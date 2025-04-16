@@ -28,3 +28,9 @@ mvn spring-boot:run
 ```
 
 Runs on: [http://localhost:8080](http://localhost:8080)
+
+## Git Flow
+
+1. Create feature branches from `development`
+2. Merge finished work into `development`
+3. When `development` is stable, merge it into `main`
