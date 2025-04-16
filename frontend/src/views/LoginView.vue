@@ -1,60 +1,86 @@
 <template>
-    <div class="auth-card">
+    <div class="auth-container">
         <h2>Login</h2>
-        <form @submit.prevent="login">
+        <form @submit.prevent="handleLogin">
             <input v-model="email" type="email" placeholder="Email" required />
             <input v-model="password" type="password" placeholder="Password" required />
-            <button type="submit">Log In</button>
+
+            <button type="submit">Login</button>
+
+            <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
+            <p>
+                Don't have an account?
+                <router-link to="/register">Register here</router-link>
+            </p>
         </form>
-        <p class="error" v-if="error">{{ error }}</p>
-        <router-link to="/register">No account? Register</router-link>
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 
 const email = ref('')
 const password = ref('')
-const error = ref('')
-const auth = useAuthStore()
+const errorMessage = ref('')
 
-const login = async () => {
-    error.value = ''
+const authStore = useAuthStore()
+const router = useRouter()
+
+async function handleLogin() {
+    errorMessage.value = ''
+
+    if (!email.value || !password.value) {
+        errorMessage.value = 'Please fill in all fields'
+        return
+    }
+
+    if (!email.value.includes('@')) {
+        errorMessage.value = 'Please enter a valid email address'
+        return
+    }
+
     try {
-        await auth.login(email.value, password.value)
-        window.location.href = '/dashboard'
+        await authStore.login(email.value, password.value)
+        router.push('/dashboard')
     } catch (err) {
-        error.value = 'Invalid email or password'
+        errorMessage.value = err.message
     }
 }
 </script>
 
 <style scoped>
-.auth-card {
+.auth-container {
     max-width: 400px;
-    margin: 3rem auto;
+    margin: 80px auto;
     padding: 2rem;
-    border-radius: 10px;
-    background: #f4f4f4;
-    box-shadow: 0 0 10px #ccc;
+    border-radius: 12px;
+    background: #f5f5f5;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 
-input,
-button {
+input {
     display: block;
     width: 100%;
-    margin: 0.5rem 0;
-    padding: 0.6rem;
-    font-size: 1rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
 }
 
 button {
-    background-color: #3b82f6;
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #2c3e50;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #1a252f;
 }
 
 .error {
