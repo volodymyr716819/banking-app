@@ -9,6 +9,5 @@ import com.bankapp.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    // Custom query to find a user by email (used in login)
     Optional<User> findByEmail(String email);
 }

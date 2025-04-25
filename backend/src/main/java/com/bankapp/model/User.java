@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "app_user") // Avoids reserved word "user"
+@Table(name = "app_user") 
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +32,7 @@ public class User {
         this.password = password;
     }
 
-    // Getters
+    
     public Long getId() {
         return id;
     }
@@ -53,7 +53,7 @@ public class User {
         return role;
     }
 
-    // Setters
+    
     public void setId(Long id) {
         this.id = id;
     }
