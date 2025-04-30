@@ -1,45 +1,67 @@
 <template>
-    <div class="dashboard">
-        <h1>Welcome to your dashboard</h1>
-        <p v-if="user">Logged in as: {{ user.email }}</p>
+  <div class="dashboard-container">
 
-        <button @click="handleLogout">Logout</button>
-    </div>
+    <!-- Main Content -->
+    <main class="main-content">
+      <h1 class="title">Welcome, {{ user.email || "Guest" }}</h1>
+      <p class="subtitle">
+        You are now logged into your personal banking dashboard.
+      </p>
+      <div class="info-message">
+        Choose an option from the sidebar to manage your accounts, transfer
+        money, or view your transaction history.
+      </div>
+    </main>
+  </div>
 </template>
 
-<script setup>
-import { useAuthStore } from '../store/auth'
-import { useRouter } from 'vue-router'
+<script>
+import { useAuthStore } from "../store/auth";
+import { useRouter } from "vue-router";
 
-const authStore = useAuthStore()
-const user = authStore.user
-const router = useRouter()
+export default {
+  setup() {
+    const router = useRouter();
+    const authStore = useAuthStore();
+    
+    const logout = () => {
+      localStorage.removeItem("authToken");
+      router.push("/login");
+    };
 
-function handleLogout() {
-    authStore.logout()
-    router.push('/login')
-}
+    return {
+      logout,
+      user: authStore.user,
+    };
+  },
+};
 </script>
 
 <style scoped>
-.dashboard {
-    max-width: 600px;
-    margin: 60px auto;
-    text-align: center;
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: "Segoe UI", sans-serif;
 }
 
-button {
-    margin-top: 2rem;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
+.main-content {
+  flex-grow: 1;
+  padding: 40px;
+  background-color: #fff;
 }
 
-button:hover {
-    background-color: #c0392b;
+.title {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.info-message {
+  font-size: 1rem;
+  color: #777;
 }
 </style>
