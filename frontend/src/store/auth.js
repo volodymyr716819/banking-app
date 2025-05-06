@@ -1,24 +1,54 @@
+import axios from "axios";
 import { defineStore } from "pinia";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
-    user: null,
-    token: null,
+    user: JSON.parse(localStorage.getItem("user")) || null,
+    token: localStorage.getItem("token") || null,
   }),
   actions: {
     async login(email, password) {
-      if (email === "test@bank.com" && password === "123456") {
-        this.token = "mock-token";
-        this.user = { email: email, role: "customer" };
-      } else {
-        throw new Error("Invalid credentials");
+      try {
+        const res = await axios.post("http://localhost:8080/api/auth/login", {
+          email,
+          password,
+        });
+        this.user = res.data;
+        this.token = "mock-token"; // or real token if you add JWT later
+        localStorage.setItem("user", JSON.stringify(this.user));
+        localStorage.setItem("token", this.token);
+      } catch (err) {
+        throw new Error(
+          "Login failed: " + err.response?.data?.message || err.message
+        );
       }
     },
+
     async register(email, password) {
-      // Simulate a success
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(true), 500);
-      });
+      try {
+        const res = await axios.post(
+          "http://localhost:8080/api/auth/register",
+          {
+            email,
+            password,
+          }
+        );
+        this.user = res.data;
+        this.token = "mock-token";
+        localStorage.setItem("user", JSON.stringify(this.user));
+        localStorage.setItem("token", this.token);
+      } catch (err) {
+        throw new Error(
+          "Register failed: " + err.response?.data?.message || err.message
+        );
+      }
+    },
+
+    logout() {
+      this.user = null;
+      this.token = null;
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
     },
   },
 });
