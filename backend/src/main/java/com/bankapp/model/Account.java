@@ -3,13 +3,7 @@ package com.bankapp.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "accounts")
@@ -28,7 +22,6 @@ public class Account {
     private boolean approved = false;
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -69,12 +62,6 @@ public class Account {
         this.approved = approved;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -82,5 +69,4 @@ public class Account {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-}
 }

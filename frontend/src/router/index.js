@@ -22,7 +22,7 @@ const routes = [
     ]
   },
   {
-    path: '/atm',
+    path: '/dashboard/atm',
     component: ATMView,
     meta: { requiresAuth: true },
   },

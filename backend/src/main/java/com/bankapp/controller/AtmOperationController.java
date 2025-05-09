@@ -13,6 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/atm")
+@CrossOrigin(origins = "*")
 public class AtmOperationController {
 
     @Autowired
@@ -29,6 +30,15 @@ public class AtmOperationController {
     @PostMapping("/withdraw")
     public ResponseEntity<String> withdraw(@RequestBody AtmRequest atmRequest) {
         return performAtmOperation(atmRequest, "WITHDRAW");
+    }
+
+    @GetMapping("/balance")
+    public ResponseEntity<?> getBalance(@RequestParam Long accountId) {
+        Optional<Account> accountOpt = accountRepository.findById(accountId);
+        if (accountOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Account not found");
+        }
+        return ResponseEntity.ok(accountOpt.get().getBalance());
     }
 
     private ResponseEntity<String> performAtmOperation(AtmRequest atmRequest, String operationType) {
