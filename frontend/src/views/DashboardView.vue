@@ -4,6 +4,7 @@
         <p v-if="user">Logged in as: {{ user.email }}</p>
 
         <button @click="handleLogout">Logout</button>
+        <button @click="handleATM">ATM</button>
     </div>
 </template>
 
@@ -19,6 +20,10 @@ function handleLogout() {
     authStore.logout()
     router.push('/login')
 }
+
+function handleATM() {
+    router.push('/atm')
+}
 </script>
 
 <style scoped>
@@ -29,6 +34,7 @@ function handleLogout() {
 }
 
 button {
+    margin-left: 10px;
     margin-top: 2rem;
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
