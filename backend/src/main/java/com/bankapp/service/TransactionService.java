@@ -20,6 +20,10 @@ public class TransactionService {
     @Autowired
     private AccountRepository accountRepository;
 
+    public List<Transaction> getAccountHistory(Long accountId) {
+        return transactionRepository.findBySenderAccountIdOrReceiverAccountId(accountId, accountId);
+    }
+
     @Transactional
     public void transferMoney(Long senderAccountId, Long receiverAccountId, BigDecimal amount, String description) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {

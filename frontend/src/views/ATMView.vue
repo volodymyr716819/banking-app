@@ -8,12 +8,12 @@
     <p v-else-if="typeof balance === 'string'">
       ⚠️ {{ balance }}
     </p>
-    
+
     <div v-if="accounts.length">
       <label for="account-select">Select Account:</label>
       <select id="account-select" v-model.number="selectedAccountId" @change="loadBalance">
         <option v-for="account in accounts" :key="account.id" :value="account.id">
-          {{ account.type }}
+           {{ account.type }} (ID: {{ account.id }})
         </option>
       </select>
     </div>

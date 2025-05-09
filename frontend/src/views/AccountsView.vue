@@ -23,9 +23,8 @@
 
     <div class="accounts-grid">
       <div v-for="account in accounts" :key="account.id" class="account-card">
-        <h2>{{ account.type }} Account</h2>
+        <h2>{{ account.type.charAt(0) + account.type.slice(1).toLowerCase() }} Account</h2>
         <p>Balance: €{{ account.balance.toFixed(2) }}</p>
-        <p>Account ID: {{ account.id }}</p>
         <p>
           Status:
           <span :class="account.approved ? 'approved-badge' : 'pending-badge'">
@@ -49,12 +48,15 @@ export default {
 
     const fetchAccounts = async () => {
       try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user || !user.id) {
+          alert("User not logged in.");
+          return;
+        }
         const response = await axios.get(
-          "http://localhost:8080/api/accounts/user",
-          {
-            withCredentials: true,
-          }
+          `http://localhost:8080/api/accounts/user/${user.id}`
         );
+
         accounts.value = response.data;
       } catch (err) {
         console.error("Failed to fetch accounts:", err);
@@ -64,9 +66,15 @@ export default {
 
     const createAccount = async () => {
       try {
-        await axios.post("http://localhost:8080/api/accounts/create", {
-          type: newAccountType.value,
-        });
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user || !user.id) {
+          alert("User not logged in");
+          return;
+        }
+        await axios.post(
+          `http://localhost:8080/api/accounts/create?userId=${user.id}&type=${newAccountType.value}`
+        );
+
         showForm.value = false;
         newAccountType.value = "CHECKING";
         await fetchAccounts();

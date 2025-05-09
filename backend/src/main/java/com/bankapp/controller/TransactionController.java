@@ -24,4 +24,9 @@ public class TransactionController {
         );
         return ResponseEntity.ok("Transfer completed successfully");
     }
+
+    @GetMapping("/account/{accountId}")
+    public ResponseEntity<?> getTransactionHistory(@PathVariable Long accountId) {
+        return ResponseEntity.ok(transactionService.getAccountHistory(accountId));
+    }
 }
