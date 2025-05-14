@@ -20,15 +20,10 @@ const routes = [
       { path: '', component: DashboardView },
       { path: 'accounts', component: AccountsView },
       { path: 'transfer', component: TransferPageView },
-      // { path: 'atm', component: AtmPageView },
+      { path: 'atm', component: ATMView, meta: { requiresAuth: true } },
       // { path: 'history', component: HistoryPageView }
       { path: 'approve', component: ApproveAccountsView, meta: { requiresRole: 'employee' } }
     ]
-  },
-  {
-    path: '/dashboard/atm',
-    component: ATMView,
-    meta: { requiresAuth: true },
   },
   { path: '/', redirect: '/login' }
 ];
@@ -41,12 +36,14 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
 
+  // Block unauthenticated access
   if (to.meta.requiresAuth && !authStore.token) {
     return next('/login');
   }
 
-  if (to.meta.requiresRole && authStore.user?.role !== to.meta.requiresRole) {
-    return next('/dashboard'); // fallback
+  // Block unauthorized access
+  if (to.meta.requiresRole && authStore.user?.role?.toLowerCase() !== to.meta.requiresRole) {
+    return next('/dashboard');
   }
 
   next();

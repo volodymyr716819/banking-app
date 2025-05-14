@@ -1,18 +1,27 @@
 package com.bankapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.List;
 
 @Entity
-@Table(name = "app_user") 
+@Table(name = "app_user")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<Account> accounts;
 
     @Column(nullable = false)
     private String email;
@@ -32,7 +41,6 @@ public class User {
         this.password = password;
     }
 
-    
     public Long getId() {
         return id;
     }
@@ -53,7 +61,6 @@ public class User {
         return role;
     }
 
-    
     public void setId(Long id) {
         this.id = id;
     }

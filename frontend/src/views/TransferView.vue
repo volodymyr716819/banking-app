@@ -38,7 +38,9 @@
   <script setup>
   import { ref, onMounted } from 'vue';
   import axios from 'axios';
+  import { useAuthStore } from '../store/auth';
   
+  const auth = useAuthStore();
   const accounts = ref([]);
   const fromAccount = ref('');
   const toAccountId = ref('');
@@ -48,10 +50,12 @@
   
   const fetchAccounts = async () => {
     try {
-      const res = await axios.get('http://localhost:8080/api/accounts/user', {
-        withCredentials: true
+      const response = await axios.get(`http://localhost:8080/api/accounts/user/${auth.user.id}`, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`
+        }
       });
-      accounts.value = res.data.filter(acc => acc.approved === true);
+      accounts.value = response.data.filter(acc => acc.approved === true);
     } catch (err) {
       message.value = 'Failed to load accounts. Please log in.';
     }
@@ -65,7 +69,9 @@
         amount: parseFloat(amount.value),
         description: description.value
       }, {
-        withCredentials: true
+        headers: {
+          Authorization: `Bearer ${auth.token}`
+        }
       });
       message.value = 'Transfer successful!';
       fromAccount.value = '';

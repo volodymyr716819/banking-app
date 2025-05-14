@@ -39,6 +39,7 @@ import { useAuthStore } from '../store/auth'
 
 const authStore = useAuthStore()
 const user = authStore.user
+const token = authStore.token
 
 const accounts = ref([])
 const selectedAccountId = ref(null)
@@ -55,7 +56,11 @@ onMounted(async () => {
   }
 
   try {
-    const res = await fetch(`http://localhost:8080/api/accounts/user/${user.id}`)
+    const res = await fetch(`http://localhost:8080/api/accounts/user/${user.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
     accounts.value = await res.json()
     if (accounts.value.length > 0) {
       selectedAccountId.value = accounts.value[0].id
@@ -75,7 +80,11 @@ async function loadBalance() {
   }
 
   try {
-    const res = await fetch(`http://localhost:8080/api/atm/balance?accountId=${selectedAccountId.value}`)
+    const res = await fetch(`http://localhost:8080/api/atm/balance?accountId=${selectedAccountId.value}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
     if (!res.ok) throw new Error(await res.text())
     balance.value = await res.json()
   } catch (err) {
@@ -96,7 +105,10 @@ async function submit(type) {
   try {
     const res = await fetch(`http://localhost:8080/api/atm/${type}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
       body: JSON.stringify({
         accountId: selectedAccountId.value,
         amount: form.value.amount

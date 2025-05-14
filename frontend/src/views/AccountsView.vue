@@ -23,7 +23,12 @@
 
     <div class="accounts-grid">
       <div v-for="account in accounts" :key="account.id" class="account-card">
-        <h2>{{ account.type.charAt(0) + account.type.slice(1).toLowerCase() }} Account</h2>
+        <h2>
+          {{
+            account.type.charAt(0) + account.type.slice(1).toLowerCase()
+          }}
+          Account
+        </h2>
         <p>Balance: €{{ account.balance.toFixed(2) }}</p>
         <p>
           Status:
@@ -39,9 +44,11 @@
 <script>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import { useAuthStore } from "../store/auth";
 
 export default {
   setup() {
+    const auth = useAuthStore();
     const accounts = ref([]);
     const showForm = ref(false);
     const newAccountType = ref("CHECKING");
@@ -54,7 +61,12 @@ export default {
           return;
         }
         const response = await axios.get(
-          `http://localhost:8080/api/accounts/user/${user.id}`
+          `http://localhost:8080/api/accounts/user/${auth.user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
+          }
         );
 
         accounts.value = response.data;

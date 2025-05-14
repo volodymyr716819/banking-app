@@ -32,14 +32,18 @@
   <script setup>
   import { ref, onMounted } from 'vue';
   import axios from 'axios';
+  import { useAuthStore } from '../store/auth';
   
+  const auth = useAuthStore();
   const accounts = ref([]);
   const message = ref('');
   
   const fetchPendingAccounts = async () => {
     try {
       const response = await axios.get('http://localhost:8080/api/accounts/pending', {
-        withCredentials: true
+        headers: {
+          Authorization: `Bearer ${auth.token}`
+        }
       });
       accounts.value = response.data;
     } catch (err) {
@@ -50,7 +54,9 @@
   const approveAccount = async (accountId) => {
     try {
       await axios.put(`http://localhost:8080/api/accounts/${accountId}/approve`, {}, {
-        withCredentials: true
+        headers: {
+          Authorization: `Bearer ${auth.token}`
+        }
       });
       message.value = `Account ${accountId} approved.`;
       await fetchPendingAccounts();

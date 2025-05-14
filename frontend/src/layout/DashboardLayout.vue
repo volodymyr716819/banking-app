@@ -6,8 +6,9 @@
         <nav class="nav-links">
           <router-link to="/dashboard/accounts" class="nav-link">Accounts</router-link>
           <router-link to="/dashboard/transfer" class="nav-link">Transfer Money</router-link>
-          <router-link to="/dashboard/history" class="nav-link">Transaction History</router-link>
+          <!--<router-link to="/dashboard/history" class="nav-link">Transaction History</router-link> -->
           <router-link to="/dashboard/atm" class="nav-link">ATM Operations</router-link>
+          <router-link v-if="auth.user?.role?.toLowerCase() === 'employee'" to="/dashboard/approve" class="nav-link">Approve Accounts</router-link>
           <button @click="logout" class="logout-button">Logout</button>
         </nav>
       </aside>
@@ -22,12 +23,14 @@
   <script>
   import { useRouter } from 'vue-router';
   import { ref, onMounted } from 'vue';
-  
+  import { useAuthStore } from '../store/auth';
+
   export default {
     setup() {
       const router = useRouter();
       const user = ref({ username: 'Guest' });
-  
+      const auth = useAuthStore();
+
       onMounted(() => {
         const storedUsername = localStorage.getItem('username');
         if (storedUsername) {
@@ -43,7 +46,8 @@
   
       return {
         logout,
-        user
+        user,
+        auth
       };
     }
   };

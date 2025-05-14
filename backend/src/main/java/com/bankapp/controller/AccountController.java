@@ -46,7 +46,17 @@ public class AccountController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Account>> getAccountsByUserId(@PathVariable Long userId) {
+    public ResponseEntity<?> getAccountsByUserId(@PathVariable Long userId, Authentication authentication) {
+        Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+        }
+
+        User currentUser = userOpt.get();
+        if (!currentUser.getId().equals(userId) && !currentUser.getRole().equalsIgnoreCase("employee")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+        }
+
         return ResponseEntity.ok(accountRepository.findByUserId(userId));
     }
 
@@ -76,11 +86,54 @@ public class AccountController {
 
     @GetMapping("/pending")
     public ResponseEntity<?> getPendingAccounts(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        if (!"employee".equalsIgnoreCase(user.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+        try {
+            String email = authentication != null ? authentication.getName() : null;
+
+            if (email == null) {
+                System.out.println("❌ No authentication context");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+            }
+
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                System.out.println("❌ User not found for email: " + email);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+            }
+
+            User user = userOpt.get();
+            System.out.println("✅ Authenticated: " + user.getEmail() + " | role: " + user.getRole());
+
+            if (user.getRole() == null || !"employee".equalsIgnoreCase(user.getRole())) {
+                System.out.println("❌ Access denied — not employee");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+
+            List<Account> pending = accountRepository.findByApprovedFalse();
+            System.out.println("🟡 Returning " + pending.size() + " pending accounts");
+            return ResponseEntity.ok(pending);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
-        return ResponseEntity.ok(accountRepository.findByApprovedFalse());
+    }
+
+    @GetMapping("/debug/pending")
+    public ResponseEntity<?> debugPendingAccounts() {
+        try {
+            List<Account> accounts = accountRepository.findByApprovedFalse();
+            System.out.println("🟡 DEBUG: Pending accounts found: " + accounts.size());
+
+            for (Account acc : accounts) {
+                System.out.println("→ Account ID: " + acc.getId() +
+                        ", Approved: " + acc.isApproved() +
+                        ", User: " + (acc.getUser() != null ? acc.getUser().getEmail() : "null"));
+            }
+
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Server error: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{accountId}/approve")
