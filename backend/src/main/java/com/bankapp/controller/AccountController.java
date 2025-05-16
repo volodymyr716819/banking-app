@@ -1,19 +1,27 @@
 package com.bankapp.controller;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.bankapp.model.Account;
 import com.bankapp.model.User;
 import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.Authentication;
-
-import java.util.Optional;
-import java.util.Arrays;
-import java.math.BigDecimal;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -28,7 +36,6 @@ public class AccountController {
 
     private static final List<String> VALID_TYPES = Arrays.asList("CHECKING", "SAVINGS");
 
-    // Temporary create account for a hardcoded user (e.g., user with ID 1)
     @PostMapping("/create")
     public ResponseEntity<?> createAccount(@RequestParam Long userId, @RequestParam String type) {
         User user = userRepository.findById(userId).orElse(null);

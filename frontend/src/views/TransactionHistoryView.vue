@@ -1,79 +1,139 @@
 <template>
-    <div class="dashboard">
-      <h2>Transaction History</h2>
-  
-      <div v-if="transactions.length === 0">
-        No transactions found.
-      </div>
-  
-      <table v-else>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Timestamp</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="tx in transactions" :key="tx.id">
-            <td>{{ tx.id }}</td>
-            <td>{{ tx.type }}</td>
-            <td>{{ tx.amount }}</td>
-            <td>{{ new Date(tx.timestamp).toLocaleString() }}</td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="transaction-history">
+    <h1>Transaction History</h1>
+
+    <div class="filter-section">
+      <label>Filter by Account Type:</label>
+      <select v-model="selectedType">
+        <option value="">All</option>
+        <option value="checking">Checking</option>
+        <option value="savings">Savings</option>
+      </select>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'TransactionHistoryView',
-    data() {
-      return {
-        transactions: []
-      };
-    },
-    async mounted() {
-      // Fetch transaction history for logged-in user
+
+    <p v-if="message" class="status-message">{{ message }}</p>
+
+    <table v-if="getFilteredTransactions().length" class="transaction-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>From Account</th>
+          <th>To Account</th>
+          <th>Amount</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="tx in getFilteredTransactions()" :key="tx.id">
+          <td>{{ tx.type }}</td>
+          <td>{{ tx.fromAccount ? tx.fromAccount.id : '-' }}</td>
+          <td>{{ tx.toAccount ? tx.toAccount.id : '-' }}</td>
+          <td>{{ formatAmount(tx.amount) }}</td>
+          <td>{{ formatDate(tx.timestamp) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p v-else class="no-data">No transactions found.</p>
+  </div>
+</template>
+
+<script>
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import { useAuthStore } from '../store/auth'
+
+export default {
+  setup() {
+    const auth = useAuthStore()
+    const transactions = ref([])
+    const selectedType = ref('')
+    const message = ref('')
+
+    const fetchTransactions = async () => {
       try {
-        const res = await fetch('/api/transactions');
-        if (!res.ok) throw new Error('Could not load transactions');
-        this.transactions = await res.json();
-      } catch (err) {
-        console.error(err.message);
+        const response = await axios.get(`http://localhost:8080/api/transactions/user/${auth.user.id}`, {
+          headers: {
+            Authorization: `Bearer ${auth.token}`
+          }
+        })
+        transactions.value = response.data
+      } catch (error) {
+        message.value = 'Failed to load transactions.'
       }
     }
-  };
-  </script>
-  
-  <style scoped>
-  .dashboard {
-    max-width: 800px;
-    margin: 60px auto;
-    text-align: center;
+
+    onMounted(() => {
+      fetchTransactions()
+    })
+
+    const getFilteredTransactions = () => {
+      if (!selectedType.value) {
+        return transactions.value
+      }
+
+      return transactions.value.filter(tx => {
+        const from = tx.fromAccount ? tx.fromAccount.type : ''
+        const to = tx.toAccount ? tx.toAccount.type : ''
+        return from === selectedType.value || to === selectedType.value
+      })
+    }
+
+    const formatAmount = (amount) => {
+      return '€' + Number(amount).toFixed(2)
+    }
+
+    const formatDate = (timestamp) => {
+      const date = new Date(timestamp)
+      return date.toLocaleString()
+    }
+
+    return {
+      selectedType,
+      transactions,
+      message,
+      getFilteredTransactions,
+      formatAmount,
+      formatDate
+    }
   }
-  
-  table {
-    margin: auto;
-    width: 90%;
-    border-collapse: collapse;
-    margin-top: 2rem;
-  }
-  
-  th, td {
-    border: 1px solid #ddd;
-    padding: 0.75rem;
-  }
-  
-  th {
-    background-color: #e74c3c;
-    color: white;
-  }
-  
-  td {
-    background-color: #f9f9f9;
-  }
-  </style>
-  
+}
+</script>
+
+<style scoped>
+.transaction-history {
+  padding: 40px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.status-message {
+  color: #2b6cb0;
+  margin-bottom: 10px;
+}
+
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transaction-table th,
+.transaction-table td {
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+.no-data {
+  margin-top: 20px;
+  font-style: italic;
+  color: #777;
+}
+</style>

@@ -1,6 +1,7 @@
 package com.bankapp.config;
 
-import com.bankapp.security.JwtAuthenticationFilter;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +19,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import com.bankapp.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableMethodSecurity
@@ -30,17 +31,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    new AntPathRequestMatcher("/api/auth/login"),
-                    new AntPathRequestMatcher("/api/auth/register"),
-                    new AntPathRequestMatcher("/h2-console/**")
-                ).permitAll()
-                .anyRequest().authenticated()
-            );
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/auth/login"),
+                                new AntPathRequestMatcher("/api/auth/register"),
+                                new AntPathRequestMatcher("/h2-console/**"))
+                        .permitAll()
+                        .anyRequest().authenticated());
 
         http.headers(headers -> headers.frameOptions(frame -> frame.disable())); // for H2 console
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
