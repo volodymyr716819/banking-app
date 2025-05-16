@@ -1,7 +1,8 @@
 package com.bankapp.model;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,11 +11,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.util.List;
 
 @Entity
 @Table(name = "app_user")
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,7 +31,11 @@ public class User {
     private String password;
 
     private String name;
+
     private String role = "customer"; // default role
+
+    @Column(nullable = false)
+    private boolean approved = false; // <-- NEW FIELD
 
     public User() {
     }
@@ -39,8 +44,10 @@ public class User {
         this.name = name;
         this.email = email;
         this.password = password;
+        this.approved = false;
     }
 
+    // Getters
     public Long getId() {
         return id;
     }
@@ -61,6 +68,11 @@ public class User {
         return role;
     }
 
+    public boolean isApproved() {
+        return approved;
+    }
+
+    // Setters
     public void setId(Long id) {
         this.id = id;
     }
@@ -79,5 +91,9 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public void setApproved(boolean approved) {
+        this.approved = approved;
     }
 }

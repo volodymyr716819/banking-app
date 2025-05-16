@@ -1,52 +1,63 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '../views/LoginView.vue'
-import RegisterView from '../views/RegisterView.vue'
-import DashboardView from '../views/DashboardView.vue'
-import ATMView from '../views/ATMView.vue'
-import AccountsView from '../views/AccountsView.vue'
-import DashboardLayout from '../layout/DashboardLayout.vue'
-import TransferPageView from '../views/TransferView.vue'
-import ApproveAccountsView from '../views/ApproveAccountsView.vue';
+import { createRouter, createWebHistory } from "vue-router";
+import LoginView from "../views/LoginView.vue";
+import RegisterView from "../views/RegisterView.vue";
+import DashboardView from "../views/DashboardView.vue";
+import ATMView from "../views/ATMView.vue";
+import AccountsView from "../views/AccountsView.vue";
+import DashboardLayout from "../layout/DashboardLayout.vue";
+import TransferPageView from "../views/TransferView.vue";
+import ApproveAccountsView from "../views/ApproveAccountsView.vue";
+import ApproveUsersView from "../views/ApproveUsersView.vue"; 
 
-import { useAuthStore } from '../store/auth'
+import { useAuthStore } from "../store/auth";
 
 const routes = [
-  { path: '/login', component: LoginView },
-  { path: '/register', component: RegisterView },
-  { 
-    path: '/dashboard', 
+  { path: "/login", component: LoginView },
+  { path: "/register", component: RegisterView },
+  {
+    path: "/dashboard",
     component: DashboardLayout,
     children: [
-      { path: '', component: DashboardView },
-      { path: 'accounts', component: AccountsView },
-      { path: 'transfer', component: TransferPageView },
-      { path: 'atm', component: ATMView, meta: { requiresAuth: true } },
-      // { path: 'history', component: HistoryPageView }
-      { path: 'approve', component: ApproveAccountsView, meta: { requiresRole: 'employee' } }
-    ]
+      { path: "", component: DashboardView },
+      { path: "accounts", component: AccountsView },
+      { path: "transfer", component: TransferPageView },
+      { path: "atm", component: ATMView, meta: { requiresAuth: true } },
+      {
+        path: "approve",
+        component: ApproveAccountsView,
+        meta: { requiresRole: "employee" },
+      },
+      {
+        path: "approve-users",
+        component: ApproveUsersView,
+        meta: { requiresRole: "employee" },
+      }, 
+    ],
   },
-  { path: '/', redirect: '/login' }
+  { path: "/", redirect: "/login" },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-})
+});
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
 
-  // Block unauthenticated access
   if (to.meta.requiresAuth && !authStore.token) {
-    return next('/login');
+    return next("/login");
   }
 
-  // Block unauthorized access
-  if (to.meta.requiresRole && authStore.user?.role?.toLowerCase() !== to.meta.requiresRole) {
-    return next('/dashboard');
+  // employee routes
+  if (
+    to.meta.requiresRole &&
+    authStore.user?.role?.toLowerCase() !== to.meta.requiresRole
+  ) {
+    return next("/dashboard");
   }
 
   next();
 });
 
-export default router
+export default router;

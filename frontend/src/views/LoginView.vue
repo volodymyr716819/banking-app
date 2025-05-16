@@ -45,7 +45,11 @@ async function handleLogin() {
         await authStore.login(email.value, password.value)
         router.push('/dashboard')
     } catch (err) {
-        errorMessage.value = err.message
+        if (err.message.includes('pending approval')) {
+            errorMessage.value = 'Your account is pending employee approval.'
+        } else {
+            errorMessage.value = 'Login failed: Invalid email or password.'
+        }
     }
 }
 </script>
