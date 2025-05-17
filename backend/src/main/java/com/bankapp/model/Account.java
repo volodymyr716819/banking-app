@@ -24,6 +24,15 @@ public class Account {
     private boolean approved = false;
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(nullable = false)
+    private BigDecimal dailyLimit = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private BigDecimal absoluteLimit = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private boolean closed = false;
+
     public Long getId() {
         return id;
     }
@@ -70,5 +79,29 @@ public class Account {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public BigDecimal getAbsoluteLimit() {
+        return absoluteLimit;
+    }
+
+    public void setAbsoluteLimit(BigDecimal absoluteLimit) {
+        this.absoluteLimit = absoluteLimit;
+    }
+
+    public BigDecimal getDailyLimit() {
+        return dailyLimit;
+    }
+
+    public void setDailyLimit(BigDecimal dailyLimit) {
+        this.dailyLimit = dailyLimit;
+    }
+
+    public boolean isClosed() {
+        return closed;
+    }
+    
+    public void setClosed(boolean closed) {
+        this.closed = closed;
     }
 }

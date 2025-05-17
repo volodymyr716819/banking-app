@@ -63,4 +63,13 @@ public class UserController {
         userRepository.save(user);
         return ResponseEntity.ok("User approved successfully.");
     }
+
+    // Get list of users who are approved
+    @GetMapping("/approved")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public List<User> getApprovedCustomers() {
+        return userRepository.findByApprovedTrue().stream()
+                .filter(user -> "CUSTOMER".equalsIgnoreCase(user.getRole()))
+                .toList();
+    }
 }

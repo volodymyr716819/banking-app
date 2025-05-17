@@ -4,10 +4,12 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +19,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
 
+import com.bankapp.dto.AccountDTO;
+import com.bankapp.dto.UpdateLimitsRequest;
 import com.bankapp.model.Account;
 import com.bankapp.model.User;
 import com.bankapp.repository.AccountRepository;
@@ -64,7 +69,10 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
-        return ResponseEntity.ok(accountRepository.findByUserId(userId));
+        return ResponseEntity.ok(
+                accountRepository.findByUserId(userId).stream()
+                        .filter(a -> !a.isClosed())
+                        .toList());
     }
 
     @PutMapping("/{accountId}")
@@ -97,49 +105,25 @@ public class AccountController {
             String email = authentication != null ? authentication.getName() : null;
 
             if (email == null) {
-                System.out.println("❌ No authentication context");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
             }
 
             Optional<User> userOpt = userRepository.findByEmail(email);
             if (userOpt.isEmpty()) {
-                System.out.println("❌ User not found for email: " + email);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
             }
 
             User user = userOpt.get();
-            System.out.println("✅ Authenticated: " + user.getEmail() + " | role: " + user.getRole());
 
             if (user.getRole() == null || !"employee".equalsIgnoreCase(user.getRole())) {
-                System.out.println("❌ Access denied — not employee");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
             }
 
             List<Account> pending = accountRepository.findByApprovedFalse();
-            System.out.println("🟡 Returning " + pending.size() + " pending accounts");
             return ResponseEntity.ok(pending);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/debug/pending")
-    public ResponseEntity<?> debugPendingAccounts() {
-        try {
-            List<Account> accounts = accountRepository.findByApprovedFalse();
-            System.out.println("🟡 DEBUG: Pending accounts found: " + accounts.size());
-
-            for (Account acc : accounts) {
-                System.out.println("→ Account ID: " + acc.getId() +
-                        ", Approved: " + acc.isApproved() +
-                        ", User: " + (acc.getUser() != null ? acc.getUser().getEmail() : "null"));
-            }
-
-            return ResponseEntity.ok(accounts);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Server error: " + e.getMessage());
         }
     }
 
@@ -159,5 +143,50 @@ public class AccountController {
         account.setApproved(true);
         accountRepository.save(account);
         return ResponseEntity.ok("Account approved successfully.");
+    }
+
+    @GetMapping("/approved")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<List<AccountDTO>> getApprovedAccounts() {
+        List<AccountDTO> accounts = accountRepository.findByApprovedTrue().stream()
+                .filter(account -> !account.isClosed())
+                .map(AccountDTO::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(accounts);
+    }
+
+    @PutMapping("/{id}/limits")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<?> updateLimits(@PathVariable Long id, @RequestBody UpdateLimitsRequest request) {
+        Optional<Account> optionalAccount = accountRepository.findById(id);
+        if (optionalAccount.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Account account = optionalAccount.get();
+        account.setDailyLimit(request.dailyLimit);
+        account.setAbsoluteLimit(request.absoluteLimit);
+        accountRepository.save(account);
+
+        return ResponseEntity.ok("Limits updated successfully");
+    }
+
+    @PutMapping("/{id}/close")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<?> closeAccount(@PathVariable Long id) {
+        Optional<Account> optional = accountRepository.findById(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Account account = optional.get();
+        if (account.isClosed()) {
+            return ResponseEntity.badRequest().body("Account already closed");
+        }
+
+        account.setClosed(true);
+        accountRepository.save(account);
+        return ResponseEntity.ok("Account successfully closed");
     }
 }
