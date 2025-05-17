@@ -60,6 +60,12 @@ public class AtmOperationController {
         if (accountOpt.isEmpty()) return ResponseEntity.badRequest().body("Account not found");
 
         Account account = accountOpt.get();
+        
+        // Check if account is approved
+        if (!account.isApproved()) {
+            return ResponseEntity.badRequest().body("Account is not approved for ATM operations");
+        }
+        
         if (operationType.equals("WITHDRAW") && account.getBalance().compareTo(atmRequest.getAmount()) < 0) {
             return ResponseEntity.badRequest().body("Insufficient balance");
         }

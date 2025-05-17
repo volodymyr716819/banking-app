@@ -3,7 +3,16 @@
 
     <!-- Main Content -->
     <main class="main-content">
-      <h1 class="title">Welcome, {{ user.email || "Guest" }}</h1>
+      <h1 class="title">Welcome, {{ user.name || user.email || "Guest" }}</h1>
+      <div class="user-details">
+        <div class="detail-item">
+          <strong>Email:</strong> {{ user.email }}
+        </div>
+        <div class="detail-item">
+          <strong>Account Type:</strong> <span class="role-badge">{{ user.role || 'Customer' }}</span>
+        </div>
+      </div>
+      
       <p class="subtitle">
         You are now logged into your personal banking dashboard.
       </p>
@@ -63,5 +72,26 @@ export default {
 .info-message {
   font-size: 1rem;
   color: #777;
+}
+
+.user-details {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.detail-item {
+  margin-bottom: 8px;
+}
+
+.role-badge {
+  background-color: #4CAF50;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  text-transform: capitalize;
 }
 </style>

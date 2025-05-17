@@ -13,7 +13,7 @@
       <label for="account-select">Select Account:</label>
       <select id="account-select" v-model.number="selectedAccountId" @change="loadBalance">
         <option v-for="account in accounts" :key="account.id" :value="account.id">
-           {{ account.type }} (ID: {{ account.id }})
+           {{ account.type }} - IBAN: {{ account.iban }}
         </option>
       </select>
     </div>
@@ -61,12 +61,19 @@ onMounted(async () => {
         Authorization: `Bearer ${token}`
       }
     })
-    accounts.value = await res.json()
+    const allAccounts = await res.json()
+    // Filter to only approved accounts
+    accounts.value = allAccounts.filter(account => account.approved)
+    
     if (accounts.value.length > 0) {
       selectedAccountId.value = accounts.value[0].id
       await loadBalance()
     } else {
-      error.value = "No accounts found"
+      if (allAccounts.length > 0) {
+        error.value = "You have accounts, but none are approved yet. Please wait for approval."
+      } else {
+        error.value = "No accounts found"
+      }
     }
   } catch (err) {
     error.value = "Failed to load accounts: " + err.message

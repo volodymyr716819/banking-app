@@ -28,6 +28,7 @@
         <thead>
           <tr>
             <th>Date</th>
+            <th>Type</th>
             <th>Description</th>
             <th>From</th>
             <th>To</th>
@@ -38,9 +39,10 @@
           <tr v-for="transaction in transactions" :key="transaction.id" 
               :class="getTransactionClass(transaction)">
             <td>{{ formatDate(transaction.timestamp) }}</td>
+            <td><span :class="'transaction-type ' + transaction.type.toLowerCase()">{{ transaction.type }}</span></td>
             <td>{{ transaction.description || 'N/A' }}</td>
-            <td>{{ getAccountInfo(transaction.senderAccount) }}</td>
-            <td>{{ getAccountInfo(transaction.receiverAccount) }}</td>
+            <td>{{ getSenderAccountInfo(transaction) }}</td>
+            <td>{{ getReceiverAccountInfo(transaction) }}</td>
             <td :class="getAmountClass(transaction)">
               {{ formatAmount(transaction) }}
             </td>
@@ -55,28 +57,41 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../store/auth';
+import { useRoute } from 'vue-router';
 
 const auth = useAuthStore();
+const route = useRoute();
 const transactions = ref([]);
 const loading = ref(true);
 const error = ref('');
 const selectedAccountType = ref('');
+const selectedAccountId = ref(null);
 
 const fetchTransactions = async () => {
   try {
     loading.value = true;
     error.value = '';
     
-    const response = await axios.get(
-      `http://localhost:8080/api/transactions/user/${auth.user.id}`, {
-        params: { 
-          accountType: selectedAccountType.value 
-        },
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
+    let url;
+    let params = {};
+    
+    // If we have a specific account ID, fetch transactions for that account
+    if (selectedAccountId.value) {
+      url = `http://localhost:8080/api/transactions/account/${selectedAccountId.value}`;
+    } else {
+      // Otherwise get all user transactions with optional account type filter
+      url = `http://localhost:8080/api/transactions/user/${auth.user.id}`;
+      if (selectedAccountType.value) {
+        params.accountType = selectedAccountType.value;
       }
-    );
+    }
+    
+    const response = await axios.get(url, {
+      params,
+      headers: {
+        Authorization: `Bearer ${auth.token}`
+      }
+    });
     
     transactions.value = response.data;
     loading.value = false;
@@ -106,12 +121,41 @@ const formatAmount = (transaction) => {
   return `€${parseFloat(transaction.amount).toFixed(2)}`;
 };
 
-const getAccountInfo = (account) => {
-  if (!account) return 'External Account';
-  return `${account.type} (ID: ${account.id})`;
+const getSenderAccountInfo = (transaction) => {
+  if (transaction.type === 'DEPOSIT') {
+    return 'Cash Deposit';
+  }
+  
+  if (!transaction.senderAccountId) {
+    return 'External Account';
+  }
+  
+  return `${transaction.senderAccountType} (IBAN: ${transaction.senderIban})`;
+};
+
+const getReceiverAccountInfo = (transaction) => {
+  if (transaction.type === 'WITHDRAW') {
+    return 'Cash Withdrawal';
+  }
+  
+  if (!transaction.receiverAccountId) {
+    return 'External Account';
+  }
+  
+  return `${transaction.receiverAccountType} (IBAN: ${transaction.receiverIban})`;
 };
 
 const getTransactionClass = (transaction) => {
+  // For ATM operations
+  if (transaction.type === 'DEPOSIT') {
+    return { 'transaction-row': true, 'incoming': true };
+  }
+  
+  if (transaction.type === 'WITHDRAW') {
+    return { 'transaction-row': true, 'outgoing': true };
+  }
+  
+  // For transfers
   const isUserSender = isCurrentUserSender(transaction);
   return {
     'transaction-row': true,
@@ -121,6 +165,16 @@ const getTransactionClass = (transaction) => {
 };
 
 const getAmountClass = (transaction) => {
+  // For ATM operations
+  if (transaction.type === 'DEPOSIT') {
+    return { 'transaction-amount': true, 'positive': true };
+  }
+  
+  if (transaction.type === 'WITHDRAW') {
+    return { 'transaction-amount': true, 'negative': true };
+  }
+  
+  // For transfers
   const isUserSender = isCurrentUserSender(transaction);
   return {
     'transaction-amount': true,
@@ -130,16 +184,20 @@ const getAmountClass = (transaction) => {
 };
 
 const isCurrentUserSender = (transaction) => {
-  // Check if the current user is the sender
-  if (!transaction.senderAccount) return false;
+  // Only applicable for transfers
+  if (transaction.type !== 'TRANSFER') return false;
   
-  // Simply check if the sender account belongs to the current user's accounts
-  // We know all transactions in our list are related to the current user already
-  return transaction.senderAccount.user && 
-         transaction.senderAccount.user.id === auth.user.id;
+  // Check if the sender account belongs to the current user
+  return transaction.senderAccountId !== null && 
+         (transaction.accountId === auth.user.id || // Direct account match
+          selectedAccountId.value === transaction.senderAccountId); // Selected account match
 };
 
 onMounted(() => {
+  // Check if we were passed a specific account ID in the route
+  if (route.query.accountId) {
+    selectedAccountId.value = parseInt(route.query.accountId);
+  }
   fetchTransactions();
 });
 </script>
@@ -242,5 +300,29 @@ onMounted(() => {
 
 .transaction-amount.negative {
   color: #e74c3c;
+}
+
+.transaction-type {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.transaction-type.transfer {
+  background-color: #3498db;
+  color: white;
+}
+
+.transaction-type.deposit {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.transaction-type.withdraw {
+  background-color: #e74c3c;
+  color: white;
 }
 </style>

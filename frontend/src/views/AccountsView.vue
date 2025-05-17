@@ -22,13 +22,19 @@
     </div>
 
     <div class="accounts-grid">
-      <div v-for="account in accounts" :key="account.id" class="account-card">
+      <div 
+        v-for="account in accounts" 
+        :key="account.id" 
+        class="account-card"
+        @click="viewTransactions(account.id)"
+      >
         <h2>
           {{
             account.type.charAt(0) + account.type.slice(1).toLowerCase()
           }}
           Account
         </h2>
+        <p class="account-iban">IBAN: {{ account.iban }}</p>
         <p>Balance: €{{ account.balance.toFixed(2) }}</p>
         <p>
           Status:
@@ -36,6 +42,7 @@
             {{ account.approved ? "Approved" : "Pending Approval" }}
           </span>
         </p>
+        <div class="view-transactions-hint">Click to view transactions</div>
       </div>
     </div>
   </div>
@@ -45,10 +52,12 @@
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { useAuthStore } from "../store/auth";
+import { useRouter } from "vue-router";
 
 export default {
   setup() {
     const auth = useAuthStore();
+    const router = useRouter();
     const accounts = ref([]);
     const showForm = ref(false);
     const newAccountType = ref("CHECKING");
@@ -105,11 +114,16 @@ export default {
       fetchAccounts();
     });
 
+    const viewTransactions = (accountId) => {
+      router.push(`/dashboard/transactions?accountId=${accountId}`);
+    };
+    
     return {
       accounts,
       showForm,
       newAccountType,
       createAccount,
+      viewTransactions,
     };
   },
 };
@@ -194,5 +208,37 @@ export default {
 .pending-badge {
   color: orange;
   font-weight: bold;
+}
+
+.account-iban {
+  font-family: monospace;
+  background-color: #f0f0f0;
+  padding: 5px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  border: 1px dashed #ccc;
+  margin: 10px 0;
+}
+
+.account-card {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.account-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background-color: #f0f7ff;
+}
+
+.view-transactions-hint {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #3182ce;
+  text-align: center;
 }
 </style>

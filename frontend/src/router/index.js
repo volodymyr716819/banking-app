@@ -18,12 +18,13 @@ const routes = [
   {
     path: "/dashboard",
     component: DashboardLayout,
+    meta: { requiresAuth: true },
     children: [
       { path: "", component: DashboardView },
       { path: "accounts", component: AccountsView },
       { path: "transfer", component: TransferPageView },
-      { path: "atm", component: ATMView, meta: { requiresAuth: true } },
-      { path: "transactions", component: TransactionHistoryView, meta: { requiresAuth: true } },
+      { path: "atm", component: ATMView },
+      { path: "transactions", component: TransactionHistoryView },
       {
         path: "approve",
         component: ApproveAccountsView,

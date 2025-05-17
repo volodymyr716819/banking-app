@@ -1,14 +1,18 @@
 <template>
     <div class="transfer-page">
       <h1 class="page-title">Transfer Money</h1>
+      
+      <div v-if="noApprovedAccounts" class="approval-warning">
+        ⚠️ You have accounts, but none are approved yet. Please wait for approval before making transfers.
+      </div>
   
-      <form class="transfer-form" @submit.prevent="submitTransfer">
+      <form v-if="!noApprovedAccounts" class="transfer-form" @submit.prevent="submitTransfer">
         <div class="form-group">
           <label for="from">From Account:</label>
           <select v-model="fromAccount" required>
             <option disabled value="">Select an account</option>
             <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
-              {{ acc.type }} (ID: {{ acc.id }}) - €{{ acc.balance.toFixed(2) }}
+              {{ acc.type }} - IBAN: {{ acc.iban }} - €{{ acc.balance.toFixed(2) }}
             </option>
           </select>
         </div>
@@ -27,14 +31,14 @@
           <div v-if="searchError" class="search-error">{{ searchError }}</div>
         </div>
         
-        <div v-if="searchPerformed" class="search-results-container">
+        <div v-if="searchPerformed && !accountSelected" class="search-results-container">
           <div v-if="searchResults.length > 0" class="search-results">
             <div v-for="result in searchResults" :key="result.accountId" class="search-result-item" @click="selectAccount(result)">
               <div class="result-name">{{ result.userName }}</div>
               <div class="result-details">{{ result.accountType }} - IBAN: {{ result.iban }}</div>
             </div>
           </div>
-          <div v-else-if="searchPerformed" class="no-results">
+          <div v-else class="no-results">
             <p>No accounts found. The user may exist but has no approved accounts.</p>
           </div>
         </div>
@@ -68,6 +72,7 @@
   
   const auth = useAuthStore();
   const accounts = ref([]);
+  const allAccounts = ref([]);
   const fromAccount = ref('');
   const toAccountId = ref('');
   const amount = ref('');
@@ -77,6 +82,8 @@
   const searchResults = ref([]);
   const searchError = ref('');
   const searchPerformed = ref(false);
+  const accountSelected = ref(false);
+  const noApprovedAccounts = ref(false);
   
   const fetchAccounts = async () => {
     try {
@@ -85,7 +92,13 @@
           Authorization: `Bearer ${auth.token}`
         }
       });
-      accounts.value = response.data.filter(acc => acc.approved === true);
+      
+      allAccounts.value = response.data;
+      accounts.value = allAccounts.value.filter(acc => acc.approved === true);
+      
+      // Check if user has accounts but none are approved
+      noApprovedAccounts.value = allAccounts.value.length > 0 && accounts.value.length === 0;
+      
     } catch (err) {
       message.value = 'Failed to load accounts. Please log in.';
     }
@@ -95,6 +108,7 @@
     console.log('searchUsers function called with name:', searchName.value);
     searchError.value = '';
     searchPerformed.value = false;
+    accountSelected.value = false; // Reset account selection when starting a new search
     
     if (!auth.token) {
       console.error('No authentication token available');
@@ -133,6 +147,7 @@
     console.log('Selected account:', result);
     toAccountId.value = result.accountId;
     searchResults.value = [];
+    accountSelected.value = true; // Mark account as selected
     message.value = `Selected ${result.userName}'s account with IBAN: ${result.iban}`;
   };
   
@@ -155,6 +170,7 @@
       description.value = '';
       searchName.value = '';
       searchResults.value = [];
+      accountSelected.value = false; // Reset account selection after transfer
       await fetchAccounts();
     } catch (err) {
       message.value = 'Transfer failed. Please check the details.';
@@ -277,5 +293,15 @@
     margin-top: 5px;
     color: #e74c3c;
     font-size: 0.9rem;
+  }
+  
+  .approval-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-weight: bold;
+    border: 1px solid #ffeeba;
   }
   </style>

@@ -2,6 +2,13 @@
   <div class="dashboard-container">
     <aside class="sidebar">
       <div class="logo">BankApp</div>
+      
+      <div class="user-info">
+        <div class="user-name">{{ auth.user?.name || "Guest" }}</div>
+        <div class="user-email">{{ auth.user?.email }}</div>
+        <div class="user-role">{{ auth.user?.role || "Customer" }}</div>
+      </div>
+      
       <nav class="nav-links">
         <router-link to="/dashboard/accounts" class="nav-link">Accounts</router-link>
         <router-link to="/dashboard/transfer" class="nav-link">Transfer Money</router-link>
@@ -76,7 +83,37 @@ export default {
   font-size: 1.5rem;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+}
+
+.user-info {
+  background-color: #e2e8f0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.user-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+.user-email {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.user-role {
+  font-size: 0.8rem;
+  background-color: #4CAF50;
+  color: white;
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: capitalize;
 }
 
 .nav-links {
