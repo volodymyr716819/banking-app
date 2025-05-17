@@ -7,7 +7,8 @@ import AccountsView from "../views/AccountsView.vue";
 import DashboardLayout from "../layout/DashboardLayout.vue";
 import TransferPageView from "../views/TransferView.vue";
 import ApproveAccountsView from "../views/ApproveAccountsView.vue";
-import ApproveUsersView from "../views/ApproveUsersView.vue"; 
+import ApproveUsersView from "../views/ApproveUsersView.vue";
+import TransactionHistoryView from "../views/TransactionHistoryView.vue";
 
 import { useAuthStore } from "../store/auth";
 
@@ -31,7 +32,12 @@ const routes = [
         path: "approve-users",
         component: ApproveUsersView,
         meta: { requiresRole: "employee" },
-      }, 
+      },
+      {
+        path: "history",
+        component: TransactionHistoryView,
+        meta: { requiresAuth: true }, 
+      },
     ],
   },
   { path: "/", redirect: "/login" },
@@ -49,7 +55,6 @@ router.beforeEach((to, from, next) => {
     return next("/login");
   }
 
-  // employee routes
   if (
     to.meta.requiresRole &&
     authStore.user?.role?.toLowerCase() !== to.meta.requiresRole

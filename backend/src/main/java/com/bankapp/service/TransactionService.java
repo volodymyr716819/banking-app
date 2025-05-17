@@ -1,16 +1,17 @@
 package com.bankapp.service;
 
-import com.bankapp.model.Account;
-import com.bankapp.model.Transaction;
-import com.bankapp.repository.AccountRepository;
-import com.bankapp.repository.TransactionRepository;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.math.BigDecimal;
-import java.util.Optional;
+import com.bankapp.model.Account;
+import com.bankapp.model.Transaction;
+import com.bankapp.repository.AccountRepository;
+import com.bankapp.repository.TransactionRepository;
 
 @Service
 public class TransactionService {
@@ -21,8 +22,8 @@ public class TransactionService {
     @Autowired
     private AccountRepository accountRepository;
 
-    public List<Transaction> getAccountHistory(Long accountId) {
-        return transactionRepository.findBySenderAccountIdOrReceiverAccountId(accountId, accountId);
+    public List<Transaction> getAccountHistory(Long userId) {
+        return transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(userId, userId);
     }
 
     @Transactional
@@ -52,8 +53,8 @@ public class TransactionService {
         accountRepository.save(receiver);
 
         Transaction transaction = new Transaction();
-        transaction.setSenderAccount(sender);
-        transaction.setReceiverAccount(receiver);
+        transaction.setFromAccount(sender); 
+        transaction.setToAccount(receiver); 
         transaction.setAmount(amount);
         transaction.setDescription(description);
         transactionRepository.save(transaction);

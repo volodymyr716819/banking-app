@@ -9,11 +9,7 @@
 
       <div v-if="showForm" class="account-form">
         <label for="accountType">Select Account Type:</label>
-        <select
-          v-model="newAccountType"
-          id="accountType"
-          class="account-type-select"
-        >
+        <select v-model="newAccountType" id="accountType" class="account-type-select">
           <option value="CHECKING">Checking</option>
           <option value="SAVINGS">Savings</option>
         </select>
@@ -24,10 +20,7 @@
     <div class="accounts-grid">
       <div v-for="account in accounts" :key="account.id" class="account-card">
         <h2>
-          {{
-            account.type.charAt(0) + account.type.slice(1).toLowerCase()
-          }}
-          Account
+          {{ account.type.charAt(0) + account.type.slice(1).toLowerCase() }} Account
         </h2>
         <p>Balance: €{{ account.balance.toFixed(2) }}</p>
         <p>
@@ -55,11 +48,6 @@ export default {
 
     const fetchAccounts = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user || !user.id) {
-          alert("User not logged in.");
-          return;
-        }
         const response = await axios.get(
           `http://localhost:8080/api/accounts/user/${auth.user.id}`,
           {
@@ -68,7 +56,6 @@ export default {
             },
           }
         );
-
         accounts.value = response.data;
       } catch (err) {
         console.error("Failed to fetch accounts:", err);
@@ -78,20 +65,21 @@ export default {
 
     const createAccount = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user || !user.id) {
-          alert("User not logged in");
-          return;
-        }
         await axios.post(
-          `http://localhost:8080/api/accounts/create?userId=${user.id}&type=${newAccountType.value}`
+          `http://localhost:8080/api/accounts/create?userId=${auth.user.id}&type=${newAccountType.value}`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
+          }
         );
-
         showForm.value = false;
         newAccountType.value = "CHECKING";
         await fetchAccounts();
       } catch (err) {
         console.error("Failed to create account", err);
+        alert("Could not create account. Make sure you're approved and logged in.");
       }
     };
 

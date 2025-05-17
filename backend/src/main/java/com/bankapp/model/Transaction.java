@@ -1,8 +1,15 @@
 package com.bankapp.model;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "transactions")
@@ -13,33 +20,65 @@ public class Transaction {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "sender_account_id")
-    private Account senderAccount;
+    @JoinColumn(name = "from_account_id")
+    private Account fromAccount;
 
     @ManyToOne
-    @JoinColumn(name = "receiver_account_id")
-    private Account receiverAccount;
+    @JoinColumn(name = "to_account_id")
+    private Account toAccount;
 
     private BigDecimal amount;
+
     private String description;
+
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
 
-    public Account getSenderAccount() { return senderAccount; }
-    public void setSenderAccount(Account senderAccount) { this.senderAccount = senderAccount; }
+    public Long getId() {
+        return id;
+    }
 
-    public Account getReceiverAccount() { return receiverAccount; }
-    public void setReceiverAccount(Account receiverAccount) { this.receiverAccount = receiverAccount; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public BigDecimal getAmount() { return amount; }
-    public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public Account getFromAccount() {
+        return fromAccount;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setFromAccount(Account fromAccount) {
+        this.fromAccount = fromAccount;
+    }
 
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public Account getToAccount() {
+        return toAccount;
+    }
+
+    public void setToAccount(Account toAccount) {
+        this.toAccount = toAccount;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
 }
