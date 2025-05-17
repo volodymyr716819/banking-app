@@ -1,9 +1,11 @@
 package com.bankapp.controller;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bankapp.dto.AccountSearchResult;
 import com.bankapp.model.Account;
 import com.bankapp.model.User;
 import com.bankapp.repository.AccountRepository;
@@ -159,5 +162,77 @@ public class AccountController {
         account.setApproved(true);
         accountRepository.save(account);
         return ResponseEntity.ok("Account approved successfully.");
+    }
+    
+    /**
+     * Search for accounts by user name
+     * @param name The name to search for
+     * @param authentication The current authenticated user
+     * @return A list of matching accounts with their IBANs and user information
+     */
+    @GetMapping("/search")
+    public ResponseEntity<?> searchAccountsByUserName(@RequestParam String name, Authentication authentication) {
+        try {
+            System.out.println("🔍 Searching for accounts with user name: " + name);
+            
+            // Verify the authenticated user
+            if (authentication == null) {
+                System.out.println("❌ Authentication is null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication is required");
+            }
+            
+            System.out.println("🔑 Auth name: " + authentication.getName());
+            
+            Optional<User> currentUserOpt = userRepository.findByEmail(authentication.getName());
+            if (currentUserOpt.isEmpty()) {
+                System.out.println("❌ User not found with email: " + authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+            }
+            
+            User currentUser = currentUserOpt.get();
+            System.out.println("✅ Current user: " + currentUser.getName() + ", role: " + currentUser.getRole());
+            
+            // Find users by name (case insensitive, partial match)
+            List<User> matchingUsers = userRepository.findByNameContainingIgnoreCaseAndApprovedTrue(name);
+            System.out.println("🔍 Found " + matchingUsers.size() + " matching users");
+            
+            if (matchingUsers.isEmpty()) {
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+            
+            List<AccountSearchResult> results = new ArrayList<>();
+            
+            // For each matching user, get their approved accounts
+            for (User user : matchingUsers) {
+                List<Account> accounts = accountRepository.findByUserId(user.getId());
+                System.out.println("👤 User " + user.getName() + " has " + accounts.size() + " accounts");
+                
+                // Filter to only approved accounts and map to DTOs
+                List<AccountSearchResult> userAccounts = accounts.stream()
+                    .filter(Account::isApproved)
+                    .map(account -> {
+                        AccountSearchResult result = new AccountSearchResult(
+                            account.getId(),
+                            account.getType(),
+                            account.getIban(),
+                            user.getId(),
+                            user.getName(),
+                            user.getEmail()
+                        );
+                        System.out.println("💳 Account: " + account.getId() + ", IBAN: " + account.getIban());
+                        return result;
+                    })
+                    .collect(Collectors.toList());
+                
+                results.addAll(userAccounts);
+            }
+            
+            System.out.println("✅ Returning " + results.size() + " results");
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            System.out.println("❌ Error in search: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing search: " + e.getMessage());
+        }
     }
 }

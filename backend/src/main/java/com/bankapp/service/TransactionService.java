@@ -8,7 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.util.Optional;
 
@@ -23,6 +26,52 @@ public class TransactionService {
 
     public List<Transaction> getAccountHistory(Long accountId) {
         return transactionRepository.findBySenderAccountIdOrReceiverAccountId(accountId, accountId);
+    }
+    
+    /**
+     * Get all transactions for a user, optionally filtered by account type
+     * @param userId The user ID
+     * @param accountType Optional filter for account type (CHECKING or SAVINGS)
+     * @return List of transactions
+     */
+    public List<Transaction> getUserTransactions(Long userId, String accountType) {
+        // Get all accounts for the user
+        List<Account> userAccounts = accountRepository.findByUserId(userId);
+        
+        if (userAccounts.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        // Filter accounts by type if specified
+        if (accountType != null && !accountType.isEmpty()) {
+            userAccounts = userAccounts.stream()
+                .filter(account -> account.getType().equalsIgnoreCase(accountType))
+                .collect(Collectors.toList());
+        }
+        
+        // Get only approved accounts
+        userAccounts = userAccounts.stream()
+            .filter(Account::isApproved)
+            .collect(Collectors.toList());
+            
+        if (userAccounts.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        // Get transactions for all accounts
+        List<Transaction> allTransactions = new ArrayList<>();
+        for (Account account : userAccounts) {
+            allTransactions.addAll(
+                transactionRepository.findBySenderAccountIdOrReceiverAccountId(
+                    account.getId(), account.getId()
+                )
+            );
+        }
+        
+        // Sort by timestamp descending (most recent first)
+        allTransactions.sort((t1, t2) -> t2.getTimestamp().compareTo(t1.getTimestamp()));
+        
+        return allTransactions;
     }
 
     @Transactional

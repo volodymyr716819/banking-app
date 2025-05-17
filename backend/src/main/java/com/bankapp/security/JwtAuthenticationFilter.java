@@ -40,13 +40,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 username = jwtUtil.extractUsername(jwt);
             } catch (Exception e) {
                 System.out.println("Invalid JWT token: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtUtil.validateToken(jwt, userDetails)) {
+            boolean isValid = jwtUtil.validateToken(jwt, userDetails);
+            System.out.println("🔍 JWT validation result: " + (isValid ? "Valid" : "Invalid"));
+            
+            if (isValid) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -54,8 +58,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 System.out.println("Header: " + authHeader);
                 System.out.println("Extracted username: " + username);
                 System.out.println("UserDetails: " + userDetails.getUsername());
+                System.out.println("Authorities: " + userDetails.getAuthorities());
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+            } else {
+                System.out.println("❌ JWT validation failed for user: " + username);
             }
         }
 

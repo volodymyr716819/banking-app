@@ -6,6 +6,7 @@ import ATMView from "../views/ATMView.vue";
 import AccountsView from "../views/AccountsView.vue";
 import DashboardLayout from "../layout/DashboardLayout.vue";
 import TransferPageView from "../views/TransferView.vue";
+import TransactionHistoryView from "../views/TransactionHistoryView.vue";
 import ApproveAccountsView from "../views/ApproveAccountsView.vue";
 import ApproveUsersView from "../views/ApproveUsersView.vue"; 
 
@@ -22,6 +23,7 @@ const routes = [
       { path: "accounts", component: AccountsView },
       { path: "transfer", component: TransferPageView },
       { path: "atm", component: ATMView, meta: { requiresAuth: true } },
+      { path: "transactions", component: TransactionHistoryView, meta: { requiresAuth: true } },
       {
         path: "approve",
         component: ApproveAccountsView,

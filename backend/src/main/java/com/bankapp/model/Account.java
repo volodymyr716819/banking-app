@@ -71,4 +71,17 @@ public class Account {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+    
+    /**
+     * Generates a pseudo-IBAN for this account.
+     * Format: "XY00BANK" + padded account ID
+     * XY - Country code (using XX for our demo bank)
+     * 00 - Check digits (using 00 for simplicity)
+     * BANK - Bank code
+     * Account ID - Padded to 10 digits
+     */
+    @Transient
+    public String getIban() {
+        return "XX00BANK" + String.format("%010d", id);
+    }
 }

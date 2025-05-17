@@ -42,6 +42,20 @@ public class AtmOperationController {
     }
 
     private ResponseEntity<String> performAtmOperation(AtmRequest atmRequest, String operationType) {
+        // Validate request
+        if (atmRequest == null) {
+            return ResponseEntity.badRequest().body("Invalid request: Request body cannot be null");
+        }
+        
+        if (atmRequest.getAccountId() == null) {
+            return ResponseEntity.badRequest().body("Invalid request: Account ID cannot be null");
+        }
+        
+        if (atmRequest.getAmount() == null || atmRequest.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            return ResponseEntity.badRequest().body("Invalid request: Amount must be greater than zero");
+        }
+
+        // Process the request
         Optional<Account> accountOpt = accountRepository.findById(atmRequest.getAccountId());
         if (accountOpt.isEmpty()) return ResponseEntity.badRequest().body("Account not found");
 

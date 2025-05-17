@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/transactions")
+@CrossOrigin(origins = "http://localhost:5173")
 public class TransactionController {
 
     @Autowired
@@ -28,5 +29,11 @@ public class TransactionController {
     @GetMapping("/account/{accountId}")
     public ResponseEntity<?> getTransactionHistory(@PathVariable Long accountId) {
         return ResponseEntity.ok(transactionService.getAccountHistory(accountId));
+    }
+    
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getUserTransactions(@PathVariable Long userId, 
+                                                @RequestParam(required = false) String accountType) {
+        return ResponseEntity.ok(transactionService.getUserTransactions(userId, accountType));
     }
 }

@@ -84,7 +84,13 @@ export default {
           return;
         }
         await axios.post(
-          `http://localhost:8080/api/accounts/create?userId=${user.id}&type=${newAccountType.value}`
+          `http://localhost:8080/api/accounts/create?userId=${user.id}&type=${newAccountType.value}`,
+          {}, // Empty body
+          {
+            headers: {
+              Authorization: `Bearer ${auth.token}`
+            }
+          }
         );
 
         showForm.value = false;

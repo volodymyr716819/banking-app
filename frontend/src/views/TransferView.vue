@@ -12,6 +12,32 @@
             </option>
           </select>
         </div>
+
+        <div class="form-group">
+          <label for="searchName">Search by Name:</label>
+          <div class="search-container">
+            <input 
+              type="text" 
+              v-model="searchName" 
+              placeholder="Search receiver by name" 
+              @input="searchUsers" 
+            />
+            <button type="button" class="search-button" @click="searchUsers">Search</button>
+          </div>
+          <div v-if="searchError" class="search-error">{{ searchError }}</div>
+        </div>
+        
+        <div v-if="searchPerformed" class="search-results-container">
+          <div v-if="searchResults.length > 0" class="search-results">
+            <div v-for="result in searchResults" :key="result.accountId" class="search-result-item" @click="selectAccount(result)">
+              <div class="result-name">{{ result.userName }}</div>
+              <div class="result-details">{{ result.accountType }} - IBAN: {{ result.iban }}</div>
+            </div>
+          </div>
+          <div v-else-if="searchPerformed" class="no-results">
+            <p>No accounts found. The user may exist but has no approved accounts.</p>
+          </div>
+        </div>
   
         <div class="form-group">
           <label for="to">To Account ID:</label>
@@ -47,6 +73,10 @@
   const amount = ref('');
   const description = ref('');
   const message = ref('');
+  const searchName = ref('');
+  const searchResults = ref([]);
+  const searchError = ref('');
+  const searchPerformed = ref(false);
   
   const fetchAccounts = async () => {
     try {
@@ -59,6 +89,51 @@
     } catch (err) {
       message.value = 'Failed to load accounts. Please log in.';
     }
+  };
+  
+  const searchUsers = async () => {
+    console.log('searchUsers function called with name:', searchName.value);
+    searchError.value = '';
+    searchPerformed.value = false;
+    
+    if (!auth.token) {
+      console.error('No authentication token available');
+      searchError.value = 'You must be logged in to search';
+      return;
+    }
+    
+    if (searchName.value.length < 2) {
+      searchResults.value = [];
+      return;
+    }
+    
+    try {
+      console.log('Searching for users with name:', searchName.value);
+      console.log('Using token:', auth.token);
+      
+      const response = await axios.get(`http://localhost:8080/api/accounts/search`, {
+        params: { name: searchName.value },
+        headers: { Authorization: `Bearer ${auth.token}` }
+      });
+      
+      console.log('Search results:', response.data);
+      searchResults.value = response.data;
+      searchPerformed.value = true;
+      
+      if (response.data.length === 0) {
+        console.log('No matching accounts found');
+      }
+    } catch (err) {
+      console.error('Search error:', err);
+      searchError.value = 'Error searching for users: ' + (err.response?.data || err.message);
+    }
+  };
+  
+  const selectAccount = (result) => {
+    console.log('Selected account:', result);
+    toAccountId.value = result.accountId;
+    searchResults.value = [];
+    message.value = `Selected ${result.userName}'s account with IBAN: ${result.iban}`;
   };
   
   const submitTransfer = async () => {
@@ -78,6 +153,8 @@
       toAccountId.value = '';
       amount.value = '';
       description.value = '';
+      searchName.value = '';
+      searchResults.value = [];
       await fetchAccounts();
     } catch (err) {
       message.value = 'Transfer failed. Please check the details.';
@@ -138,4 +215,67 @@
     font-weight: bold;
     color: #2b6cb0;
   }
-  </style>  
+  
+  .search-container {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .search-button {
+    padding: 8px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  .search-results-container {
+    margin-bottom: 15px;
+  }
+  
+  .search-results {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .no-results {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    color: #666;
+    background-color: #f5f5f5;
+    font-style: italic;
+  }
+  
+  .search-result-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+  }
+  
+  .search-result-item:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+  
+  .result-name {
+    font-weight: bold;
+  }
+  
+  .result-details {
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  .search-error {
+    margin-top: 5px;
+    color: #e74c3c;
+    font-size: 0.9rem;
+  }
+  </style>
