@@ -5,7 +5,7 @@
       <nav class="nav-links">
         <router-link to="/dashboard/accounts" class="nav-link">Accounts</router-link>
         <router-link to="/dashboard/transfer" class="nav-link">Transfer Money</router-link>
-        <!--<router-link to="/dashboard/history" class="nav-link">Transaction History</router-link>-->
+        <router-link to="/dashboard/history" class="nav-link">Transaction History</router-link>
         <router-link to="/dashboard/atm" class="nav-link">ATM Operations</router-link>
 
         <!-- Employee-only links -->
@@ -45,16 +45,16 @@ export default {
     });
 
     const logout = () => {
-      auth.logout(); 
+      auth.logout();
       router.push('/login');
     };
 
     return {
       logout,
       user,
-      auth
+      auth,
     };
-  }
+  },
 };
 </script>
 
