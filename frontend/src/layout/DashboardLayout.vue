@@ -69,90 +69,161 @@ export default {
 .dashboard-container {
   display: flex;
   min-height: 100vh;
-  font-family: 'Segoe UI', sans-serif;
 }
 
 .sidebar {
-  width: 240px;
-  background-color: #f4f4f4;
-  border-right: 1px solid #ddd;
-  padding: 20px;
+  width: 280px;
+  min-width: 280px; /* Fix to prevent shrinking */
+  background: linear-gradient(to bottom, var(--primary-dark), var(--primary-color));
+  color: var(--text-on-primary);
+  box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  position: relative;
 }
 
 .logo {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 20px;
+  padding: 25px 0;
+  background-color: rgba(255, 255, 255, 0.05);
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-info {
-  background-color: #e2e8f0;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  margin: 20px;
+  border-radius: var(--border-radius);
   text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .user-name {
-  font-weight: bold;
-  font-size: 1.1rem;
+  font-weight: 600;
+  font-size: 1.2rem;
   margin-bottom: 5px;
+  color: white;
 }
 
 .user-email {
   font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 10px;
 }
 
 .user-role {
   font-size: 0.8rem;
-  background-color: #4CAF50;
+  background-color: var(--secondary-color);
   color: white;
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 12px;
+  padding: 5px 12px;
+  border-radius: 50px;
   text-transform: capitalize;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .nav-links {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  padding: 10px 20px;
+  flex-grow: 1;
 }
 
 .nav-link {
-  padding: 10px;
-  border-radius: 6px;
+  padding: 14px 20px;
+  margin: 5px 0;
+  border-radius: var(--border-radius);
   text-decoration: none;
-  color: #333;
-  transition: background-color 0.2s ease;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  position: relative;
 }
 
 .nav-link:hover {
-  background-color: #e2e8f0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+}
+
+.nav-link.router-link-active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 600;
+}
+
+.nav-link.router-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background-color: var(--secondary-color);
+  border-radius: 0 4px 4px 0;
 }
 
 .logout-button {
-  margin-top: 20px;
-  background: none;
-  color: #e53e3e;
+  margin: 20px;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: white;
   border: none;
   cursor: pointer;
-  padding: 10px;
-  border-radius: 6px;
-  text-align: left;
-  transition: background-color 0.2s ease;
+  padding: 14px;
+  border-radius: var(--border-radius);
+  text-align: center;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logout-button:hover {
-  background-color: #ffe5e5;
+  background-color: var(--error-color);
+  transform: translateY(-2px);
 }
 
 .main-content {
   flex-grow: 1;
-  padding: 40px;
-  background-color: #fff;
+  padding: 30px;
+  background-color: var(--ultra-light-gray);
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .nav-links {
+    padding: 10px;
+  }
+  
+  .user-info {
+    margin: 10px;
+  }
+  
+  .logo {
+    padding: 15px 0;
+  }
+  
+  .main-content {
+    padding: 20px;
+  }
 }
 </style>

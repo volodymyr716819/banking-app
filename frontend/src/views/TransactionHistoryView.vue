@@ -2,28 +2,46 @@
   <div class="transaction-history-page">
     <h1 class="page-title">Transaction History</h1>
     
-    <div class="filter-controls">
-      <label>Filter by Account Type:</label>
-      <select v-model="selectedAccountType" @change="fetchTransactions">
-        <option value="">All Accounts</option>
-        <option value="CHECKING">Checking</option>
-        <option value="SAVINGS">Savings</option>
-      </select>
+    <div class="filter-section">
+      <div class="filter-controls">
+        <label for="account-type-filter">Filter by Account Type:</label>
+        <select 
+          id="account-type-filter" 
+          v-model="selectedAccountType" 
+          @change="fetchTransactions"
+          class="form-control"
+        >
+          <option value="">All Accounts</option>
+          <option value="CHECKING">Checking</option>
+          <option value="SAVINGS">Savings</option>
+        </select>
+      </div>
     </div>
     
-    <div v-if="loading" class="loading">
-      Loading transactions...
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading transactions...</div>
     </div>
     
-    <div v-else-if="error" class="error-message">
-      {{ error }}
+    <div v-else-if="error" class="alert alert-danger">
+      <div class="alert-icon">⚠️</div>
+      <div>{{ error }}</div>
     </div>
     
-    <div v-else-if="transactions.length === 0" class="no-transactions">
-      No transactions found. Try a different filter or make some transfers first.
+    <div v-else-if="transactions.length === 0" class="empty-state">
+      <div class="empty-icon">📊</div>
+      <h3>No transactions found</h3>
+      <p>Try a different filter or make some transfers first.</p>
     </div>
     
     <div v-else class="transactions-container">
+      <div class="transactions-header">
+        <h3>
+          {{ transactions.length }} 
+          {{ transactions.length === 1 ? 'Transaction' : 'Transactions' }}
+        </h3>
+      </div>
+      
       <table class="transactions-table">
         <thead>
           <tr>
@@ -38,8 +56,10 @@
         <tbody>
           <tr v-for="transaction in transactions" :key="transaction.id" 
               :class="getTransactionClass(transaction)">
-            <td>{{ formatDate(transaction.timestamp) }}</td>
-            <td><span :class="'transaction-type ' + transaction.type.toLowerCase()">{{ transaction.type }}</span></td>
+            <td class="transaction-date">{{ formatDate(transaction.timestamp) }}</td>
+            <td class="transaction-type-cell">
+              <span :class="'transaction-type ' + transaction.type.toLowerCase()">{{ transaction.type }}</span>
+            </td>
             <td>{{ transaction.description || 'N/A' }}</td>
             <td>{{ getSenderAccountInfo(transaction) }}</td>
             <td>{{ getReceiverAccountInfo(transaction) }}</td>
@@ -116,7 +136,6 @@ const formatDate = (dateString) => {
 
 const formatAmount = (transaction) => {
   if (!transaction.amount) return '€0.00';
-  
   // Format with 2 decimal places
   return `€${parseFloat(transaction.amount).toFixed(2)}`;
 };
@@ -204,125 +223,275 @@ onMounted(() => {
 
 <style scoped>
 .transaction-history-page {
-  padding: 40px;
-  background-color: #fff;
+  padding: 20px 0;
 }
 
 .page-title {
-  font-size: 2rem;
-  margin-bottom: 20px;
-  color: #333;
+  font-size: 2.2rem;
+  margin-bottom: 30px;
+  color: var(--primary-dark);
+  position: relative;
+  display: inline-block;
+}
+
+.page-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background-color: var(--secondary-color);
+  border-radius: 2px;
+}
+
+.filter-section {
+  background-color: white;
+  border-radius: var(--border-radius);
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: var(--box-shadow);
 }
 
 .filter-controls {
-  margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
+}
+
+.filter-controls label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 180px;
 }
 
 .filter-controls select {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background-color: #fff;
+  padding: 12px 15px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--light-gray);
+  font-size: 1rem;
+  background-color: white;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  max-width: 250px;
 }
 
-.loading,
-.error-message,
-.no-transactions {
-  padding: 20px;
+.filter-controls select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
+  outline: none;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 60px 0;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-top: 30px;
+}
+
+.loading-spinner {
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-top: 30px;
   text-align: center;
-  color: #666;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  margin-top: 20px;
 }
 
-.error-message {
-  color: #e74c3c;
-  background-color: #fde8e6;
+.empty-icon {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  opacity: 0.7;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  max-width: 400px;
 }
 
 .transactions-container {
-  margin-top: 20px;
-  overflow-x: auto;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-top: 30px;
+  overflow: hidden;
+}
+
+.transactions-header {
+  padding: 20px 25px;
+  background-color: var(--ultra-light-gray);
+  border-bottom: 1px solid var(--light-gray);
+}
+
+.transactions-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
 }
 
 .transactions-table {
   width: 100%;
   border-collapse: collapse;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  overflow: hidden;
 }
 
 .transactions-table th,
 .transactions-table td {
-  padding: 12px 15px;
+  padding: 15px 20px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--light-gray);
 }
 
 .transactions-table th {
-  background-color: #f5f5f5;
-  font-weight: bold;
-  color: #333;
+  background-color: var(--ultra-light-gray);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .transactions-table tr:last-child td {
   border-bottom: none;
 }
 
+.transaction-date {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .transaction-row {
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease;
 }
 
 .transaction-row:hover {
-  background-color: #f9f9f9;
-}
-
-.transaction-row.outgoing {
-  background-color: #f9f9f9;
+  background-color: var(--ultra-light-gray);
 }
 
 .transaction-row.incoming {
-  background-color: #f0f9f0;
+  background-color: rgba(46, 204, 113, 0.05);
+}
+
+.transaction-row.incoming:hover {
+  background-color: rgba(46, 204, 113, 0.1);
+}
+
+.transaction-row.outgoing {
+  background-color: rgba(231, 76, 60, 0.05);
+}
+
+.transaction-row.outgoing:hover {
+  background-color: rgba(231, 76, 60, 0.1);
 }
 
 .transaction-amount {
-  font-weight: bold;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .transaction-amount.positive {
-  color: #2ecc71;
+  color: var(--success-color);
+}
+
+.transaction-amount.positive::before {
+  content: '+';
 }
 
 .transaction-amount.negative {
-  color: #e74c3c;
+  color: var(--error-color);
 }
 
 .transaction-type {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 12px;
+  padding: 6px 12px;
+  border-radius: 50px;
   font-size: 0.8rem;
-  font-weight: bold;
+  font-weight: 600;
   text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.transaction-type-cell {
+  text-align: center;
 }
 
 .transaction-type.transfer {
-  background-color: #3498db;
+  background-color: var(--info-color);
   color: white;
 }
 
 .transaction-type.deposit {
-  background-color: #2ecc71;
+  background-color: var(--success-color);
   color: white;
 }
 
 .transaction-type.withdraw {
-  background-color: #e74c3c;
+  background-color: var(--error-color);
   color: white;
+}
+
+@media (max-width: 992px) {
+  .transactions-table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .filter-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .filter-controls select {
+    width: 100%;
+    max-width: none;
+  }
 }
 </style>
