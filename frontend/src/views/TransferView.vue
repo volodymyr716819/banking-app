@@ -269,7 +269,17 @@ const submitTransfer = async () => {
     await fetchAccounts();
     
   } catch (err) {
-    message.value = err.response?.data || 'Transfer failed. Please check the details.';
+    // Display a clear message when daily limit is exceeded
+    if (err.response?.data && err.response.data.includes("daily limit")) {
+      message.value = "Transaction cannot be completed because it exceeds your daily transfer limit.";
+    } else if (err.response?.data) {
+      message.value = err.response.data;
+    } else if (err.message) {
+      message.value = err.message;
+    } else {
+      message.value = 'Transfer failed. Please check the details.';
+    }
+    console.log("Transfer error details:", err.response?.data);
     transferError.value = true;
     isLoading.value = false;
   }

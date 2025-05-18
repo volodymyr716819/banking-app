@@ -21,6 +21,12 @@
 
         <router-link v-if="auth.user?.role?.toLowerCase() === 'employee'" to="/dashboard/approve-users"
           class="nav-link">Approve Users</router-link>
+          
+        <router-link v-if="auth.user?.role?.toLowerCase() === 'employee'" to="/dashboard/customers"
+          class="nav-link">View Customers</router-link>
+          
+        <router-link v-if="auth.user?.role?.toLowerCase() === 'employee'" to="/dashboard/approved-accounts"
+          class="nav-link">View Approved Accounts</router-link>
 
         <button @click="logout" class="logout-button">Logout</button>
       </nav>

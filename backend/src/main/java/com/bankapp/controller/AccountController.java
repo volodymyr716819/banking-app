@@ -16,10 +16,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bankapp.dto.AccountLimitsDTO;
 import com.bankapp.dto.AccountSearchResult;
 import com.bankapp.model.Account;
 import com.bankapp.model.User;
@@ -233,6 +235,164 @@ public class AccountController {
             System.out.println("❌ Error in search: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing search: " + e.getMessage());
+        }
+    }
+    
+    @GetMapping("/approved")
+    public ResponseEntity<?> getAllApprovedAccounts(Authentication authentication) {
+        try {
+            // Verify the authenticated user
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication is required");
+            }
+            
+            Optional<User> currentUserOpt = userRepository.findByEmail(authentication.getName());
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+            }
+            
+            User currentUser = currentUserOpt.get();
+            
+            // Only employees can access this endpoint
+            if (!"employee".equalsIgnoreCase(currentUser.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+            
+            // Get all approved accounts
+            List<Account> approvedAccounts = accountRepository.findByApprovedTrue();
+            
+            // Convert to DTOs with user information
+            List<AccountSearchResult> results = new ArrayList<>();
+            
+            for (Account account : approvedAccounts) {
+                User user = account.getUser();
+                if (user != null) {
+                    AccountSearchResult result = new AccountSearchResult(
+                        account.getId(),
+                        account.getType(),
+                        account.getIban(),
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail()
+                    );
+                    results.add(result);
+                }
+            }
+            
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching approved accounts: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Updates the limits for a specific account
+     * @param limitsDTO The DTO containing the account ID and limit values
+     * @param authentication The current authenticated user
+     * @return Success or error message
+     */
+    @PutMapping("/limits")
+    public ResponseEntity<?> updateAccountLimits(@RequestBody AccountLimitsDTO limitsDTO, Authentication authentication) {
+        try {
+            // Verify the authenticated user
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication is required");
+            }
+            
+            Optional<User> currentUserOpt = userRepository.findByEmail(authentication.getName());
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+            }
+            
+            User currentUser = currentUserOpt.get();
+            
+            // Only employees can update account limits
+            if (!"employee".equalsIgnoreCase(currentUser.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+            
+            // Find the account
+            Optional<Account> accountOpt = accountRepository.findById(limitsDTO.getAccountId());
+            if (accountOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+            }
+            
+            Account account = accountOpt.get();
+            
+            // Validate the limits
+            if (limitsDTO.getDailyTransferLimit() != null) {
+                if (limitsDTO.getDailyTransferLimit().compareTo(BigDecimal.ZERO) < 0) {
+                    return ResponseEntity.badRequest().body("Daily transfer limit cannot be negative");
+                }
+                account.setDailyTransferLimit(limitsDTO.getDailyTransferLimit());
+            }
+            
+            if (limitsDTO.getMinimumBalanceLimit() != null) {
+                if (limitsDTO.getMinimumBalanceLimit().compareTo(BigDecimal.ZERO) < 0) {
+                    return ResponseEntity.badRequest().body("Minimum balance limit cannot be negative");
+                }
+                account.setMinimumBalanceLimit(limitsDTO.getMinimumBalanceLimit());
+            }
+            
+            // Save the updated account
+            accountRepository.save(account);
+            
+            return ResponseEntity.ok("Account limits updated successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating account limits: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Gets the current limits for a specific account
+     * @param accountId The account ID
+     * @param authentication The current authenticated user
+     * @return The account limits
+     */
+    @GetMapping("/{accountId}/limits")
+    public ResponseEntity<?> getAccountLimits(@PathVariable Long accountId, Authentication authentication) {
+        try {
+            // Verify the authenticated user
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication is required");
+            }
+            
+            Optional<User> currentUserOpt = userRepository.findByEmail(authentication.getName());
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+            }
+            
+            User currentUser = currentUserOpt.get();
+            
+            // Find the account
+            Optional<Account> accountOpt = accountRepository.findById(accountId);
+            if (accountOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+            }
+            
+            Account account = accountOpt.get();
+            
+            // Check if the user is the account owner or an employee
+            boolean isOwner = account.getUser().getId().equals(currentUser.getId());
+            boolean isEmployee = "employee".equalsIgnoreCase(currentUser.getRole());
+            
+            if (!isOwner && !isEmployee) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+            
+            // Create the DTO with the current limits
+            AccountLimitsDTO limitsDTO = new AccountLimitsDTO(
+                account.getId(),
+                account.getDailyTransferLimit(),
+                account.getMinimumBalanceLimit()
+            );
+            
+            return ResponseEntity.ok(limitsDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching account limits: " + e.getMessage());
         }
     }
 }

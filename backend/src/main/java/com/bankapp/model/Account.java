@@ -23,6 +23,19 @@ public class Account {
     private BigDecimal balance;
     private boolean approved = false;
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    // Default daily transfer limit: 10,000
+    private BigDecimal dailyTransferLimit = new BigDecimal("10000.00");
+    
+    // Default minimum balance limit: 0
+    private BigDecimal minimumBalanceLimit = BigDecimal.ZERO;
+    
+    // Track daily transfers for limit checking
+    @Transient
+    private BigDecimal dailyTransfersTotal = BigDecimal.ZERO;
+    
+    @Transient
+    private LocalDateTime lastTransferDate;
 
     public Long getId() {
         return id;
@@ -70,6 +83,38 @@ public class Account {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public BigDecimal getDailyTransferLimit() {
+        return dailyTransferLimit;
+    }
+    
+    public void setDailyTransferLimit(BigDecimal dailyTransferLimit) {
+        this.dailyTransferLimit = dailyTransferLimit;
+    }
+    
+    public BigDecimal getMinimumBalanceLimit() {
+        return minimumBalanceLimit;
+    }
+    
+    public void setMinimumBalanceLimit(BigDecimal minimumBalanceLimit) {
+        this.minimumBalanceLimit = minimumBalanceLimit;
+    }
+    
+    public BigDecimal getDailyTransfersTotal() {
+        return dailyTransfersTotal;
+    }
+    
+    public void setDailyTransfersTotal(BigDecimal dailyTransfersTotal) {
+        this.dailyTransfersTotal = dailyTransfersTotal;
+    }
+    
+    public LocalDateTime getLastTransferDate() {
+        return lastTransferDate;
+    }
+    
+    public void setLastTransferDate(LocalDateTime lastTransferDate) {
+        this.lastTransferDate = lastTransferDate;
     }
     
     /**

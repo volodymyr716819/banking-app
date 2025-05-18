@@ -126,16 +126,54 @@ public class TransactionService {
             throw new IllegalArgumentException("Receiver account is not approved for transactions");
         }
 
+        // Check if the sender has sufficient balance
         if (sender.getBalance().compareTo(amount) < 0) {
             throw new IllegalArgumentException("Sender has insufficient balance");
         }
+        
+        // Check if this transfer would go below the minimum balance limit
+        BigDecimal balanceAfterTransfer = sender.getBalance().subtract(amount);
+        if (balanceAfterTransfer.compareTo(sender.getMinimumBalanceLimit()) < 0) {
+            throw new IllegalArgumentException("Transfer denied: Minimum balance limit would be breached. The minimum balance required is " + 
+                sender.getMinimumBalanceLimit() + "€. Your current balance is " + sender.getBalance() + 
+                "€ and this transfer would leave you with " + balanceAfterTransfer + "€.");
+        }
+        
+        // Check daily transfer limit
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+        
+        // Reset daily transfers total if it's a new day
+        if (sender.getLastTransferDate() == null || 
+            sender.getLastTransferDate().toLocalDate().isBefore(now.toLocalDate())) {
+            sender.setDailyTransfersTotal(BigDecimal.ZERO);
+        }
+        
+        // Calculate new daily total
+        BigDecimal newDailyTotal = sender.getDailyTransfersTotal().add(amount);
+        
+        // Check if daily limit would be exceeded
+        if (newDailyTotal.compareTo(sender.getDailyTransferLimit()) > 0) {
+            BigDecimal remainingLimit = sender.getDailyTransferLimit().subtract(sender.getDailyTransfersTotal());
+            throw new IllegalArgumentException("Transfer denied: Daily transfer limit exceeded. Your daily limit is " + 
+                sender.getDailyTransferLimit() + "€. You have already transferred " + 
+                sender.getDailyTransfersTotal() + "€ today. Remaining limit: " + 
+                remainingLimit + "€. Please reduce the amount or try again tomorrow.");
+        }
+        
+        // Update daily transfers total and last transfer date
+        sender.setDailyTransfersTotal(newDailyTotal);
+        sender.setLastTransferDate(now);
 
+        // Update balances
         sender.setBalance(sender.getBalance().subtract(amount));
         receiver.setBalance(receiver.getBalance().add(amount));
 
+        // Save accounts
         accountRepository.save(sender);
         accountRepository.save(receiver);
 
+        // Create and save transaction record
         Transaction transaction = new Transaction();
         transaction.setSenderAccount(sender);
         transaction.setReceiverAccount(receiver);

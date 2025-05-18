@@ -9,6 +9,8 @@ import TransferPageView from "../views/TransferView.vue";
 import TransactionHistoryView from "../views/TransactionHistoryView.vue";
 import ApproveAccountsView from "../views/ApproveAccountsView.vue";
 import ApproveUsersView from "../views/ApproveUsersView.vue"; 
+import CustomersView from "../views/CustomersView.vue";
+import ApprovedAccountsView from "../views/ApprovedAccountsView.vue";
 
 import { useAuthStore } from "../store/auth";
 
@@ -35,6 +37,16 @@ const routes = [
         component: ApproveUsersView,
         meta: { requiresRole: "employee" },
       }, 
+      {
+        path: "customers",
+        component: CustomersView,
+        meta: { requiresRole: "employee" },
+      },
+      {
+        path: "approved-accounts",
+        component: ApprovedAccountsView,
+        meta: { requiresRole: "employee" },
+      },
     ],
   },
   { path: "/", redirect: "/login" },

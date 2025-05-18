@@ -17,13 +17,21 @@ public class TransactionController {
 
     @PostMapping("/transfer")
     public ResponseEntity<String> transferMoney(@RequestBody TransferRequest transferRequest) {
-        transactionService.transferMoney(
-            transferRequest.getSenderAccountId(),
-            transferRequest.getReceiverAccountId(),
-            transferRequest.getAmount(),
-            transferRequest.getDescription()
-        );
-        return ResponseEntity.ok("Transfer completed successfully");
+        try {
+            transactionService.transferMoney(
+                transferRequest.getSenderAccountId(),
+                transferRequest.getReceiverAccountId(),
+                transferRequest.getAmount(),
+                transferRequest.getDescription()
+            );
+            return ResponseEntity.ok("Transfer completed successfully");
+        } catch (IllegalArgumentException ex) {
+            // Return the detailed error message with 400 Bad Request status
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        } catch (Exception ex) {
+            // For any other errors
+            return ResponseEntity.internalServerError().body("An unexpected error occurred: " + ex.getMessage());
+        }
     }
 
     @GetMapping("/account/{accountId}")
