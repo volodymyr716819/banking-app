@@ -850,3 +850,5 @@ Caused by: org.h2.mvstore.MVStoreException: The file is locked: C:/Users/Puyol/b
 	at org.h2.mvstore.FileStore.open(FileStore.java:128)
 	at org.h2.mvstore.MVStore.<init>(MVStore.java:452)
 	... 144 more
+2025-05-18 15:24:40 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
