@@ -2,14 +2,9 @@ package com.bankapp.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "accounts")
@@ -20,6 +15,7 @@ public class Account {
     private Long id;
 
     @ManyToOne
+    @JsonBackReference
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -28,7 +24,15 @@ public class Account {
     private boolean approved = false;
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Getters and Setters
+    @Column(nullable = false)
+    private BigDecimal dailyLimit = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private BigDecimal absoluteLimit = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private boolean closed = false;
+
     public Long getId() {
         return id;
     }
@@ -75,5 +79,29 @@ public class Account {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public BigDecimal getAbsoluteLimit() {
+        return absoluteLimit;
+    }
+
+    public void setAbsoluteLimit(BigDecimal absoluteLimit) {
+        this.absoluteLimit = absoluteLimit;
+    }
+
+    public BigDecimal getDailyLimit() {
+        return dailyLimit;
+    }
+
+    public void setDailyLimit(BigDecimal dailyLimit) {
+        this.dailyLimit = dailyLimit;
+    }
+
+    public boolean isClosed() {
+        return closed;
+    }
+    
+    public void setClosed(boolean closed) {
+        this.closed = closed;
     }
 }

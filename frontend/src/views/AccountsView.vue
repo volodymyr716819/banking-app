@@ -9,11 +9,7 @@
 
       <div v-if="showForm" class="account-form">
         <label for="accountType">Select Account Type:</label>
-        <select
-          v-model="newAccountType"
-          id="accountType"
-          class="account-type-select"
-        >
+        <select v-model="newAccountType" id="accountType" class="account-type-select">
           <option value="CHECKING">Checking</option>
           <option value="SAVINGS">Savings</option>
         </select>
@@ -23,9 +19,10 @@
 
     <div class="accounts-grid">
       <div v-for="account in accounts" :key="account.id" class="account-card">
-        <h2>{{ account.type }} Account</h2>
+        <h2>
+          {{ account.type.charAt(0) + account.type.slice(1).toLowerCase() }} Account
+        </h2>
         <p>Balance: €{{ account.balance.toFixed(2) }}</p>
-        <p>Account ID: {{ account.id }}</p>
         <p>
           Status:
           <span :class="account.approved ? 'approved-badge' : 'pending-badge'">
@@ -40,9 +37,11 @@
 <script>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import { useAuthStore } from "../store/auth";
 
 export default {
   setup() {
+    const auth = useAuthStore();
     const accounts = ref([]);
     const showForm = ref(false);
     const newAccountType = ref("CHECKING");
@@ -50,9 +49,11 @@ export default {
     const fetchAccounts = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8080/api/accounts/user",
+          `http://localhost:8080/api/accounts/user/${auth.user.id}`,
           {
-            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
           }
         );
         accounts.value = response.data;
@@ -64,14 +65,21 @@ export default {
 
     const createAccount = async () => {
       try {
-        await axios.post("http://localhost:8080/api/accounts/create", {
-          type: newAccountType.value,
-        });
+        await axios.post(
+          `http://localhost:8080/api/accounts/create?userId=${auth.user.id}&type=${newAccountType.value}`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
+          }
+        );
         showForm.value = false;
         newAccountType.value = "CHECKING";
         await fetchAccounts();
       } catch (err) {
         console.error("Failed to create account", err);
+        alert("Could not create account. Make sure you're approved and logged in.");
       }
     };
 
