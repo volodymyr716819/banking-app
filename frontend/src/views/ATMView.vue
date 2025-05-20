@@ -13,13 +13,23 @@
       </div>
 
       <!-- ATM Screen -->
-      <div class="atm-screen">
-        <div class="screen-content" :class="atmState">
+      <div class="screen-container">
+        <div class="atm-screen">
+          <div class="screen-content" :class="atmState">
           <!-- Welcome / Idle State -->
           <div v-if="atmState === 'idle'" class="screen-idle">
             <div class="welcome-message">
               <h2>Welcome to BankApp ATM</h2>
               <p>Please select an account to begin</p>
+              <div class="atm-instructions">
+                <p class="instruction-title">ATM Instructions:</p>
+                <ul class="instruction-list">
+                  <li>Use the numeric keypad to enter amounts and PIN</li>
+                  <li>Press the buttons on screen to select options</li>
+                  <li>Follow on-screen instructions for each operation</li>
+                  <li>Use function keys for quick navigation</li>
+                </ul>
+              </div>
             </div>
             <div v-if="accounts.length" class="account-selection">
               <select id="account-select" v-model.number="selectedAccountId" @change="selectAccount">
@@ -29,12 +39,66 @@
                 </option>
               </select>
               <button class="green-btn" @click="selectAccount" :disabled="!selectedAccountId">
-                Proceed →
+                Proceed
               </button>
             </div>
             <div v-else class="loading-accounts">
               <div v-if="error" class="error-message">{{ error }}</div>
               <div v-else class="loading-spinner"></div>
+            </div>
+          </div>
+          
+          <!-- PIN Creation State -->
+          <div v-if="atmState === 'pin-create'" class="screen-pin">
+            <div class="pin-header">
+              <h3>Create Your PIN</h3>
+              <p>Please create a 4-digit PIN for your account</p>
+            </div>
+            <div class="pin-entry">
+              <div class="pin-display">
+                <div v-for="(digit, index) in 4" :key="index" class="pin-digit">
+                  {{ (pinValue.length > index) ? '•' : '' }}
+                </div>
+              </div>
+              <div class="pin-instructions">
+                Enter a 4-digit PIN and press confirm
+              </div>
+              <div v-if="error" class="error-message">
+                {{ error }}
+              </div>
+            </div>
+            <div class="confirm-row">
+              <button class="cancel-btn" @click="cancelOperation">Cancel</button>
+              <button class="green-btn" :disabled="pinValue.length !== 4" @click="createPin">
+                Create PIN
+              </button>
+            </div>
+          </div>
+          
+          <!-- PIN Verification State -->
+          <div v-if="atmState === 'pin-verify'" class="screen-pin">
+            <div class="pin-header">
+              <h3>Enter Your PIN</h3>
+              <p>Please enter your 4-digit PIN</p>
+            </div>
+            <div class="pin-entry">
+              <div class="pin-display">
+                <div v-for="(digit, index) in 4" :key="index" class="pin-digit">
+                  {{ (pinValue.length > index) ? '•' : '' }}
+                </div>
+              </div>
+              <div class="pin-instructions">
+                Enter your PIN and press confirm
+              </div>
+              <div v-if="error" class="error-message">
+                {{ error }}
+              </div>
+            </div>
+            <div class="confirm-row">
+              <button class="cancel-btn" @click="cancelOperation">Cancel</button>
+              <button class="green-btn" :disabled="pinValue.length !== 4" @click="verifyPin">
+                Confirm
+              </button>
             </div>
           </div>
 
@@ -61,6 +125,8 @@
                 </button>
               </div>
             </div>
+            <!-- Spacer to push content up -->
+            <div class="menu-spacer"></div>
           </div>
 
           <!-- Amount Entry State -->
@@ -82,11 +148,24 @@
                 {{ error }}
               </div>
             </div>
+            <div class="amount-presets">
+              <div class="preset-row">
+                <div class="preset-label">Quick Amounts:</div>
+                <div class="preset-amounts">
+                  <button class="preset" @click="displayAmount = '10'">€10</button>
+                  <button class="preset" @click="displayAmount = '20'">€20</button>
+                  <button class="preset" @click="displayAmount = '50'">€50</button>
+                  <button class="preset" @click="displayAmount = '100'">€100</button>
+                </div>
+              </div>
+            </div>
             <div class="confirm-buttons">
-              <button class="cancel-btn" @click="clearAmount">Clear</button>
-              <button class="green-btn" :disabled="enteredAmount <= 0" @click="confirmAmount">
-                Confirm →
-              </button>
+              <div class="confirm-row">
+                <button class="cancel-btn" @click="clearAmount">Clear</button>
+                <button class="green-btn" :disabled="enteredAmount <= 0" @click="confirmAmount">
+                  Confirm
+                </button>
+              </div>
             </div>
           </div>
 
@@ -108,8 +187,10 @@
               </div>
             </div>
             <div class="confirm-buttons">
-              <button class="cancel-btn" @click="atmState = 'amount'">Cancel</button>
-              <button class="green-btn" @click="processTransaction">Confirm</button>
+              <div class="confirm-row">
+                <button class="cancel-btn" @click="atmState = 'amount'">Cancel</button>
+                <button class="green-btn" @click="processTransaction">Confirm</button>
+              </div>
             </div>
           </div>
 
@@ -122,45 +203,18 @@
             </div>
           </div>
 
-          <!-- Receipt State -->
-          <div v-if="atmState === 'receipt'" class="screen-receipt">
-            <div class="receipt-header">
-              <h3>Transaction Successful</h3>
-              <div class="transaction-icon" :class="operationType">
-                <span v-if="operationType === 'deposit'">↓</span>
-                <span v-else>↑</span>
-              </div>
+          <!-- Transaction success message will be shown in place of receipt prompt -->
+          <div v-if="atmState === 'success'" class="screen-success">
+            <div class="success-icon">✓</div>
+            <h3>Transaction Successful</h3>
+            <div class="transaction-details">
+              <p>Your {{ operationType === 'deposit' ? 'deposit' : 'withdrawal' }} of 
+                <span class="amount">€{{ enteredAmount.toFixed(2) }}</span> has been completed.</p>
+              <p>New Balance: <span class="balance">€{{ typeof balance === 'number' ? balance.toFixed(2) : '---' }}</span></p>
             </div>
-            <div class="receipt-details">
-              <div class="receipt-row">
-                <div class="receipt-label">Account:</div>
-                <div class="receipt-value">{{ getCurrentAccountLabel() }}</div>
-              </div>
-              <div class="receipt-row">
-                <div class="receipt-label">Amount:</div>
-                <div class="receipt-value">€{{ enteredAmount.toFixed(2) }}</div>
-              </div>
-              <div class="receipt-row">
-                <div class="receipt-label">New Balance:</div>
-                <div class="receipt-value">€{{ typeof balance === 'number' ? balance.toFixed(2) : '---' }}</div>
-              </div>
-              <div class="receipt-row">
-                <div class="receipt-label">Date:</div>
-                <div class="receipt-value">{{ new Date().toLocaleString() }}</div>
-              </div>
-              <div class="receipt-row">
-                <div class="receipt-label">Status:</div>
-                <div class="receipt-value success">COMPLETED</div>
-              </div>
-            </div>
-            <div class="receipt-actions">
-              <button class="green-btn" @click="atmState = 'menu'">
-                Return to Menu
-              </button>
-              <button class="blue-btn" @click="downloadReceipt">
-                Print Receipt
-              </button>
-            </div>
+            <button class="green-btn" @click="returnToMenu">
+              Return to Menu
+            </button>
           </div>
 
           <!-- Error State -->
@@ -168,9 +222,12 @@
             <div class="error-icon">❌</div>
             <h3>Error</h3>
             <p class="error-message">{{ error }}</p>
-            <button class="blue-btn" @click="atmState = 'menu'">
-              Return to Menu
-            </button>
+            <div class="action-row">
+              <button class="blue-btn" @click="returnToMenu">
+                Return to Menu
+              </button>
+            </div>
+          </div>
           </div>
         </div>
       </div>
@@ -183,7 +240,7 @@
               v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]" 
               :key="num" 
               @click="enterDigit(num)"
-              :class="{'keypad-btn': true, 'disabled': atmState !== 'amount'}"
+              :class="{'keypad-btn': true, 'disabled': !['amount', 'pin-create', 'pin-verify'].includes(atmState)}"
             >
               {{ num }}
             </button>
@@ -197,7 +254,7 @@
             <button 
               class="keypad-btn keypad-delete" 
               @click="deleteDigit()"
-              :class="{'disabled': atmState !== 'amount'}"
+              :class="{'disabled': !['amount', 'pin-create', 'pin-verify'].includes(atmState)}"
             >
               ⌫
             </button>
@@ -218,13 +275,6 @@
               <div class="cash-bills" v-if="animateWithdraw"></div>
             </div>
           </div>
-          
-          <div class="receipt-slot" :class="{ active: animateReceipt }">
-            <div class="slot-label">RECEIPT</div>
-            <div class="slot-animation">
-              <div class="receipt-paper" v-if="animateReceipt"></div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -232,30 +282,87 @@
 </template>
 
 <script setup>
+/**
+ * ATM Component
+ * 
+ * A full-featured ATM interface that allows users to:
+ * - Select accounts
+ * - Create/verify PINs
+ * - Deposit and withdraw funds
+ * - See success/error messages
+ * 
+ * The component implements a state machine pattern for managing the ATM flow
+ * between different screens and operations.
+ */
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../store/auth'
 
-// Auth & API
+// Auth & API integration
 const authStore = useAuthStore()
 const user = authStore.user
 const token = authStore.token
 
-// Account Data
+// Account Data - Managed reactively
 const accounts = ref([])
 const selectedAccountId = ref(null)
 const balance = ref(null)
 
-// ATM State Management
-const atmState = ref('idle') // idle, menu, amount, confirm, processing, receipt, error
-const operationType = ref('') // deposit, withdraw
+// ATM State Management - Implements state machine pattern
+const atmState = ref('idle') // States: idle, pin-create, pin-verify, menu, amount, confirm, processing, success, error
+/**
+ * Operation state
+ * @type {import('vue').Ref<string>} - 'deposit' or 'withdraw'
+ */
+const operationType = ref('') 
+
+/**
+ * Amount input display value
+ * @type {import('vue').Ref<string>}
+ */
 const displayAmount = ref('')
+
+/**
+ * Error message for user feedback
+ * @type {import('vue').Ref<string>}
+ */
 const error = ref('')
+
+/**
+ * Success/info message for user feedback
+ * @type {import('vue').Ref<string>}
+ */
 const message = ref('')
 
-// Animation Flags
+/**
+ * PIN input value during creation/verification
+ * @type {import('vue').Ref<string>}
+ */
+const pinValue = ref('')
+
+/**
+ * Stores verified PIN for transaction operations
+ * @type {import('vue').Ref<string>}
+ */
+const verifiedPin = ref('')
+
+/**
+ * Flag indicating if PIN has been created for the account
+ * @type {import('vue').Ref<boolean>}
+ */
+const pinCreated = ref(false)
+
+/**
+ * Stores account balance before transaction for comparison
+ * @type {import('vue').Ref<number|null>}
+ */
+const previousBalance = ref(null)
+
+/**
+ * Animation state flags for cash movements
+ * @type {import('vue').Ref<boolean>}
+ */
 const animateDeposit = ref(false)
 const animateWithdraw = ref(false)
-const animateReceipt = ref(false)
 
 // Computed Properties
 const enteredAmount = computed(() => {
@@ -281,11 +388,25 @@ onMounted(async () => {
       throw new Error(await res.text())
     }
     
-    accounts.value = await res.json()
-    accounts.value = accounts.value.filter(acc => acc.approved)
+    // Get all accounts including unapproved ones
+    const allAccounts = await res.json()
+    
+    // Check if the user has any accounts at all
+    if (allAccounts.length === 0) {
+      error.value = "No accounts found. Please open an account first."
+      return
+    }
+    
+    // Check if the user has any approved accounts
+    accounts.value = allAccounts.filter(acc => acc.approved)
     
     if (accounts.value.length === 0) {
-      error.value = "No approved accounts found. Please contact customer service."
+      const pendingAccounts = allAccounts.filter(acc => !acc.approved)
+      if (pendingAccounts.length > 0) {
+        error.value = "Your accounts are pending approval. ATM operations are only available for approved accounts. Please contact customer service for assistance."
+      } else {
+        error.value = "No approved accounts found. Please contact customer service."
+      }
     }
   } catch (err) {
     error.value = "Failed to load accounts: " + err.message
@@ -298,7 +419,18 @@ function getCurrentAccountLabel() {
   return account ? `${account.type} (ID: ${account.id})` : 'Unknown Account'
 }
 
-// ATM Flow Functions
+
+/**
+ * ATM Flow Functions
+ * These functions control the state transitions and main functionality of the ATM
+ */
+
+/**
+ * Initiates account selection process
+ * Verifies PIN status and retrieves current balance
+ * Transitions to appropriate PIN state based on account status
+ * @returns {Promise<void>}
+ */
 async function selectAccount() {
   if (!selectedAccountId.value) {
     error.value = "Please select an account"
@@ -309,21 +441,135 @@ async function selectAccount() {
   atmState.value = 'processing'
   
   try {
-    const res = await fetch(`http://localhost:8080/api/atm/balance?accountId=${selectedAccountId.value}`, {
+    // First check PIN status
+    const pinStatusRes = await fetch(`http://localhost:8080/api/atm/pinStatus?accountId=${selectedAccountId.value}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
+    })
+    
+    if (!pinStatusRes.ok) {
+      throw new Error(await pinStatusRes.text())
+    }
+    
+    const pinStatus = await pinStatusRes.json()
+    pinCreated.value = pinStatus.pinCreated
+    
+    // Get balance
+    const balanceRes = await fetch(`http://localhost:8080/api/atm/balance?accountId=${selectedAccountId.value}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    
+    if (!balanceRes.ok) {
+      throw new Error(await balanceRes.text())
+    }
+    
+    balance.value = await balanceRes.json()
+    
+    // Route to appropriate state based on PIN status
+    if (!pinCreated.value) {
+      // PIN needs to be created first
+      pinValue.value = ''
+      atmState.value = 'pin-create'
+    } else {
+      // PIN verification needed
+      pinValue.value = ''
+      atmState.value = 'pin-verify'
+    }
+  } catch (err) {
+    error.value = "Failed to load account: " + err.message
+    atmState.value = 'error'
+  }
+}
+
+/**
+ * PIN Management Functions
+ * Handle PIN creation and verification for account security
+ */
+
+/**
+ * Creates a new PIN for the selected account
+ * Validates PIN format and sends to backend for storage
+ * @returns {Promise<void>}
+ */
+async function createPin() {
+  if (pinValue.value.length !== 4) {
+    error.value = "PIN must be 4 digits"
+    return
+  }
+
+  error.value = ''
+  atmState.value = 'processing'
+  
+  try {
+    const res = await fetch('http://localhost:8080/api/pin/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        accountId: selectedAccountId.value,
+        pin: pinValue.value
+      })
     })
     
     if (!res.ok) {
       throw new Error(await res.text())
     }
     
-    balance.value = await res.json()
+    pinCreated.value = true
+    pinValue.value = ''
     atmState.value = 'menu'
   } catch (err) {
-    error.value = "Failed to load balance: " + err.message
+    error.value = "Failed to create PIN: " + err.message
     atmState.value = 'error'
+  }
+}
+
+async function verifyPin() {
+  if (pinValue.value.length !== 4) {
+    error.value = "PIN must be 4 digits"
+    return
+  }
+
+  error.value = ''
+  atmState.value = 'processing'
+  
+  try {
+    const res = await fetch('http://localhost:8080/api/pin/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        accountId: selectedAccountId.value,
+        pin: pinValue.value
+      })
+    })
+    
+    if (!res.ok) {
+      throw new Error(await res.text())
+    }
+    
+    const result = await res.json()
+    
+    if (result.valid) {
+      // Keep pin value for ATM operations, don't clear it
+      // Store the verified PIN in a separate variable
+      verifiedPin.value = pinValue.value
+      atmState.value = 'menu'
+    } else {
+      error.value = "Invalid PIN. Please try again."
+      pinValue.value = '' // Clear PIN
+      atmState.value = 'pin-verify'
+    }
+  } catch (err) {
+    error.value = "PIN verification failed: " + err.message
+    atmState.value = 'pin-verify'
   }
 }
 
@@ -343,13 +589,27 @@ function startWithdraw() {
 
 function cancelOperation() {
   atmState.value = 'idle'
+  selectedAccountId.value = null // Reset the account selection
   operationType.value = ''
   displayAmount.value = ''
+  pinValue.value = ''
+  verifiedPin.value = '' // Clear the verified PIN
   error.value = ''
 }
 
+
 // Amount Input Functions
 function enterDigit(digit) {
+  // Handle PIN entry
+  if (atmState.value === 'pin-create' || atmState.value === 'pin-verify') {
+    // Limit PIN to 4 digits
+    if (pinValue.value.length >= 4) return
+    
+    pinValue.value += digit.toString()
+    return
+  }
+  
+  // Handle amount entry
   if (atmState.value !== 'amount') return
   
   // Limit to reasonable amount length
@@ -363,6 +623,7 @@ function enterDigit(digit) {
 }
 
 function enterDecimal() {
+  // Only relevant for amount entry
   if (atmState.value !== 'amount') return
   if (displayAmount.value.includes('.')) return
   
@@ -374,6 +635,15 @@ function enterDecimal() {
 }
 
 function deleteDigit() {
+  // Handle PIN entry
+  if (atmState.value === 'pin-create' || atmState.value === 'pin-verify') {
+    if (pinValue.value.length > 0) {
+      pinValue.value = pinValue.value.slice(0, -1)
+    }
+    return
+  }
+  
+  // Handle amount entry
   if (atmState.value !== 'amount') return
   if (displayAmount.value.length > 0) {
     displayAmount.value = displayAmount.value.slice(0, -1)
@@ -381,7 +651,11 @@ function deleteDigit() {
 }
 
 function clearAmount() {
-  displayAmount.value = ''
+  if (atmState.value === 'pin-create' || atmState.value === 'pin-verify') {
+    pinValue.value = ''
+  } else {
+    displayAmount.value = ''
+  }
 }
 
 function confirmAmount() {
@@ -400,12 +674,26 @@ function confirmAmount() {
   atmState.value = 'confirm'
 }
 
-// Transaction Processing
+/**
+ * Transaction Processing
+ * Core function that handles deposit/withdrawal transaction execution
+ * Manages the transaction lifecycle: validation, processing, animation, and feedback
+ * @returns {Promise<void>}
+ */
 async function processTransaction() {
   error.value = ''
   atmState.value = 'processing'
+  let transactionSuccessful = false
   
   try {
+    // Check if the verified PIN is available
+    if (!verifiedPin.value) {
+      throw new Error("PIN verification required. Please restart the transaction.");
+    }
+    
+    // Store current balance as previous balance before transaction
+    previousBalance.value = balance.value;
+    
     const res = await fetch(`http://localhost:8080/api/atm/${operationType.value}`, {
       method: 'POST',
       headers: {
@@ -414,15 +702,34 @@ async function processTransaction() {
       },
       body: JSON.stringify({
         accountId: selectedAccountId.value,
-        amount: enteredAmount.value
+        amount: enteredAmount.value,
+        pin: verifiedPin.value
       })
     })
     
     const text = await res.text()
-    if (!res.ok) throw new Error(text)
+    if (!res.ok) {
+      // Create more specific error messages based on the response
+      if (text.includes("not approved")) {
+        throw new Error("Your account is not approved for ATM operations. Please contact customer service.");
+      } else if (text.includes("closed")) {
+        throw new Error("This account is closed and cannot perform ATM operations.");
+      } else if (text.includes("Insufficient balance")) {
+        throw new Error("Insufficient balance for this withdrawal. Please enter a smaller amount.");
+      } else {
+        throw new Error(text);
+      }
+    }
     
-    // Update balance
-    await updateBalance()
+    // Transaction was successful
+    transactionSuccessful = true
+    
+    // Try to update balance - but don't block the transaction flow if this fails
+    try {
+      await updateBalance()
+    } catch (balanceErr) {
+      // Continue with transaction even if balance update fails
+    }
     
     // Animate cash movement
     if (operationType.value === 'deposit') {
@@ -431,19 +738,54 @@ async function processTransaction() {
       animateWithdraw.value = true
     }
     
-    // Show completion after short delay
-    setTimeout(() => {
-      animateDeposit.value = false
-      animateWithdraw.value = false
-      atmState.value = 'receipt'
-    }, 2000)
-    
   } catch (err) {
     error.value = err.message
     atmState.value = 'error'
   }
+  
+  // Show success message after successful transaction
+  if (transactionSuccessful) {
+    // Show cash animation first
+    if (operationType.value === 'deposit') {
+      animateDeposit.value = true
+    } else {
+      animateWithdraw.value = true
+    }
+    
+    // Transition to success state after animation
+    setTimeout(() => {
+      // Stop cash animations
+      animateDeposit.value = false
+      animateWithdraw.value = false
+      
+      // Show success message
+      atmState.value = 'success'
+      // Reset operation type immediately to ensure menu buttons are visible
+      operationType.value = ''
+      
+      // Automatically return to menu after 5 seconds
+      setTimeout(() => {
+        // If user is still on the success screen, reset to idle state
+        if (atmState.value === 'success') {
+          atmState.value = 'idle'
+          selectedAccountId.value = null  // Reset the account selection
+          operationType.value = ''
+          displayAmount.value = ''
+          pinValue.value = ''
+          verifiedPin.value = ''
+          error.value = ''
+        }
+      }, 5000)
+    }, 2000)
+  }
 }
 
+/**
+ * Updates account balance from backend
+ * Retrieves the current balance for the selected account
+ * @returns {Promise<void>}
+ * @throws {Error} If balance update fails
+ */
 async function updateBalance() {
   try {
     const res = await fetch(`http://localhost:8080/api/atm/balance?accountId=${selectedAccountId.value}`, {
@@ -455,63 +797,105 @@ async function updateBalance() {
     if (!res.ok) throw new Error(await res.text())
     balance.value = await res.json()
   } catch (err) {
-    console.error("Failed to update balance:", err)
+    // Error handled by caller
+    throw err;
   }
 }
 
-function downloadReceipt() {
-  animateReceipt.value = true
+/**
+ * Returns to the main menu and resets operation state
+ * Called when user manually clicks the "Return to Menu" button
+ */
+function returnToMenu() {
+  // Reset all operation-related states
+  operationType.value = ''
+  displayAmount.value = ''
+  error.value = ''
   
-  setTimeout(() => {
-    animateReceipt.value = false
-    
-    // Generate receipt content
-    const receiptContent = `
-      BANK APP ATM RECEIPT
-      -------------------
-      Date: ${new Date().toLocaleString()}
-      
-      Account: ${getCurrentAccountLabel()}
-      Transaction: ${operationType.value.toUpperCase()}
-      Amount: €${enteredAmount.value.toFixed(2)}
-      Current Balance: €${balance.value.toFixed(2)}
-      
-      Thank you for using BankApp ATM
-    `.replace(/\n\s+/g, '\n').trim()
-    
-    // Create temporary download link
-    const element = document.createElement('a')
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(receiptContent))
-    element.setAttribute('download', `atm-receipt-${Date.now()}.txt`)
-    element.style.display = 'none'
-    
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
-  }, 2000)
+  // After transaction success, return to idle state and reset account selection
+  if (atmState.value === 'success') {
+    atmState.value = 'idle'
+    selectedAccountId.value = null  // Reset the account selection
+    pinValue.value = ''
+    verifiedPin.value = ''
+  } else {
+    // For other scenarios, go back to menu
+    atmState.value = 'menu'
+  }
 }
 </script>
 
 <style scoped>
+/* PIN Screen Styles */
+.pin-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.pin-header h3 {
+  margin-bottom: 10px;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.pin-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.pin-display {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.pin-digit {
+  width: 30px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pin-instructions {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
 .atm-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #f0f0f0;
   padding: 20px;
+  box-sizing: border-box;
+  min-height: 85vh; /* Adjusted height to ensure visibility within dashboard */
+  width: 100%;
 }
 
 .atm-machine {
   width: 100%;
-  max-width: 800px;
-  background: linear-gradient(145deg, #2c3e50, #34495e);
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
+  max-width: 650px;
+  background-color: #e0e0e0;
+  border-radius: 16px;
+  box-shadow: 
+    0 10px 25px rgba(0, 0, 0, 0.2),
+    0 0 0 10px #d0d0d0;
+  overflow: visible; /* Changed from hidden to ensure buttons are fully visible */
   display: flex;
   flex-direction: column;
-  padding-bottom: 20px;
+  position: relative;
+  border: 1px solid #c0c0c0;
+  margin: 0 auto 20px; /* Added bottom margin for spacing */
 }
 
 /* ATM Header Section */
@@ -519,31 +903,40 @@ function downloadReceipt() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #1a2530;
+  background-color: #2c3e50;
   padding: 15px 20px;
+  border-bottom: 1px solid #34495e;
+  color: white;
 }
 
 .bank-name {
   font-size: 24px;
   font-weight: 700;
-  color: #ecf0f1;
+  color: white;
   letter-spacing: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .card-reader {
   display: flex;
   flex-direction: column;
   align-items: center;
+  background-color: #34495e;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #243342;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .card-slot {
-  width: 60px;
-  height: 10px;
-  background-color: #222;
-  border: 1px solid #555;
-  border-radius: 3px;
+  width: 70px;
+  height: 5px;
+  background-color: #111;
+  border: 1px solid #000;
+  border-radius: 2px;
   margin-bottom: 5px;
   position: relative;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .card-slot-light {
@@ -551,84 +944,110 @@ function downloadReceipt() {
   right: 5px;
   top: 50%;
   transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background-color: #444;
+  background-color: #ccc;
   transition: all 0.3s;
 }
 
 .card-slot-light.active {
-  background-color: #2ecc71;
-  box-shadow: 0 0 5px #2ecc71;
+  background-color: #4caf50;
 }
 
 .card-text {
   font-size: 10px;
-  color: #bbb;
+  color: #eee;
+  margin-top: 4px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ATM Screen */
+.screen-container {
+  margin: 20px 20px 0;
+  position: relative;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 /* ATM Screen */
 .atm-screen {
-  background-color: #ecf0f1;
-  margin: 20px;
-  border-radius: 10px;
-  padding: 3px;
-  border: 1px solid #95a5a6;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-  height: 350px;
+  background-color: #222;
+  flex-grow: 1;
+  padding: 12px;
+  height: 380px; /* Reduced height to prevent overflow */
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+  border: 8px solid #333;
 }
 
 .screen-content {
-  background-color: #fff;
+  background-color: #004080;
   height: 100%;
-  border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   padding: 20px;
   position: relative;
+  color: white;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 /* ATM Controls (Keypad & Cash Slots) */
 .atm-controls {
   display: flex;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 20px;
+  background-color: #555;
+  margin: 10px 20px 20px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.3);
 }
 
+/* Keypad Styling */
 .keypad {
   display: flex;
   flex-direction: column;
   width: 250px;
+  padding: 10px;
+  background-color: #444;
+  border-radius: 8px;
+  border: 1px solid #333;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
 .keypad-section {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .keypad-btn {
-  background-color: #34495e;
+  background: linear-gradient(to bottom, #555, #444);
   color: white;
-  border: none;
-  border-radius: 5px;
-  height: 50px;
-  font-size: 20px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  height: 45px;
+  font-size: 18px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 3px 0 #2c3e50;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
 }
 
 .keypad-btn:hover:not(.disabled) {
-  background-color: #2c3e50;
+  background: linear-gradient(to bottom, #666, #555);
 }
 
 .keypad-btn:active:not(.disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 0 0 #2c3e50;
+  background: linear-gradient(to bottom, #444, #555);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .keypad-btn.disabled {
@@ -637,34 +1056,46 @@ function downloadReceipt() {
 }
 
 .keypad-decimal, .keypad-delete {
-  background-color: #3498db;
-  box-shadow: 0 3px 0 #2980b9;
+  background: linear-gradient(to bottom, #205080, #104070);
+  border-color: #003366;
+  color: white;
 }
 
 .keypad-decimal:hover:not(.disabled), .keypad-delete:hover:not(.disabled) {
-  background-color: #2980b9;
+  background: linear-gradient(to bottom, #306090, #205080);
 }
 
+/* Cash Slots Styling */
 .cash-slots {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   width: 250px;
+  padding: 10px;
+  background-color: #444;
+  border-radius: 8px;
+  border: 1px solid #333;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
 .cash-slot, .receipt-slot {
   background-color: #222;
-  padding: 5px;
-  border-radius: 5px;
+  padding: 8px;
+  border-radius: 4px;
   text-align: center;
   height: 40px;
   position: relative;
   transition: all 0.3s;
+  border: 1px solid #111;
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .cash-slot.active, .receipt-slot.active {
-  box-shadow: 0 0 10px rgba(46, 204, 113, 0.8);
+  border-color: #4caf50;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
 }
+
 
 .slot-label {
   color: #aaa;
@@ -673,6 +1104,9 @@ function downloadReceipt() {
   top: 5px;
   left: 0;
   right: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
 }
 
 .slot-animation {
@@ -680,28 +1114,36 @@ function downloadReceipt() {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 20px;
+  height: 25px;
 }
 
 .cash-bills {
   position: absolute;
-  height: 4px;
-  background-color: #2ecc71;
+  height: 6px;
+  background-color: #4caf50;
   bottom: 3px;
   left: 10%;
   right: 10%;
-  animation: cashAnimation 2s ease;
+  animation: cashAnimation 1.5s ease;
+  border-radius: 1px;
 }
 
 .receipt-paper {
   position: absolute;
-  height: 20px;
-  width: 60px;
+  height: 35px;
+  width: 70px;
   background-color: white;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  animation: receiptAnimation 2s ease;
+  animation: receiptAnimation 2.5s ease;
+  border: 1px solid #eee;
+  border-bottom: none;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  background-image: 
+    linear-gradient(90deg, transparent 0%, transparent 90%, rgba(200, 200, 200, 0.2) 91%, transparent 92%),
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 5px;
 }
 
 @keyframes cashAnimation {
@@ -722,51 +1164,122 @@ function downloadReceipt() {
 @keyframes receiptAnimation {
   0% { 
     height: 0;
+    opacity: 0.8;
   }
-  70% {
+  15% {
+    height: 10px;
+    opacity: 1;
+  }
+  30% {
+    height: 15px;
+  }
+  45% {
     height: 20px;
+  }
+  60% {
+    height: 25px;
+  }
+  75% {
+    height: 30px;
+  }
+  90% {
+    height: 35px;
+  }
+  95% {
+    transform: translateX(-50%) translateY(0) rotate(0);
   }
   100% {
-    height: 20px;
+    height: 35px;
+    transform: translateX(-50%) translateY(-2px) rotate(1deg);
   }
 }
 
 /* Button Styles */
 .green-btn, .blue-btn, .cancel-btn, .menu-btn {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 5px;
-  font-weight: bold;
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   margin: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+  display: inline-block; /* Ensure buttons are properly sized */
 }
 
 .green-btn {
-  background-color: #2ecc71;
+  background: linear-gradient(to bottom, #4caf50, #388e3c);
   color: white;
+  border: 1px solid #2e7d32;
 }
 
 .green-btn:hover:not(:disabled) {
-  background-color: #27ae60;
+  background: linear-gradient(to bottom, #5cb860, #4caf50);
+}
+
+.green-btn:active:not(:disabled) {
+  background: linear-gradient(to bottom, #388e3c, #4caf50);
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
 .blue-btn {
-  background-color: #3498db;
+  background: linear-gradient(to bottom, #2196f3, #1976d2);
   color: white;
+  border: 1px solid #0d47a1;
 }
 
 .blue-btn:hover {
-  background-color: #2980b9;
+  background: linear-gradient(to bottom, #42a5f5, #2196f3);
+}
+
+.blue-btn:active {
+  background: linear-gradient(to bottom, #1976d2, #2196f3);
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.2);
+}
+
+.orange-btn {
+  background: linear-gradient(to bottom, #ff9800, #f57c00);
+  color: white;
+  border: 1px solid #e65100;
+}
+
+.orange-btn:hover {
+  background: linear-gradient(to bottom, #ffa726, #ff9800);
+}
+
+.orange-btn:active {
+  background: linear-gradient(to bottom, #f57c00, #ff9800);
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.2);
+}
+
+.purple-btn {
+  background: linear-gradient(to bottom, #9c27b0, #7b1fa2);
+  color: white;
+  border: 1px solid #6a1b9a;
+}
+
+.purple-btn:hover {
+  background: linear-gradient(to bottom, #ab47bc, #9c27b0);
+}
+
+.purple-btn:active {
+  background: linear-gradient(to bottom, #7b1fa2, #9c27b0);
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
 .cancel-btn {
-  background-color: #e74c3c;
+  background: linear-gradient(to bottom, #f44336, #d32f2f);
   color: white;
+  border: 1px solid #b71c1c;
 }
 
 .cancel-btn:hover {
-  background-color: #c0392b;
+  background: linear-gradient(to bottom, #ef5350, #f44336);
+}
+
+.cancel-btn:active {
+  background: linear-gradient(to bottom, #d32f2f, #f44336);
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
 .menu-btn {
@@ -774,60 +1287,115 @@ function downloadReceipt() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 110px;
-  height: 80px;
+  min-width: 80px;
+  height: 70px;
   text-align: center;
-  background-color: #3498db;
+  background: linear-gradient(to bottom, #2196f3, #1976d2);
   color: white;
+  border: 1px solid #0d47a1;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.menu-btn:hover {
+  background: linear-gradient(to bottom, #42a5f5, #2196f3);
+}
+
+.menu-btn:active {
+  background: linear-gradient(to bottom, #1976d2, #2196f3);
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
 .deposit-btn {
-  background-color: #2ecc71;
+  background: linear-gradient(to bottom, #4caf50, #388e3c);
+  border: 1px solid #2e7d32;
 }
 
 .deposit-btn:hover {
-  background-color: #27ae60;
+  background: linear-gradient(to bottom, #5cb860, #4caf50);
+}
+
+.deposit-btn:active {
+  background: linear-gradient(to bottom, #388e3c, #4caf50);
 }
 
 .withdraw-btn {
-  background-color: #e67e22;
+  background: linear-gradient(to bottom, #ff9800, #f57c00);
+  border: 1px solid #ef6c00;
 }
 
 .withdraw-btn:hover {
-  background-color: #d35400;
+  background: linear-gradient(to bottom, #ffa726, #ff9800);
+}
+
+.withdraw-btn:active {
+  background: linear-gradient(to bottom, #f57c00, #ff9800);
 }
 
 .menu-btn .icon {
-  font-size: 24px;
+  font-size: 20px;
   margin-bottom: 5px;
 }
 
 .back-btn {
   background: none;
   border: none;
-  color: #3498db;
+  color: #2196f3;
   cursor: pointer;
   padding: 5px;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 /* Screen State Styles */
-.screen-idle, .screen-menu, .screen-amount, .screen-confirm, 
-.screen-processing, .screen-receipt, .screen-error {
+.screen-idle, .screen-amount, .screen-confirm, 
+.screen-processing, .screen-receipt, .screen-error, .screen-pin {
   display: flex;
   flex-direction: column;
   height: 100%;
   justify-content: space-between;
 }
 
+.screen-menu {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: flex-start;
+}
+
 .welcome-message {
   text-align: center;
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 .welcome-message h2 {
-  color: #2c3e50;
+  color: white;
   margin-bottom: 10px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.atm-instructions {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: rgba(33, 150, 243, 0.2);
+  border-radius: 4px;
+  border-left: 3px solid #2196f3;
+}
+
+.instruction-title {
+  font-weight: 600;
+  color: #2196f3;
+  margin-bottom: 5px;
+}
+
+.instruction-list {
+  text-align: left;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  padding-left: 20px;
+}
+
+.instruction-list li {
+  margin-bottom: 4px;
 }
 
 .account-selection {
@@ -836,24 +1404,34 @@ function downloadReceipt() {
   flex-direction: column;
   align-items: center;
   gap: 15px;
+  padding: 0 10px;
+  width: 100%;
 }
 
 .account-selection select {
   width: 100%;
   max-width: 300px;
-  padding: 12px;
-  border-radius: 5px;
-  border: 1px solid #bdc3c7;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
   background-color: white;
   font-size: 16px;
+  color: #222;
+  margin-bottom: 5px;
+}
+
+.account-selection .green-btn {
+  margin-top: 5px;
+  min-width: 150px;
+  padding: 10px 20px;
 }
 
 .loading-spinner {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   margin: 20px auto;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #2196f3;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -864,52 +1442,72 @@ function downloadReceipt() {
 }
 
 .error-message {
-  color: #e74c3c;
+  color: #f44336;
   text-align: center;
-  margin: 20px 0;
-  font-weight: bold;
+  margin: 15px 0;
+  font-weight: 600;
+  background-color: rgba(244, 67, 54, 0.1);
+  padding: 8px;
+  border-radius: 4px;
 }
 
 /* Menu Screen */
 .account-info {
   text-align: center;
-  padding: 15px;
-  border-bottom: 1px solid #eee;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
 }
 
 .balance-display {
-  margin: 15px 0;
+  margin: 10px 0;
   font-size: 18px;
 }
 
 .balance-label {
-  color: #7f8c8d;
+  color: rgba(255, 255, 255, 0.7);
   margin-right: 10px;
 }
 
 .balance-amount {
-  font-weight: bold;
-  color: #2c3e50;
+  font-weight: 600;
+  color: white;
   font-size: 22px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .menu-options {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 20px 0;
+  margin: 30px 0;
+  padding-bottom: 30px;
 }
 
 .menu-options h4 {
   margin-bottom: 20px;
-  color: #7f8c8d;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
 }
 
 .menu-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 15px;
+  margin-top: 20px;
+  padding-bottom: 20px;
+}
+
+.menu-spacer {
+  flex-grow: 1;
+}
+
+.confirm-row, .action-row {
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 20px;
+  justify-content: space-around;
+  align-items: center;
+  gap: 15px;
+  margin-top: 15px;
 }
 
 /* Amount Entry Screen */
@@ -918,7 +1516,7 @@ function downloadReceipt() {
   justify-content: space-between;
   align-items: center;
   padding: 10px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .amount-entry {
@@ -930,48 +1528,98 @@ function downloadReceipt() {
 }
 
 .amount-display {
-  font-size: 42px;
-  font-weight: bold;
-  color: #2c3e50;
+  font-size: 36px;
+  font-weight: 600;
+  color: white;
   margin-bottom: 20px;
-  min-height: 50px;
+  min-height: 42px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .entry-instructions {
-  color: #7f8c8d;
-  margin-bottom: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 12px;
+}
+
+.amount-presets {
+  margin: 15px 0;
+}
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.preset-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.preset-amounts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: 12px;
+}
+
+.preset {
+  background: linear-gradient(to bottom, #555, #444);
+  border: 1px solid #333;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.preset:hover {
+  background: linear-gradient(to bottom, #666, #555);
+}
+
+.preset:active {
+  background: linear-gradient(to bottom, #444, #555);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .confirm-buttons {
   display: flex;
   justify-content: space-between;
   padding: 0 20px 20px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* Confirm Screen */
 .confirmation-details, .receipt-details {
-  margin: 20px 0;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-  padding: 15px;
+  margin: 15px 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .confirm-row, .receipt-row {
   display: flex;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
 }
 
 .confirm-label, .receipt-label {
   width: 40%;
-  color: #7f8c8d;
-  font-weight: bold;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
 }
 
 .confirm-value, .receipt-value {
   width: 60%;
-  color: #2c3e50;
+  color: white;
 }
 
 /* Processing Screen */
@@ -984,61 +1632,144 @@ function downloadReceipt() {
 }
 
 .processing-animation .spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #3498db;
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top: 4px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .processing-animation p {
-  color: #2c3e50;
-  margin: 5px 0;
+  color: white;
+  margin: 4px 0;
 }
 
 .processing-animation .small {
   font-size: 14px;
-  color: #95a5a6;
+  color: rgba(255, 255, 255, 0.7);
 }
 
-/* Receipt Screen */
-.receipt-header {
+/* Success Screen */
+.screen-success {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  animation: fadeIn 0.3s ease-in;
+  background-color: #004080;
 }
 
-.transaction-icon {
-  width: 50px;
-  height: 50px;
+.screen-success .success-icon {
+  width: 60px;
+  height: 60px;
+  background-color: #4caf50;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 36px;
+  color: white;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.screen-success h3 {
   font-size: 24px;
+  margin-bottom: 20px;
   color: white;
 }
 
-.transaction-icon.deposit {
-  background-color: #2ecc71;
+.screen-success .transaction-details {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  color: white;
+  max-width: 80%;
 }
 
-.transaction-icon.withdraw {
-  background-color: #e67e22;
-}
-
-.receipt-value.success {
-  color: #2ecc71;
+.screen-success .amount,
+.screen-success .balance {
   font-weight: bold;
+  font-size: 1.1em;
 }
 
-.receipt-actions {
+.screen-success button {
+  margin-top: 15px;
+  min-width: 180px;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.transaction-success {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.success-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 15px;
+  background-color: #4caf50;
+  color: white;
+  font-size: 36px;
+  font-weight: bold;
+  border-radius: 50%;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.transaction-details {
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px auto;
+  max-width: 80%;
+}
+
+.transaction-details .amount,
+.transaction-details .balance {
+  font-weight: bold;
+  color: white;
+  font-size: 1.1em;
+}
+
+.prompt-question {
+  text-align: center;
   margin-top: 20px;
+}
+
+.prompt-question h4 {
+  font-size: 1.4em;
+  margin-bottom: 20px;
+  color: white;
+}
+
+.prompt-options {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* Enhanced Receipt Screen */
+/* Removed receipt-related styling */
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
 
 /* Error Screen */
@@ -1051,41 +1782,114 @@ function downloadReceipt() {
 }
 
 .error-icon {
-  font-size: 50px;
-  color: #e74c3c;
-  margin-bottom: 20px;
+  font-size: 40px;
+  color: #f44336;
+  margin-bottom: 16px;
 }
 
 .screen-error h3 {
-  color: #e74c3c;
-  margin-bottom: 15px;
+  color: #f44336;
+  margin-bottom: 12px;
 }
 
 .screen-error .error-message {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   max-width: 80%;
+}
+
+/* Debug element for forcing receipt prompt */
+.debug-force-receipt-prompt {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+  background: rgba(255, 0, 0, 0.9);
+  padding: 8px;
+  border-radius: 4px;
+  border: 2px solid yellow;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.debug-force-receipt-prompt button {
+  background: #f44336;
+  color: white;
+  border: 2px solid white;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 4px;
 }
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
+  .atm-container {
+    padding: 10px;
+    min-height: auto;
+  }
+  
   .atm-machine {
-    border-radius: 0;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    max-width: 100%;
+    box-shadow: 
+      0 5px 15px rgba(0, 0, 0, 0.2),
+      0 0 0 5px #d0d0d0;
+  }
+  
+  .atm-screen {
+    height: auto;
+    min-height: 320px;
   }
   
   .atm-controls {
     flex-direction: column;
     align-items: center;
+    padding: 15px 10px;
+    margin: 10px;
   }
   
   .keypad, .cash-slots {
     width: 100%;
     max-width: 350px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
   
   .menu-buttons {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .account-selection {
+    gap: 10px;
+  }
+  
+  .account-selection select, 
+  .account-selection .green-btn {
+    max-width: 100%;
+  }
+  
+  .welcome-message h2 {
+    font-size: 1.5rem;
+  }
+  
+  .instruction-list {
+    font-size: 0.8rem;
+  }
+  
+  .keypad-btn {
+    height: 40px;
+  }
+  
+  /* Ensure all buttons are properly visible */
+  .screen-content {
+    padding: 15px 10px;
+    overflow-y: auto;
+  }
+  
+  .screen-idle, .screen-success, .screen-error {
+    padding-bottom: 20px;
   }
 }
 </style>

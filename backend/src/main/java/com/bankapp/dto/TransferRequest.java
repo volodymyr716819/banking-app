@@ -6,6 +6,8 @@ public class TransferRequest {
 
     private Long senderAccountId;
     private Long receiverAccountId;
+    private String senderIban;
+    private String receiverIban;
     private BigDecimal amount;
     private String description;
 
@@ -24,6 +26,22 @@ public class TransferRequest {
 
     public void setReceiverAccountId(Long receiverAccountId) {
         this.receiverAccountId = receiverAccountId;
+    }
+    
+    public String getSenderIban() {
+        return senderIban;
+    }
+    
+    public void setSenderIban(String senderIban) {
+        this.senderIban = senderIban;
+    }
+    
+    public String getReceiverIban() {
+        return receiverIban;
+    }
+    
+    public void setReceiverIban(String receiverIban) {
+        this.receiverIban = receiverIban;
     }
 
     public BigDecimal getAmount() {

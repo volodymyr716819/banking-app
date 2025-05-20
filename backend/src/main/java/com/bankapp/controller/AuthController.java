@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -85,5 +86,37 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "Registration successful. Your account is pending approval."));
+    }
+    
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+            
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                        "valid", false, 
+                        "message", "User not found"));
+            }
+            
+            User user = userOpt.get();
+            
+            if (!user.isApproved()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                        "valid", false,
+                        "message", "Account is pending approval"));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                    "valid", true,
+                    "id", user.getId(),
+                    "email", user.getEmail(),
+                    "name", user.getName(),
+                    "role", user.getRole()));
+        }
+        
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "valid", false,
+                "message", "Invalid or expired token"));
     }
 }

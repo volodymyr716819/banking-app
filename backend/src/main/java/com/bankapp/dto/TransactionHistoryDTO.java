@@ -3,6 +3,7 @@ package com.bankapp.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.bankapp.model.Account;
 import com.bankapp.model.AtmOperation;
 import com.bankapp.model.Transaction;
 
@@ -44,7 +45,7 @@ public class TransactionHistoryDTO {
         
         try {
             if (transaction.getFromAccount() != null) {
-                this.fromAccountIban = generateIban(transaction.getFromAccount().getId());
+                this.fromAccountIban = getAccountIban(transaction.getFromAccount());
                 this.fromAccountHolderName = transaction.getFromAccount().getUser().getName();
             }
         } catch (Exception e) {
@@ -53,7 +54,7 @@ public class TransactionHistoryDTO {
         
         try {
             if (transaction.getToAccount() != null) {
-                this.toAccountIban = generateIban(transaction.getToAccount().getId());
+                this.toAccountIban = getAccountIban(transaction.getToAccount());
                 this.toAccountHolderName = transaction.getToAccount().getUser().getName();
             }
         } catch (Exception e) {
@@ -72,14 +73,14 @@ public class TransactionHistoryDTO {
             
             if (atmOperation.getAccount() != null) {
                 if (atmOperation.getOperationType() == AtmOperation.OperationType.DEPOSIT) {
-                    this.toAccountIban = generateIban(atmOperation.getAccount().getId());
+                    this.toAccountIban = getAccountIban(atmOperation.getAccount());
                     try {
                         this.toAccountHolderName = atmOperation.getAccount().getUser().getName();
                     } catch (Exception e) {
                         this.toAccountHolderName = "Account Owner";
                     }
                 } else {
-                    this.fromAccountIban = generateIban(atmOperation.getAccount().getId());
+                    this.fromAccountIban = getAccountIban(atmOperation.getAccount());
                     try {
                         this.fromAccountHolderName = atmOperation.getAccount().getUser().getName();
                     } catch (Exception e) {
@@ -100,13 +101,20 @@ public class TransactionHistoryDTO {
         }
     }
 
-    // Generate a pseudo-IBAN from account ID
-    private static String generateIban(Long accountId) {
-        String countryCode = "NL";
-        String bankCode = "BANK";
-        String paddedId = String.format("%010d", accountId);
+    // Get IBAN from account, or generate one if not available
+    private static String getAccountIban(Account account) {
+        if (account == null) {
+            return null;
+        }
         
-        return countryCode + bankCode + paddedId;
+        // Use the account's IBAN if available
+        String iban = account.getIban();
+        if (iban != null && !iban.isEmpty()) {
+            return iban;
+        }
+        
+        // Fall back to generating an IBAN from ID if needed
+        return account.getIban();
     }
 
     // Getters and setters
