@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,7 +33,15 @@ public class Transaction {
 
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    private TransactionType transactionType = TransactionType.TRANSFER;
+
     private LocalDateTime timestamp = LocalDateTime.now();
+    
+    // Enum for transaction type
+    public enum TransactionType {
+        TRANSFER, DEPOSIT, WITHDRAW
+    }
 
 
     public Long getId() {
@@ -80,5 +90,13 @@ public class Transaction {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+    
+    public TransactionType getTransactionType() {
+        return transactionType;
+    }
+
+    public void setTransactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
     }
 }

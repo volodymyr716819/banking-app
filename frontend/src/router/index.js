@@ -10,7 +10,8 @@ import ApproveAccountsView from "../views/ApproveAccountsView.vue";
 import ApproveUsersView from "../views/ApproveUsersView.vue";
 import EmployeeUsersView from "../views/EmployeeUsersView.vue";
 import EmployeeAccountsView from "../views/EmployeeAccountsView.vue";
-import TransactionHistoryView from "../views/TransactionHistoryView.vue"; // ✅ NEW
+import TransactionHistoryView from "../views/TransactionHistoryView.vue";
+import SearchCustomerView from "../views/SearchCustomerView.vue";
 
 import { useAuthStore } from "../store/auth";
 
@@ -28,6 +29,11 @@ const routes = [
       {
         path: "history",
         component: TransactionHistoryView,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: "search-customer",
+        component: SearchCustomerView,
         meta: { requiresAuth: true },
       },
       {

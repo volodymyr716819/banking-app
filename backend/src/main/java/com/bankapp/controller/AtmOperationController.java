@@ -3,8 +3,10 @@ package com.bankapp.controller;
 import com.bankapp.dto.AtmRequest;
 import com.bankapp.model.Account;
 import com.bankapp.model.AtmOperation;
+import com.bankapp.model.Transaction;
 import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.AtmOperationRepository;
+import com.bankapp.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,9 @@ public class AtmOperationController {
 
     @Autowired
     private AtmOperationRepository atmOperationRepository;
+    
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     @PostMapping("/deposit")
     public ResponseEntity<String> deposit(@RequestBody AtmRequest atmRequest) {
@@ -61,10 +66,17 @@ public class AtmOperationController {
         AtmOperation atmOperation = new AtmOperation();
         atmOperation.setAccount(account);
         atmOperation.setAmount(atmRequest.getAmount());
+        boolean isDeposit = operationType.equals("DEPOSIT");
         atmOperation.setOperationType(
-            operationType.equals("DEPOSIT") ? AtmOperation.OperationType.DEPOSIT : AtmOperation.OperationType.WITHDRAW
+            isDeposit ? AtmOperation.OperationType.DEPOSIT : AtmOperation.OperationType.WITHDRAW
         );
         atmOperationRepository.save(atmOperation);
+        
+        /* 
+        // We're creating an AtmOperation record only to avoid duplication
+        // The TransactionService.getUserTransactionHistory method now converts
+        // ATM operations to TransactionHistoryDTO objects for display in history
+        */
 
         return ResponseEntity.ok("ATM Operation successful");
     }

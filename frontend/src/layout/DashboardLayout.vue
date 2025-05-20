@@ -7,6 +7,7 @@
         <router-link to="/dashboard/transfer" class="nav-link">Transfer Money</router-link>
         <router-link to="/dashboard/history" class="nav-link">Transaction History</router-link>
         <router-link to="/dashboard/atm" class="nav-link">ATM Operations</router-link>
+        <router-link to="/dashboard/search-customer" class="nav-link">Find Customer</router-link>
 
         <!-- Employee-only links -->
         <router-link v-if="auth.user?.role?.toLowerCase() === 'employee'" to="/dashboard/approve"

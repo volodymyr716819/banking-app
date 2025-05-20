@@ -2,18 +2,23 @@ package com.bankapp.controller;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bankapp.dto.UserSearchResultDTO;
 import com.bankapp.model.User;
+import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.UserRepository;
 
 @RestController
@@ -22,6 +27,9 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private AccountRepository accountRepository;
 
     @GetMapping
     public List<User> getAllUsers() {
@@ -71,5 +79,34 @@ public class UserController {
         return userRepository.findByApprovedTrue().stream()
                 .filter(user -> "CUSTOMER".equalsIgnoreCase(user.getRole()))
                 .toList();
+    }
+    
+    @GetMapping("/find-by-name")
+    public ResponseEntity<?> searchUsersByName(@RequestParam String name, Authentication authentication) {
+        // Check if the user is authenticated
+        if (authentication == null) {
+            return ResponseEntity.badRequest().body("User not authenticated");
+        }
+        
+        // Get the authenticated user
+        Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+        
+        // Only authenticated users can search
+        if (!userOpt.get().isApproved()) {
+            return ResponseEntity.badRequest().body("User not approved");
+        }
+        
+        // Search for customers by name
+        List<User> matchingUsers = userRepository.findByNameContainingIgnoreCaseAndApprovedTrueAndRoleIgnoreCase(name, "customer");
+        
+        // Convert to DTOs with IBANs
+        List<UserSearchResultDTO> results = matchingUsers.stream()
+                .map(user -> new UserSearchResultDTO(user, accountRepository.findByUserId(user.getId())))
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(results);
     }
 }

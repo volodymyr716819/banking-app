@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bankapp.dto.TransactionHistoryDTO;
 import com.bankapp.dto.TransferRequest;
 import com.bankapp.model.Transaction;
 import com.bankapp.model.User;
@@ -64,9 +65,9 @@ public class TransactionController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
-        List<Transaction> transactions = transactionRepository
-                .findByFromAccount_User_IdOrToAccount_User_Id(userId, userId);
+        // Use the enhanced transaction history method that includes ATM operations
+        List<TransactionHistoryDTO> transactionHistory = transactionService.getUserTransactionHistory(userId);
 
-        return ResponseEntity.ok(transactions);
+        return ResponseEntity.ok(transactionHistory);
     }
 }
