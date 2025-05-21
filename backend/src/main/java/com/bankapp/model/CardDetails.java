@@ -16,14 +16,15 @@ public class CardDetails {
     private Account account;
 
     // Store PIN securely using hashing
-    @Column(nullable = false)
-    private String hashedPin;
+    @Column(name = "hashed_pin", nullable = false)
+    private String hashedPin = "";  // Default to empty string to avoid null issues
     
     // Flag to indicate if this is the first use of the card
-    @Column(nullable = false)
+    @Column(name = "pin_created")
     private boolean pinCreated = false;
     
     // Track PIN change history
+    @Column(name = "last_pin_changed")
     private LocalDateTime lastPinChanged;
 
     // Constructors

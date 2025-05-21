@@ -520,8 +520,12 @@ async function createPin() {
       throw new Error(await res.text())
     }
     
+    // Save the PIN value to use for transactions
+    verifiedPin.value = pinValue.value
     pinCreated.value = true
-    pinValue.value = ''
+    
+    // Skip PIN verification since we just created it
+    message.value = "PIN created successfully"
     atmState.value = 'menu'
   } catch (err) {
     error.value = "Failed to create PIN: " + err.message

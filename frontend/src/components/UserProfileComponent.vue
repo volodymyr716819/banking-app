@@ -16,7 +16,12 @@ import { computed } from 'vue';
 const props = defineProps({
   user: {
     type: Object,
-    required: true
+    required: false,
+    default: () => ({
+      name: 'Guest',
+      role: 'guest',
+      id: 0
+    })
   },
   size: {
     type: String,

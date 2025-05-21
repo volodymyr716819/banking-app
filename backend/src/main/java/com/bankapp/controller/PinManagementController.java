@@ -51,38 +51,36 @@ public class PinManagementController {
      */
     @PostMapping("/create")
     public ResponseEntity<?> createPin(@RequestBody PinRequest pinRequest) {
-        if (pinRequest.getPin() == null || pinRequest.getPin().length() != 4) {
-            return ResponseEntity.badRequest().body("PIN must be 4 digits");
-        }
+        try {
+            if (pinRequest.getPin() == null || pinRequest.getPin().length() != 4) {
+                return ResponseEntity.badRequest().body("PIN must be 4 digits");
+            }
 
-        Optional<Account> accountOpt = accountRepository.findById(pinRequest.getAccountId());
-        if (accountOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
-        }
+            Optional<Account> accountOpt = accountRepository.findById(pinRequest.getAccountId());
+            if (accountOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+            }
 
-        Account account = accountOpt.get();
-        
-        // Hash the PIN before storing
-        String hashedPin = pinHashUtil.hashPin(pinRequest.getPin());
-        
-        // Check if card details already exist
-        Optional<CardDetails> cardDetailsOpt = cardDetailsRepository.findByAccountId(account.getId());
-        CardDetails cardDetails;
-        
-        if (cardDetailsOpt.isPresent()) {
-            // Update existing card details
-            cardDetails = cardDetailsOpt.get();
-            cardDetails.setHashedPin(hashedPin);
+            Account account = accountOpt.get();
+            
+            // Hash the PIN before storing
+            String hashedPin = pinHashUtil.hashPin(pinRequest.getPin());
+            
+            // First, delete any existing card details to avoid unique constraint violations
+            cardDetailsRepository.deleteByAccountId(account.getId());
+            
+            // Create new card details
+            CardDetails cardDetails = new CardDetails(account, hashedPin);
             cardDetails.setPinCreated(true);
             cardDetails.setLastPinChanged(LocalDateTime.now());
-        } else {
-            // Create new card details
-            cardDetails = new CardDetails(account, hashedPin);
+            
+            cardDetailsRepository.save(cardDetails);
+            
+            return ResponseEntity.ok("PIN created successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error creating PIN: " + e.getMessage());
         }
-        
-        cardDetailsRepository.save(cardDetails);
-        
-        return ResponseEntity.ok("PIN created successfully");
     }
 
     /**
