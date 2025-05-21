@@ -18,10 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bankapp.dto.TransactionHistoryDTO;
 import com.bankapp.dto.TransferRequest;
 import com.bankapp.model.Account;
-import com.bankapp.model.Transaction;
 import com.bankapp.model.User;
 import com.bankapp.repository.AccountRepository;
-import com.bankapp.repository.TransactionRepository;
 import com.bankapp.repository.UserRepository;
 import com.bankapp.service.TransactionService;
 
@@ -31,9 +29,6 @@ public class TransactionController {
 
     @Autowired
     private TransactionService transactionService;
-
-    @Autowired
-    private TransactionRepository transactionRepository;
 
     @Autowired
     private UserRepository userRepository;
