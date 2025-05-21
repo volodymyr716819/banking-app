@@ -3,7 +3,6 @@ package com.bankapp.dto;
 import java.math.BigDecimal;
 
 import com.bankapp.model.Account;
-import com.bankapp.util.IbanGenerator;
 
 public class AccountDTO {
     public Long id;

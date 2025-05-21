@@ -7,7 +7,6 @@ import com.bankapp.model.CardDetails;
 import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.AtmOperationRepository;
 import com.bankapp.repository.CardDetailsRepository;
-import com.bankapp.repository.TransactionRepository;
 import com.bankapp.util.PinHashUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,9 +25,6 @@ public class AtmOperationController {
 
     @Autowired
     private AtmOperationRepository atmOperationRepository;
-    
-    @Autowired
-    private TransactionRepository transactionRepository;
     
     @Autowired
     private CardDetailsRepository cardDetailsRepository;

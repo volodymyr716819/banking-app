@@ -42,7 +42,7 @@ const message = ref('');
 
 const fetchPendingUsers = async () => {
     try {
-        const res = await axios.get('http://localhost:8080/api/users/pending', {
+        const res = await axios.get('http://localhost:8080/api/users/pending', { // move to .env
             headers: {
                 Authorization: `Bearer ${auth.token}`
             }

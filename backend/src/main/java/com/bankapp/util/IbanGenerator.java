@@ -66,7 +66,6 @@ public class IbanGenerator {
             String bankAndAccount = iban.substring(4);
             
             // Recalculate checksum for validation
-            String rearranged = bankAndAccount + countryCode + "00";
             int calculatedChecksum = calculateChecksum(countryCode + "00" + bankAndAccount);
             int providedChecksum;
             
