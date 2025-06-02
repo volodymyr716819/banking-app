@@ -50,13 +50,7 @@
                     </div>
                 </div>
 
-                <div class="form-group remember-group">
-                    <label class="remember-label">
-                        <input type="checkbox" v-model="rememberMe" />
-                        <span>Remember me</span>
-                    </label>
-                </div>
-
+              
                 <div class="error-container" v-if="errorMessage">
                     <div class="error-message">
                         <span class="material-icons error-icon">error_outline</span>
@@ -126,13 +120,7 @@ async function handleLogin() {
     try {
         await authStore.login(email.value, password.value)
         
-        // If remember me is checked, we could set a longer token expiry
-        // or store the email in localStorage for convenience
-        if (rememberMe.value) {
-            localStorage.setItem('rememberedEmail', email.value)
-        } else {
-            localStorage.removeItem('rememberedEmail')
-        }
+       
         
         router.push('/dashboard')
     } catch (err) {
