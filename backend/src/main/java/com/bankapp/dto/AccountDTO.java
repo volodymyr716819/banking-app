@@ -11,6 +11,9 @@ public class AccountDTO {
     public BigDecimal dailyLimit;
     public BigDecimal absoluteLimit;
     public Long userId;
+    public String iban;
+    public String formattedIban;
+    public String ownerName;
 
     public AccountDTO(Account account) {
         this.id = account.getId();
@@ -19,5 +22,8 @@ public class AccountDTO {
         this.dailyLimit = account.getDailyLimit();
         this.absoluteLimit = account.getAbsoluteLimit();
         this.userId = account.getUser().getId();
+        this.iban = account.getIban();
+        this.formattedIban = account.getFormattedIban();
+        this.ownerName = account.getUser().getName();
     }
 }
