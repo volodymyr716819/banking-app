@@ -78,7 +78,7 @@ public class AtmOperationController {
     }
 
     private ResponseEntity<?> verifyPin(AtmRequest atmRequest) {
-        if (atmRequest.getPin() == null) {
+        if (atmRequest.getPin() == null || atmRequest.getPin().isEmpty()) {
             return ResponseEntity.badRequest().body("PIN is required");
         }
         
