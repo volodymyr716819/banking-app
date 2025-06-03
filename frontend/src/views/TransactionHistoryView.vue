@@ -1,7 +1,5 @@
 <template>
   <div class="transaction-history">
-    
-
     <div class="filters-container">
       <div class="filter-section">
         <label>Transaction Type:</label>
@@ -17,15 +15,22 @@
         <label>Account:</label>
         <select v-model="filterAccount">
           <option value="">All Accounts</option>
-          <option v-for="account in accounts" :key="account.id" :value="account.iban">
-            {{ account.type.charAt(0) + account.type.slice(1).toLowerCase() }} - {{ formatIban(account.iban) }}
+          <option
+            v-for="account in accounts"
+            :key="account.id"
+            :value="account.iban"
+          >
+            {{ account.type.charAt(0) + account.type.slice(1).toLowerCase() }} -
+            {{ formatIban(account.iban) }}
           </option>
         </select>
       </div>
 
-      <button v-if="selectedTransactionType || filterAccount" 
-              @click="clearFilters" 
-              class="clear-filters-button">
+      <button
+        v-if="selectedTransactionType || filterAccount"
+        @click="clearFilters"
+        class="clear-filters-button"
+      >
         Clear Filters
       </button>
     </div>
@@ -44,16 +49,24 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(tx, index) in getFilteredTransactions()" :key="index" 
-            :class="getTransactionTypeClass(tx.transactionType)">
+        <tr
+          v-for="(tx, index) in getFilteredTransactions()"
+          :key="index"
+          :class="getTransactionTypeClass(tx.transactionType)"
+        >
           <td>
-            <span class="transaction-type-badge" :class="`transaction-type-${tx.transactionType.toLowerCase()}`">
+            <span
+              class="transaction-type-badge"
+              :class="`transaction-type-${tx.transactionType.toLowerCase()}`"
+            >
               {{ formatTransactionType(tx.transactionType) }}
             </span>
           </td>
           <td>
             <div v-if="tx.fromAccountIban">
-              <div class="account-iban">{{ formatIban(tx.fromAccountIban) }}</div>
+              <div class="account-iban">
+                {{ formatIban(tx.fromAccountIban) }}
+              </div>
               <div class="account-holder">{{ tx.fromAccountHolderName }}</div>
             </div>
             <span v-else>-</span>
@@ -67,7 +80,7 @@
           </td>
           <td class="amount">{{ formatAmount(tx.amount) }}</td>
           <td>{{ formatDate(tx.timestamp) }}</td>
-          <td>{{ tx.description || '-' }}</td>
+          <td>{{ tx.description || "-" }}</td>
         </tr>
       </tbody>
     </table>
@@ -77,62 +90,70 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from '../store/auth'
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import { useAuthStore } from "../store/auth";
 
 export default {
   setup() {
-    const auth = useAuthStore()
-    const transactions = ref([])
-    const selectedTransactionType = ref('')
-    const message = ref('')
-    const accounts = ref([])
-    const filterAccount = ref('')
+    const auth = useAuthStore();
+    const transactions = ref([]);
+    const selectedTransactionType = ref("");
+    const message = ref("");
+    const accounts = ref([]);
+    const filterAccount = ref("");
 
     const fetchTransactions = async () => {
       if (!auth.user || !auth.user.id) {
-        message.value = 'User information not available. Please log in again.';
+        message.value = "User information not available. Please log in again.";
         return;
       }
-      
-      message.value = 'Loading transactions...';
-      
+
+      message.value = "Loading transactions...";
+
       try {
-        const response = await axios.get(`http://localhost:8080/api/transactions/user/${auth.user.id}`, {
-          headers: {
-            Authorization: `Bearer ${auth.token}`
+        const response = await axios.get(
+          `http://localhost:8080/api/transactions/user/${auth.user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
           }
-        });
-        
+        );
+
         if (response.data && Array.isArray(response.data)) {
           transactions.value = response.data;
-          message.value = transactions.value.length > 0 ? '' : 'No transactions found.';
+          message.value =
+            transactions.value.length > 0 ? "" : "No transactions found.";
         } else {
-          message.value = 'Invalid response format.';
+          message.value = "Invalid response format.";
           transactions.value = [];
         }
       } catch (error) {
-        console.error('Transaction fetch error:', error);
-        
+        console.error("Transaction fetch error:", error);
+
         if (error.response) {
           // Server returned error code
           if (error.response.status === 403) {
-            message.value = 'Access denied. You may not have permission to view these transactions.';
+            message.value =
+              "Access denied. You may not have permission to view these transactions.";
           } else {
-            message.value = `Error: ${error.response.data || 'Failed to load transactions'}`;
+            message.value = `Error: ${
+              error.response.data || "Failed to load transactions"
+            }`;
           }
         } else if (error.request) {
           // Request made but no response
-          message.value = 'Unable to reach the server. Please check your connection.';
+          message.value =
+            "Unable to reach the server. Please check your connection.";
         } else {
           // Request setup error
-          message.value = 'Failed to load transactions.';
+          message.value = "Failed to load transactions.";
         }
-        
+
         transactions.value = [];
       }
-    }
+    };
 
     const fetchUserAccounts = async () => {
       try {
@@ -140,84 +161,85 @@ export default {
           `http://localhost:8080/api/accounts/user/${auth.user.id}`,
           {
             headers: {
-              Authorization: `Bearer ${auth.token}`
-            }
+              Authorization: `Bearer ${auth.token}`,
+            },
           }
-        )
-        accounts.value = response.data
+        );
+        accounts.value = response.data;
       } catch (error) {
-        console.error('Failed to fetch accounts:', error)
+        console.error("Failed to fetch accounts:", error);
       }
-    }
+    };
 
     onMounted(() => {
-      fetchTransactions()
-      fetchUserAccounts()
-    })
+      fetchTransactions();
+      fetchUserAccounts();
+    });
 
     const clearFilters = () => {
-      selectedTransactionType.value = ''
-      filterAccount.value = ''
-    }
+      selectedTransactionType.value = "";
+      filterAccount.value = "";
+    };
 
     const getFilteredTransactions = () => {
-      let result = transactions.value
+      let result = transactions.value;
 
       // Filter by transaction type if selected
       if (selectedTransactionType.value) {
-        result = result.filter(tx => 
-          tx.transactionType === selectedTransactionType.value
-        )
+        result = result.filter(
+          (tx) => tx.transactionType === selectedTransactionType.value
+        );
       }
 
       // Filter by account if selected
       if (filterAccount.value) {
-        result = result.filter(tx => 
-          tx.fromAccountIban === filterAccount.value || 
-          tx.toAccountIban === filterAccount.value
-        )
+        result = result.filter(
+          (tx) =>
+            tx.fromAccountIban === filterAccount.value ||
+            tx.toAccountIban === filterAccount.value
+        );
       }
 
-      return result
-    }
+      return result;
+    };
 
     const formatAmount = (amount) => {
-      return '€' + Number(amount).toFixed(2)
-    }
+      return "€" + Number(amount).toFixed(2);
+    };
 
     const formatDate = (timestamp) => {
-      const date = new Date(timestamp)
+      const date = new Date(timestamp);
       // Format: 'Jan 01, 2025 14:30'
-      return new Intl.DateTimeFormat('en-GB', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date)
-    }
-    
+      return new Intl.DateTimeFormat("en-GB", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(date);
+    };
+
     const formatIban = (iban) => {
-      // Format IBAN with spaces for readability: NL12 BANK 0123 4567 89
-      return iban.replace(/(.{4})/g, '$1 ').trim()
-    }
-    
+      if (!iban) return ""; // handle null / undefined
+      return iban.replace(/(.{4})/g, "$1 ").trim();
+    };
+
     const formatTransactionType = (type) => {
-      switch(type) {
-        case 'TRANSFER': 
-          return 'Transfer'
-        case 'DEPOSIT': 
-          return 'Deposit'
-        case 'WITHDRAW': 
-          return 'Withdrawal'
-        default: 
-          return type
+      switch (type) {
+        case "TRANSFER":
+          return "Transfer";
+        case "DEPOSIT":
+          return "Deposit";
+        case "WITHDRAW":
+          return "Withdrawal";
+        default:
+          return type;
       }
-    }
-    
+    };
+
     const getTransactionTypeClass = (type) => {
-      return `transaction-${type.toLowerCase()}`
-    }
+      return `transaction-${type.toLowerCase()}`;
+    };
 
     return {
       selectedTransactionType,
@@ -231,10 +253,10 @@ export default {
       getTransactionTypeClass,
       accounts,
       filterAccount,
-      clearFilters
-    }
-  }
-}
+      clearFilters,
+    };
+  },
+};
 </script>
 
 <style scoped>
@@ -280,7 +302,8 @@ h1 {
   min-width: 180px;
   font-size: var(--font-size-sm);
   background-color: var(--white);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .filter-section select:focus {
@@ -413,15 +436,15 @@ h1 {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .filter-section {
     width: 100%;
   }
-  
+
   .filter-section select {
     flex-grow: 1;
   }
-  
+
   .clear-filters-button {
     align-self: flex-end;
   }
