@@ -9,35 +9,48 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.bankapp.model.User;
+import com.bankapp.model.enums.RegistrationStatus;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+
+    /* unchanged  */
     Optional<User> findByEmail(String email);
 
-    List<User> findByApprovedFalse();
+    /* ---------- status-based look-ups ---------- */
+    List<User> findByRegistrationStatus(RegistrationStatus registrationStatus);
 
-    List<User> findByRoleIgnoreCase(String role);
+    List<User> findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus registrationStatus,
+                                                         String role);
 
-    List<User> findByApprovedTrue();
-    
-    List<User> findByNameContainingIgnoreCaseAndApprovedTrueAndRoleIgnoreCase(String name, String role);
-    
-    List<User> findByEmailContainingIgnoreCaseAndApprovedTrueAndRoleIgnoreCase(String email, String role);
-    
-    // Unified search method for a single term
-    @Query("SELECT u FROM User u WHERE " +
-           "(LOWER(u.name) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
-           "LOWER(u.email) LIKE LOWER(CONCAT('%', :term, '%'))) AND " +
-           "u.approved = true AND LOWER(u.role) = LOWER('customer')")
-    List<User> findCustomersBySearchTerm(@Param("term") String term);
-    
-    // Find users by a combination of name and/or email
-    @Query("SELECT u FROM User u WHERE " +
-           "(:name IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
-           "(:email IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%'))) AND " +
-           "u.approved = true AND LOWER(u.role) = LOWER(:role)")
-    List<User> findByNameAndEmailAndRole(
-            @Param("name") String name,
-            @Param("email") String email,
-            @Param("role") String role);
+    List<User> findByNameContainingIgnoreCaseAndRegistrationStatusAndRoleIgnoreCase(
+            String name,
+            RegistrationStatus registrationStatus,
+            String role);
+
+    List<User> findByEmailContainingIgnoreCaseAndRegistrationStatusAndRoleIgnoreCase(
+            String email,
+            RegistrationStatus registrationStatus,
+            String role);
+
+    /* ---------- search helpers for approved customers ---------- */
+    @Query("""
+           SELECT u FROM User u
+           WHERE (LOWER(u.name)  LIKE LOWER(CONCAT('%', :term, '%'))
+               OR LOWER(u.email) LIKE LOWER(CONCAT('%', :term, '%')))
+             AND u.registrationStatus = com.bankapp.model.enums.RegistrationStatus.APPROVED
+             AND LOWER(u.role) = LOWER('customer')
+           """)
+    List<User> findApprovedCustomersBySearchTerm(@Param("term") String term);
+
+    @Query("""
+           SELECT u FROM User u
+           WHERE (:name  IS NULL OR LOWER(u.name)  LIKE LOWER(CONCAT('%', :name,  '%')))
+             AND (:email IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%')))
+             AND u.registrationStatus = com.bankapp.model.enums.RegistrationStatus.APPROVED
+             AND LOWER(u.role) = LOWER(:role)
+           """)
+    List<User> searchApprovedByNameEmailAndRole(@Param("name")  String name,
+                                                @Param("email") String email,
+                                                @Param("role")  String role);
 }
