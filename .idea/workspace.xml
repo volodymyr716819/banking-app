@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="192eec08-f7d8-48fd-8d68-83bcf7c5a62a" name="Changes" comment="comment">
-      <change beforePath="$PROJECT_DIR$/backend/src/test/resources/features/customer_approval.feature" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/test/resources/features/customer_approval.feature" afterDir="false" />
+    <list default="true" id="192eec08-f7d8-48fd-8d68-83bcf7c5a62a" name="Changes" comment="comments">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/resources/features/account_transfers.feature" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/test/resources/features/account_transfers.feature" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,75 +41,39 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Cucumber Java.Feature: account_transfers.executor&quot;: &quot;Run&quot;,
-    &quot;Cucumber Java.Feature: customer_approval.executor&quot;: &quot;Run&quot;,
-    &quot;Cucumber Java.Feature: user_registration_flow.executor&quot;: &quot;Run&quot;,
-    &quot;Cucumber Java.Feature: view_transaction_history.executor&quot;: &quot;Run&quot;,
-    &quot;Cucumber Java.Scenario: Successful transfer between accounts.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.AccountControllerTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.AccountCreationTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.ApplicationContextTest.contextLoads.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.ApplicationContextTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.AtmDepositTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.AtmOperationControllerTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.AuthControllerTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.CucumberRunner.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.TransferLogicTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.UserControllerTest.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;development&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cucumber Java.Feature: account_transfers.executor": "Run",
+    "Cucumber Java.Feature: customer_approval.executor": "Run",
+    "Cucumber Java.Feature: user_registration_flow.executor": "Run",
+    "Cucumber Java.Feature: view_transaction_history.executor": "Run",
+    "Cucumber Java.Scenario: Employee approves a customer.executor": "Run",
+    "Cucumber Java.Scenario: Successful customer registration.executor": "Run",
+    "Cucumber Java.Scenario: Successful transfer between accounts.executor": "Run",
+    "Cucumber Java.Scenario: Transfer with insufficient funds.executor": "Run",
+    "JUnit.AccountControllerTest.executor": "Run",
+    "JUnit.AccountCreationTest.executor": "Run",
+    "JUnit.ApplicationContextTest.contextLoads.executor": "Run",
+    "JUnit.ApplicationContextTest.executor": "Run",
+    "JUnit.AtmDepositTest.executor": "Run",
+    "JUnit.AtmOperationControllerTest.executor": "Run",
+    "JUnit.AuthControllerTest.executor": "Run",
+    "JUnit.CucumberRunner.executor": "Run",
+    "JUnit.TransferLogicTest.executor": "Run",
+    "JUnit.UserControllerTest.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "development"
   }
-}</component>
-  <component name="RunManager" selected="Cucumber Java.Scenario: Successful customer registration">
-    <configuration name="Feature: customer_approval" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
+}]]></component>
+  <component name="RunManager" selected="Cucumber Java.Scenario: Transfer with insufficient funds">
+    <configuration name="Feature: account_transfers" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
       <option name="CUCUMBER_CORE_VERSION" value="5" />
-      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/customer_approval.feature" />
-      <option name="GLUE" value="com.bankapp.cucumber" />
+      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/account_transfers.feature" />
       <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
       <module name="banking-backend" />
       <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter" />
-      <option name="SUGGESTED_NAME" value="Feature: customer_approval" />
-      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="io.cucumber.core.cli.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Feature: user_registration_flow" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
-      <option name="CUCUMBER_CORE_VERSION" value="5" />
-      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/user_registration_flow.feature" />
-      <option name="GLUE" value="com.bankapp.cucumber" />
-      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
-      <module name="banking-backend" />
-      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter" />
-      <option name="SUGGESTED_NAME" value="Feature: user_registration_flow" />
-      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="io.cucumber.core.cli.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Feature: view_transaction_history" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
-      <option name="CUCUMBER_CORE_VERSION" value="5" />
-      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/view_transaction_history.feature" />
-      <option name="GLUE" value="com.bankapp.cucumber" />
-      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
-      <module name="banking-backend" />
-      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter" />
-      <option name="SUGGESTED_NAME" value="Feature: view_transaction_history" />
+      <option name="SUGGESTED_NAME" value="Feature: account_transfers" />
       <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
       <extension name="coverage">
         <pattern>
@@ -158,13 +123,51 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Scenario: Successful transfer between accounts" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
+      <option name="CUCUMBER_CORE_VERSION" value="5" />
+      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/account_transfers.feature" />
+      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
+      <module name="banking-backend" />
+      <option name="NAME_FILTER" value="^Successful transfer between accounts$" />
+      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter --name &quot;^Successful transfer between accounts$&quot;" />
+      <option name="SUGGESTED_NAME" value="Scenario: Successful transfer between accounts" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.cucumber.core.cli.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Scenario: Transfer with insufficient funds" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
+      <option name="CUCUMBER_CORE_VERSION" value="5" />
+      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/account_transfers.feature" />
+      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
+      <module name="banking-backend" />
+      <option name="NAME_FILTER" value="^Transfer with insufficient funds$" />
+      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter --name &quot;^Transfer with insufficient funds$&quot;" />
+      <option name="SUGGESTED_NAME" value="Scenario: Transfer with insufficient funds" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.cucumber.core.cli.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Cucumber Java.Scenario: Transfer with insufficient funds" />
+        <item itemvalue="Cucumber Java.Scenario: Successful transfer between accounts" />
+        <item itemvalue="Cucumber Java.Feature: account_transfers" />
         <item itemvalue="Cucumber Java.Scenario: Successful customer registration" />
         <item itemvalue="Cucumber Java.Scenario: Employee approves a customer" />
-        <item itemvalue="Cucumber Java.Feature: customer_approval" />
-        <item itemvalue="Cucumber Java.Feature: user_registration_flow" />
-        <item itemvalue="Cucumber Java.Feature: view_transaction_history" />
       </list>
     </recent_temporary>
   </component>
@@ -184,11 +187,20 @@
       <option name="project" value="LOCAL" />
       <updated>1748935735165</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="comments">
+      <option name="closed" value="true" />
+      <created>1748946243292</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1748946243292</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="comment" />
-    <option name="LAST_COMMIT_MESSAGE" value="comment" />
+    <MESSAGE value="comments" />
+    <option name="LAST_COMMIT_MESSAGE" value="comments" />
   </component>
 </project>
