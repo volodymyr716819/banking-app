@@ -120,8 +120,6 @@ public class UserController {
     }
 
     @GetMapping("/find-by-email")
-
-    @GetMapping("/find-by-email")
     public ResponseEntity<?> searchUsersByEmail(@RequestParam String email, Authentication authentication) {
         return searchUsers(null, null, email, null, authentication);
     }
