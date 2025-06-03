@@ -1,6 +1,6 @@
 # Banking Application Test Suite
 
-This comprehensive test suite provides 90%+ code coverage for the Spring Boot banking application using JUnit 5, MockMvc, Cucumber, and various testing best practices.
+This comprehensive test suite provides 90%+ code coverage for the Spring Boot banking application using JUnit 5, Cucumber.
 
 ## Test Structure
 
