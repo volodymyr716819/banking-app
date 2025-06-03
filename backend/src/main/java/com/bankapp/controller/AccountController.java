@@ -11,14 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import com.bankapp.dto.AccountDTO;
 import com.bankapp.dto.UpdateLimitsRequest;
@@ -38,6 +31,20 @@ public class AccountController {
     private UserRepository userRepository;
 
     private static final List<String> VALID_TYPES = Arrays.asList("CHECKING", "SAVINGS");
+
+    // Helper mapper method to convert Account entity to DTO
+    private AccountDTO mapToDTO(Account account) {
+        AccountDTO dto = new AccountDTO();
+        dto.setId(account.getId());
+        dto.setUserId(account.getUser().getId());
+        dto.setType(account.getType());
+        dto.setBalance(account.getBalance());
+        dto.setApproved(account.isApproved());
+        dto.setClosed(account.isClosed());
+        dto.setDailyLimit(account.getDailyLimit());
+        dto.setAbsoluteLimit(account.getAbsoluteLimit());
+        return dto;
+    }
 
     @PostMapping("/create")
     public ResponseEntity<?> createAccount(@RequestParam Long userId, @RequestParam String type) {
@@ -67,14 +74,17 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
         }
 
-        return ResponseEntity.ok(
-                accountRepository.findByUserId(userId).stream()
-                        .filter(a -> !a.isClosed())
-                        .toList());
+        List<AccountDTO> accounts = accountRepository.findByUserId(userId).stream()
+                .filter(a -> !a.isClosed())
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(accounts);
     }
 
     @PutMapping("/{accountId}")
-    public ResponseEntity<?> updateAccount(@PathVariable Long accountId, @RequestParam(required = false) String type,
+    public ResponseEntity<?> updateAccount(@PathVariable Long accountId,
+            @RequestParam(required = false) String type,
             @RequestParam(required = false) Boolean approved) {
         Optional<Account> accOpt = accountRepository.findById(accountId);
         if (accOpt.isEmpty())
@@ -117,7 +127,10 @@ public class AccountController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
             }
 
-            List<Account> pending = accountRepository.findByApprovedFalse();
+            List<AccountDTO> pending = accountRepository.findByApprovedFalse().stream()
+                    .map(this::mapToDTO)
+                    .collect(Collectors.toList());
+
             return ResponseEntity.ok(pending);
         } catch (Exception e) {
             e.printStackTrace();
@@ -148,7 +161,7 @@ public class AccountController {
     public ResponseEntity<List<AccountDTO>> getApprovedAccounts() {
         List<AccountDTO> accounts = accountRepository.findByApprovedTrue().stream()
                 .filter(account -> !account.isClosed())
-                .map(AccountDTO::new)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(accounts);

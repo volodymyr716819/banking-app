@@ -32,25 +32,21 @@ public class TransactionController {
 
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private AccountRepository accountRepository;
 
     @PostMapping("/transfer")
     public ResponseEntity<?> transferMoney(@RequestBody TransferRequest transferRequest) {
         try {
-            // Check if we're using IBAN or account ID based transfer
             if ((transferRequest.getSenderIban() != null && !transferRequest.getSenderIban().isEmpty()) &&
                 (transferRequest.getReceiverIban() != null && !transferRequest.getReceiverIban().isEmpty())) {
-                
-                // IBAN-based transfer
                 transactionService.transferMoneyByIban(
                         transferRequest.getSenderIban(),
                         transferRequest.getReceiverIban(),
                         transferRequest.getAmount(),
                         transferRequest.getDescription());
             } else {
-                // Traditional account ID based transfer
                 transactionService.transferMoney(
                         transferRequest.getSenderAccountId(),
                         transferRequest.getReceiverAccountId(),
@@ -59,10 +55,8 @@ public class TransactionController {
             }
             return ResponseEntity.ok("Transfer completed successfully");
         } catch (IllegalArgumentException e) {
-            // This will catch validation errors from the service layer
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            // This will catch any other unexpected errors
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("An error occurred during the transfer: " + e.getMessage());
         }
@@ -71,37 +65,38 @@ public class TransactionController {
     @GetMapping("/account/{accountId}")
     public ResponseEntity<?> getTransactionHistory(@PathVariable Long accountId) {
         try {
-            return ResponseEntity.ok(transactionService.getAccountTransactionHistory(accountId));
+            List<TransactionHistoryDTO> transactions = transactionService.getAccountTransactionHistory(accountId);
+            return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error retrieving transaction history: " + e.getMessage());
         }
     }
-    
+
     @GetMapping("/account")
     public ResponseEntity<?> getTransactionHistoryByIban(@RequestParam String iban, Authentication authentication) {
         try {
-            // Check authorization
             Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
             }
-            
+
             User user = userOpt.get();
             Optional<Account> accountOpt = accountRepository.findByIban(iban);
-            
+
             if (accountOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
             }
-            
+
             Account account = accountOpt.get();
-            
-            // Only account owner or employees can view transactions
+
             if (!account.getUser().getId().equals(user.getId()) && !user.getRole().equalsIgnoreCase("EMPLOYEE")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
             }
-            
-            return ResponseEntity.ok(transactionService.getAccountTransactionHistoryByIban(iban));
+
+            List<TransactionHistoryDTO> transactions = transactionService.getAccountTransactionHistoryByIban(iban);
+            return ResponseEntity.ok(transactions);
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
@@ -121,15 +116,12 @@ public class TransactionController {
 
             User authUser = authUserOpt.get();
 
-            // Only allow the user to view their own transactions, or employee role
             if (!authUser.getId().equals(userId) && !authUser.getRole().equalsIgnoreCase("EMPLOYEE")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
             }
 
-            // Use the enhanced transaction history method that includes ATM operations
-            List<TransactionHistoryDTO> transactionHistory = transactionService.getUserTransactionHistory(userId);
-
-            return ResponseEntity.ok(transactionHistory);
+            List<TransactionHistoryDTO> transactions = transactionService.getUserTransactionHistory(userId);
+            return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error retrieving user transactions: " + e.getMessage());
