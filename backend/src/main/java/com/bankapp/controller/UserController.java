@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bankapp.dto.UserDTO;
 import com.bankapp.dto.UserSearchResultDTO;
 import com.bankapp.model.Account;
 import com.bankapp.model.User;
@@ -36,21 +37,43 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+
     @Autowired
     private AccountRepository accountRepository;
+
+    private UserDTO mapToDTO(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        dto.setApproved(user.isApproved());
+        return dto;
+    }
+
+    private String generateIban(Account account) {
+        String countryCode = "NL";
+        String bankCode = "BANK";
+        String paddedId = String.format("%010d", account.getId());
+        return countryCode + bankCode + paddedId;
+    }
 
     @Autowired
     private UserService userService;
 
     @GetMapping
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         Optional<User> userOpt = userRepository.findById(id);
-        return userOpt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return userOpt.map(user -> ResponseEntity.ok(mapToDTO(user)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
@@ -62,7 +85,6 @@ public class UserController {
         return ResponseEntity.ok("User deleted.");
     }
 
-    // Get list of users who were not yet approved
     @GetMapping("/pending")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public List<User> getPendingUsers() {
@@ -83,7 +105,6 @@ public class UserController {
         return ResponseEntity.ok("User approved successfully.");
     }
 
-    // Get list of users who are approved
     @GetMapping("/approved")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public List<User> getApprovedCustomers() {
@@ -95,13 +116,13 @@ public class UserController {
      */
     @GetMapping("/find-by-name")
     public ResponseEntity<?> searchUsersByName(@RequestParam String name, Authentication authentication) {
-        // Delegate to unified search endpoint
         return searchUsers(name, null, null, null, authentication);
     }
 
     @GetMapping("/find-by-email")
+
+    @GetMapping("/find-by-email")
     public ResponseEntity<?> searchUsersByEmail(@RequestParam String email, Authentication authentication) {
-        // Delegate to unified search endpoint
         return searchUsers(null, null, email, null, authentication);
     }
 
@@ -159,6 +180,7 @@ public class UserController {
                         String accountIdPart = cleanTerm.substring("NLBANK".length());
                         Long accountId = Long.parseLong(accountIdPart);
 
+
                         Optional<Account> account = accountRepository.findById(accountId);
                         if (account.isPresent() && account.get().isApproved() && !account.get().isClosed()) {
                             User accountOwner = account.get().getUser();
@@ -167,14 +189,24 @@ public class UserController {
                             }
                         }
                     } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                        // Invalid IBAN format, return empty result
+                        // invalid IBAN format
                     }
                 }
             }
 
+
             List<UserSearchResultDTO> results = matchingUsers.stream()
-                    .map(user -> new UserSearchResultDTO(user, accountRepository.findByUserId(user.getId())))
+                    .map(user -> {
+                        List<Account> accounts = accountRepository.findByUserId(user.getId());
+                        List<String> ibans = accounts.stream()
+                                .filter(Account::isApproved)
+                                .filter(account -> !account.isClosed())
+                                .map(this::generateIban)
+                                .collect(Collectors.toList());
+                        return new UserSearchResultDTO(user.getId(), user.getName(), ibans);
+                    })
                     .collect(Collectors.toList());
+
 
             return ResponseEntity.ok(results);
         }
@@ -187,11 +219,11 @@ public class UserController {
             return ResponseEntity.badRequest().body("At least one search parameter is required");
         }
 
+
         List<User> matchingUsers = new ArrayList<>();
 
         // If IBAN is provided, search by IBAN
         if (iban != null && !iban.trim().isEmpty()) {
-            // Clean the IBAN by removing spaces
             String cleanIban = iban.replaceAll("\\s+", "");
 
             // Extract the numeric part (account ID) from the IBAN format
@@ -209,7 +241,7 @@ public class UserController {
                         }
                     }
                 } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                    // Invalid IBAN format, just continue with an empty result for IBAN search
+                    // invalid IBAN format
                 }
             }
         } else {
@@ -222,8 +254,17 @@ public class UserController {
 
         // Convert to DTOs with IBANs
         List<UserSearchResultDTO> results = matchingUsers.stream()
-                .map(user -> new UserSearchResultDTO(user, accountRepository.findByUserId(user.getId())))
+                .map(user -> {
+                    List<Account> accounts = accountRepository.findByUserId(user.getId());
+                    List<String> ibans = accounts.stream()
+                            .filter(Account::isApproved)
+                            .filter(account -> !account.isClosed())
+                            .map(this::generateIban)
+                            .collect(Collectors.toList());
+                    return new UserSearchResultDTO(user.getId(), user.getName(), ibans);
+                })
                 .collect(Collectors.toList());
+
 
         return ResponseEntity.ok(results);
     }
