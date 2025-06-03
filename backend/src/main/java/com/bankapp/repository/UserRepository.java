@@ -20,10 +20,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByApprovedTrue();
     
-    List<User> findByNameContainingIgnoreCaseAndApprovedTrueAndRoleIgnoreCase(String name, String role);
-    
-    List<User> findByEmailContainingIgnoreCaseAndApprovedTrueAndRoleIgnoreCase(String email, String role);
-    
+
     // Unified search method for a single term
     @Query("SELECT u FROM User u WHERE " +
            "(LOWER(u.name) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
