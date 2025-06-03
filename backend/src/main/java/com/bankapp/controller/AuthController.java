@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bankapp.model.User;
 import com.bankapp.model.enums.RegistrationStatus;
-import com.bankapp.repository.UserRepository;
+import com.bankapp.service.UserService;
 import com.bankapp.security.JwtUtil;
 
 @RestController
@@ -33,33 +33,28 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // Handles login requests by authenticating credentials and returning JWT
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                
+                Optional<User> userOpt = userService.validateLogin(request);
+                if (userOpt.isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
+                }
 
-            Optional<User> found = userRepository.findByEmail(request.getEmail());
-            if (found.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
-            }
-
-            User user = found.get();
-
-            if (!user.isApproved()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                        "message", "Your account is pending approval by an employee."));
-            }
-
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String jwt = jwtUtil.generateToken(userDetails);
-
-            return ResponseEntity.ok(Map.of(
+                User user = userOpt.get();
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+                String jwt = jwtUtil.generateToken(userDetails);
+                
+                return ResponseEntity.ok(Map.of(
                     "token", jwt,
                     "id", user.getId(),
                     "email", user.getEmail(),
@@ -67,57 +62,39 @@ public class AuthController {
                     "role", user.getRole()));
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "message", "Invalid email or password."));
+           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password."));
         }
     }
 
+    // Registers a new user if email is not already taken
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "message", "Email is already registered."));
+        try {
+            userService.registerUser(user);
+            return ResponseEntity.ok(Map.of("message", "Registration successful. Your account is pending approval."));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
         }
-
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole("customer");
-        user.setRegistrationStatus(RegistrationStatus.PENDING); 
-        userRepository.save(user);
-
-        return ResponseEntity.ok(Map.of(
-                "message", "Registration successful. Your account is pending approval."));
     }
-    
+
+    // Validates the token and user status for authenticated sessions
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken(Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated()) {
-            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
-            
+        try {
+            Optional<User> userOpt = userService.validateAuthentication(authentication);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                        "valid", false, 
-                        "message", "User not found"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("valid", false, "message", "Invalid or expired token"));
             }
-            
+
             User user = userOpt.get();
-            
-            if (!user.isApproved()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                        "valid", false,
-                        "message", "Account is pending approval"));
-            }
-            
             return ResponseEntity.ok(Map.of(
                     "valid", true,
                     "id", user.getId(),
                     "email", user.getEmail(),
                     "name", user.getName(),
                     "role", user.getRole()));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("valid", false, "message", ex.getMessage()));
         }
-        
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                "valid", false,
-                "message", "Invalid or expired token"));
     }
 }

@@ -15,6 +15,7 @@ import com.bankapp.dto.TransactionHistoryDTO;
 import com.bankapp.model.Account;
 import com.bankapp.model.AtmOperation;
 import com.bankapp.model.Transaction;
+import com.bankapp.model.User;
 import com.bankapp.model.Transaction.TransactionType;
 import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.AtmOperationRepository;
@@ -172,5 +173,25 @@ public class TransactionService {
         }
 
         transferMoney(senderOpt.get().getId(), receiverOpt.get().getId(), amount, description);
+    }
+
+    public List<TransactionHistoryDTO> getTransactionHistoryByIbanWithAuth(String iban, User requester) {
+        Account account = accountRepository.findByIban(iban)
+        .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        if (!account.getUser().getId().equals(requester.getId()) &&
+           !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
+           throw new IllegalArgumentException("Access denied");
+        }
+
+         return getAccountTransactionHistory(account.getId());
+        }
+
+    public List<TransactionHistoryDTO> getTransactionsByUserWithAuth(Long userId, User requester) {
+        if (!requester.getId().equals(userId) && !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
+            throw new IllegalArgumentException("Access denied");
+        }
+
+        return getUserTransactionHistory(userId);
     }
 }

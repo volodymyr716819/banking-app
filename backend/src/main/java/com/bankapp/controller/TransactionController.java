@@ -36,6 +36,11 @@ public class TransactionController {
     @Autowired
     private AccountRepository accountRepository;
 
+    // method for authentication
+    private Optional<User> getAuthenticatedUser(Authentication auth) {
+        return userRepository.findByEmail(auth.getName());
+    }  
+
     @PostMapping("/transfer")
     public ResponseEntity<?> transferMoney(@RequestBody TransferRequest transferRequest) {
         try {
@@ -76,55 +81,42 @@ public class TransactionController {
     @GetMapping("/account")
     public ResponseEntity<?> getTransactionHistoryByIban(@RequestParam String iban, Authentication authentication) {
         try {
-            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+            Optional<User> userOpt = getAuthenticatedUser(authentication);
+
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
             }
 
             User user = userOpt.get();
-            Optional<Account> accountOpt = accountRepository.findByIban(iban);
-
-            if (accountOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
-            }
-
-            Account account = accountOpt.get();
-
-            if (!account.getUser().getId().equals(user.getId()) && !user.getRole().equalsIgnoreCase("EMPLOYEE")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
-            }
-
-            List<TransactionHistoryDTO> transactions = transactionService.getAccountTransactionHistoryByIban(iban);
+            List<TransactionHistoryDTO> transactions = transactionService.getTransactionHistoryByIbanWithAuth(iban, user);
             return ResponseEntity.ok(transactions);
 
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error retrieving transaction history: " + e.getMessage());
+              .body("Error retrieving transaction history: " + e.getMessage());
         }
     }
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getTransactionsByUser(@PathVariable Long userId, Authentication authentication) {
         try {
-            Optional<User> authUserOpt = userRepository.findByEmail(authentication.getName());
+            Optional<User> userOpt = getAuthenticatedUser(authentication);
 
-            if (authUserOpt.isEmpty()) {
+            if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
             }
 
-            User authUser = authUserOpt.get();
-
-            if (!authUser.getId().equals(userId) && !authUser.getRole().equalsIgnoreCase("EMPLOYEE")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
-            }
-
-            List<TransactionHistoryDTO> transactions = transactionService.getUserTransactionHistory(userId);
+            User authUser = userOpt.get();
+            List<TransactionHistoryDTO> transactions = transactionService.getTransactionsByUserWithAuth(userId, authUser);
             return ResponseEntity.ok(transactions);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error retrieving user transactions: " + e.getMessage());
+            .body("Error retrieving user transactions: " + e.getMessage());
         }
     }
 }
