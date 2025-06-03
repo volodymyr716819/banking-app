@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bankapp.model.User;
+import com.bankapp.model.enums.RegistrationStatus;
 import com.bankapp.repository.UserRepository;
 import com.bankapp.security.JwtUtil;
 
@@ -81,7 +82,7 @@ public class AuthController {
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole("customer");
-        user.setApproved(false); 
+        user.setRegistrationStatus(RegistrationStatus.PENDING); 
         userRepository.save(user);
 
         return ResponseEntity.ok(Map.of(
