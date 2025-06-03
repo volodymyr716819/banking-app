@@ -1,36 +1,20 @@
 package com.bankapp.dto;
 
-import com.bankapp.model.Account;
-import com.bankapp.model.User;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class UserSearchResultDTO {
     private Long id;
     private String name;
     private List<String> ibans = new ArrayList<>();
 
-    public UserSearchResultDTO(User user, List<Account> accounts) {
-        this.id = user.getId();
-        this.name = user.getName();
-        if (accounts != null && !accounts.isEmpty()) {
-            this.ibans = accounts.stream()
-                    .filter(Account::isApproved)
-                    .filter(account -> !account.isClosed())
-                    .map(UserSearchResultDTO::generateIban)
-                    .collect(Collectors.toList());
-        }
+    public UserSearchResultDTO() {
     }
 
-    // Generate a pseudo-IBAN from account ID for display purposes
-    private static String generateIban(Account account) {
-        String countryCode = "NL";
-        String bankCode = "BANK";
-        String paddedId = String.format("%010d", account.getId());
-        
-        return countryCode + bankCode + paddedId;
+    public UserSearchResultDTO(Long id, String name, List<String> ibans) {
+        this.id = id;
+        this.name = name;
+        this.ibans = ibans;
     }
 
     public Long getId() {
