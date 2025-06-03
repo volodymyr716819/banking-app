@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="192eec08-f7d8-48fd-8d68-83bcf7c5a62a" name="Changes" comment="comment">
+      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/controller/AccountControllerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/controller/AtmOperationControllerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/controller/AuthControllerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/controller/TransactionControllerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/controller/UserControllerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/cucumber/AdditionalStepDefinitions.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/cucumber/BankingStepDefinitions.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/cucumber/BankingStepDefinitions.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/cucumber/BankingStepDefinitionsExtended.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/cucumber/CucumberRunner.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/cucumber/CucumberRunner.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/cucumber/TestUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/cucumber/TestUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/integration/BankingApplicationIntegrationTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/bankapp/service/TransactionServiceTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/resources/features/account_management.feature" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/resources/features/atm_operations.feature" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/resources/features/money_transfers.feature" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/resources/features/transaction_history.feature" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/resources/features/user_registration_and_approval.feature" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="development" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "Alaa-nl"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/volodymyr716819/banking-app.git",
+    "accountId": "bac7f37d-6025-4367-abdd-5c9e76948559"
+  }
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7
+}]]></component>
+  <component name="ProjectId" id="2xzHuM3RaICT799TR7UgZhZnKcz" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cucumber Java.Feature: account_transfers.executor": "Run",
+    "Cucumber Java.Feature: customer_approval.executor": "Run",
+    "Cucumber Java.Feature: user_registration_flow.executor": "Run",
+    "Cucumber Java.Feature: view_transaction_history.executor": "Run",
+    "Cucumber Java.Scenario: Successful transfer between accounts.executor": "Run",
+    "JUnit.AccountControllerTest.executor": "Run",
+    "JUnit.AccountCreationTest.executor": "Run",
+    "JUnit.ApplicationContextTest.contextLoads.executor": "Run",
+    "JUnit.ApplicationContextTest.executor": "Run",
+    "JUnit.AtmDepositTest.executor": "Run",
+    "JUnit.AtmOperationControllerTest.executor": "Run",
+    "JUnit.AuthControllerTest.executor": "Run",
+    "JUnit.CucumberRunner.executor": "Run",
+    "JUnit.TransferLogicTest.executor": "Run",
+    "JUnit.UserControllerTest.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "test-branch"
+  }
+}]]></component>
+  <component name="RunManager" selected="Cucumber Java.Feature: user_registration_flow">
+    <configuration name="Feature: account_transfers" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
+      <option name="CUCUMBER_CORE_VERSION" value="5" />
+      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/account_transfers.feature" />
+      <option name="GLUE" value="com.bankapp.cucumber" />
+      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
+      <module name="banking-backend" />
+      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter" />
+      <option name="SUGGESTED_NAME" value="Feature: account_transfers" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.cucumber.core.cli.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Feature: customer_approval" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
+      <option name="CUCUMBER_CORE_VERSION" value="5" />
+      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/customer_approval.feature" />
+      <option name="GLUE" value="com.bankapp.cucumber" />
+      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
+      <module name="banking-backend" />
+      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter" />
+      <option name="SUGGESTED_NAME" value="Feature: customer_approval" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.cucumber.core.cli.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Feature: user_registration_flow" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
+      <option name="CUCUMBER_CORE_VERSION" value="5" />
+      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/user_registration_flow.feature" />
+      <option name="GLUE" value="com.bankapp.cucumber" />
+      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
+      <module name="banking-backend" />
+      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter" />
+      <option name="SUGGESTED_NAME" value="Feature: user_registration_flow" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.cucumber.core.cli.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Feature: view_transaction_history" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
+      <option name="CUCUMBER_CORE_VERSION" value="5" />
+      <option name="FILE_PATH" value="$PROJECT_DIR$/backend/src/test/resources/features/view_transaction_history.feature" />
+      <option name="GLUE" value="com.bankapp.cucumber" />
+      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
+      <module name="banking-backend" />
+      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter" />
+      <option name="SUGGESTED_NAME" value="Feature: view_transaction_history" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.cucumber.core.cli.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="CucumberRunner" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="banking-backend" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.bankapp.cucumber.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.bankapp.cucumber" />
+      <option name="MAIN_CLASS_NAME" value="com.bankapp.cucumber.CucumberRunner" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Cucumber Java.Feature: user_registration_flow" />
+        <item itemvalue="Cucumber Java.Feature: view_transaction_history" />
+        <item itemvalue="JUnit.CucumberRunner" />
+        <item itemvalue="Cucumber Java.Feature: customer_approval" />
+        <item itemvalue="Cucumber Java.Feature: account_transfers" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="192eec08-f7d8-48fd-8d68-83bcf7c5a62a" name="Changes" comment="" />
+      <created>1748934206537</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1748934206537</updated>
+    </task>
+    <task id="LOCAL-00001" summary="comment">
+      <option name="closed" value="true" />
+      <created>1748935735165</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1748935735165</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="comment" />
+    <option name="LAST_COMMIT_MESSAGE" value="comment" />
+  </component>
+</project>

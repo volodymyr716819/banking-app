@@ -155,6 +155,7 @@
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
+                        <include>**/CucumberRunner.java</include>
                     </includes>
                     <excludes>
                         <exclude>**/*IT.java</exclude>
@@ -162,7 +163,7 @@
                     </excludes>
                     <reportFormat>xml</reportFormat>
                     <testFailureIgnore>false</testFailureIgnore>
-                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                    <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
             </plugin>
             
@@ -175,10 +176,9 @@
                     <includes>
                         <include>**/*IT.java</include>
                         <include>**/*IntegrationTest.java</include>
-                        <include>**/CucumberTestRunner.java</include>
                     </includes>
                     <testFailureIgnore>false</testFailureIgnore>
-                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                    <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
                 <executions>
                     <execution>

@@ -1,10 +1,13 @@
 package com.bankapp.cucumber;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -21,6 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Utility class for test helper methods
  */
 public class TestUtils {
+    
+    private static final PasswordEncoder DEFAULT_PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     /**
      * Create a test user in the database
@@ -45,6 +50,25 @@ public class TestUtils {
         user.setRole(role);
         user.setApproved(approved);
         return userRepository.save(user);
+    }
+    
+    /**
+     * Create a test user without saving to the database
+     * 
+     * @param name User name
+     * @param email User email
+     * @param role User role (CUSTOMER, EMPLOYEE)
+     * @param approved Whether the user is approved
+     * @return A User entity
+     */
+    public static User createTestUser(String name, String email, String role, boolean approved) {
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(DEFAULT_PASSWORD_ENCODER.encode("password123"));
+        user.setRole(role);
+        user.setApproved(approved);
+        return user;
     }
     
     /**
@@ -73,6 +97,38 @@ public class TestUtils {
         account.setDailyLimit(new BigDecimal("1000.00"));
         account.setAbsoluteLimit(new BigDecimal("5000.00"));
         return accountRepository.save(account);
+    }
+    
+    /**
+     * Creates a test account without saving to the database
+     * 
+     * @param user The account owner
+     * @param type Account type (CHECKING, SAVINGS)
+     * @param balance Initial balance
+     * @param approved Whether the account is approved
+     * @return An Account entity
+     */
+    public static Account createTestAccount(User user, String type, BigDecimal balance, boolean approved) {
+        Account account = new Account();
+        account.setUser(user);
+        account.setType(type);
+        account.setBalance(balance);
+        account.setApproved(approved);
+        account.setClosed(false);
+        account.setIban(generateRandomIban());
+        account.setDailyLimit(new BigDecimal("5000.00"));
+        account.setAbsoluteLimit(new BigDecimal("10000.00"));
+        return account;
+    }
+    
+    /**
+     * Generates a random IBAN for testing
+     * 
+     * @return A random IBAN string
+     */
+    public static String generateRandomIban() {
+        String randomPart = UUID.randomUUID().toString().substring(0, 8);
+        return "NL91ABNA" + randomPart;
     }
     
     /**
@@ -130,5 +186,15 @@ public class TestUtils {
                 new BigDecimal(String.valueOf(expected)),
                 new BigDecimal(String.valueOf(actual))
         );
+    }
+    
+    /**
+     * Parses a timestamp string into a LocalDateTime object
+     * 
+     * @param timestamp Timestamp string in ISO format
+     * @return A LocalDateTime object
+     */
+    public static LocalDateTime parseTimestamp(String timestamp) {
+        return LocalDateTime.parse(timestamp);
     }
 }
