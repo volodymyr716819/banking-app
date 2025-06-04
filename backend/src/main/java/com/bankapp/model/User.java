@@ -110,4 +110,16 @@ public class User {
     public void setRegistrationStatus(RegistrationStatus status) {
         this.registrationStatus = status;
     }
+
+    public void setApproved(boolean approved) {
+        this.registrationStatus = approved ? RegistrationStatus.APPROVED : RegistrationStatus.PENDING;
+    }
+        
+    public void approve() {
+        this.registrationStatus = RegistrationStatus.APPROVED;
+    }
+ 
+    public void decline() {
+        this.registrationStatus = RegistrationStatus.DECLINED;
+    }
 }
