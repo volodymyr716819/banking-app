@@ -36,37 +36,26 @@ public class TransactionController {
     @Autowired
     private AccountRepository accountRepository;
 
-    // method for authentication
+    // Retrieves authenticated user from JWT authentication
     private Optional<User> getAuthenticatedUser(Authentication auth) {
         return userRepository.findByEmail(auth.getName());
     }  
 
+    // POST endpoint to process transfers between accounts or IBANs
     @PostMapping("/transfer")
     public ResponseEntity<?> transferMoney(@RequestBody TransferRequest transferRequest) {
         try {
-            if ((transferRequest.getSenderIban() != null && !transferRequest.getSenderIban().isEmpty()) &&
-                (transferRequest.getReceiverIban() != null && !transferRequest.getReceiverIban().isEmpty())) {
-                transactionService.transferMoneyByIban(
-                        transferRequest.getSenderIban(),
-                        transferRequest.getReceiverIban(),
-                        transferRequest.getAmount(),
-                        transferRequest.getDescription());
-            } else {
-                transactionService.transferMoney(
-                        transferRequest.getSenderAccountId(),
-                        transferRequest.getReceiverAccountId(),
-                        transferRequest.getAmount(),
-                        transferRequest.getDescription());
-            }
+            transactionService.processTransfer(transferRequest);
             return ResponseEntity.ok("Transfer completed successfully");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("An error occurred during the transfer: " + e.getMessage());
+              .body("An error occurred during the transfer: " + e.getMessage());
         }
     }
 
+    // GET endpoint to fetch all transactions for a given account ID
     @GetMapping("/account/{accountId}")
     public ResponseEntity<?> getTransactionHistory(@PathVariable Long accountId) {
         try {
@@ -78,6 +67,7 @@ public class TransactionController {
         }
     }
 
+    // GET endpoint to fetch transactions by IBAN, restricted to account owner or employee
     @GetMapping("/account")
     public ResponseEntity<?> getTransactionHistoryByIban(@RequestParam String iban, Authentication authentication) {
         try {
@@ -99,6 +89,7 @@ public class TransactionController {
         }
     }
 
+    // GET endpoint to fetch all transactions made by a user (by userId), with authorization check
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getTransactionsByUser(@PathVariable Long userId, Authentication authentication) {
         try {
