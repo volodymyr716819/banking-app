@@ -2,15 +2,13 @@
     FROM eclipse-temurin:21-jdk AS builder
     WORKDIR /workspace
     
-    # copy the wrapper from backend/
     COPY backend/mvnw mvnw
     COPY backend/.mvn .mvn
-    
-    # copy the entire repo
     COPY . .
     
-    # build only backend, skip tests
-    RUN ./mvnw -ntp -DskipTests -pl backend -am clean package    
+    # give the wrapper execute permission, then build
+    RUN chmod +x mvnw \
+     && ./mvnw -ntp -DskipTests -pl backend -am clean package      
     
     # ---------- runtime stage ----------
     FROM eclipse-temurin:21-jre
