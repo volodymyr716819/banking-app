@@ -2,16 +2,15 @@
     FROM eclipse-temurin:21-jdk AS builder
     WORKDIR /workspace
     
-    # copy the Maven wrapper that sits in repo root (overrides .dockerignore)
-    COPY mvnw mvnw
-    COPY .mvn .mvn
+    # copy the wrapper from backend/
+    COPY backend/mvnw mvnw
+    COPY backend/.mvn .mvn
     
-    # copy the entire repository
+    # copy the entire repo
     COPY . .
     
-    # build only the backend module, skip tests for speed
-    RUN ./mvnw -ntp -DskipTests -pl backend -am clean package
-    
+    # build only backend, skip tests
+    RUN ./mvnw -ntp -DskipTests -pl backend -am clean package    
     
     # ---------- runtime stage ----------
     FROM eclipse-temurin:21-jre
