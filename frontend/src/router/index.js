@@ -10,26 +10,35 @@ import ApproveAccountsView from "../views/ApproveAccountsView.vue";
 import ApproveUsersView from "../views/ApproveUsersView.vue";
 import EmployeeUsersView from "../views/EmployeeUsersView.vue";
 import EmployeeAccountsView from "../views/EmployeeAccountsView.vue";
-import TransactionHistoryView from "../views/TransactionHistoryView.vue"; // ✅ NEW
+import TransactionHistoryView from "../views/TransactionHistoryView.vue";
+import SearchCustomerView from "../views/SearchCustomerView.vue";
+import PinSettingsView from "../views/PinSettingsView.vue";
 
 import { useAuthStore } from "../store/auth";
 
 const routes = [
-  { path: "/login", component: LoginView },
-  { path: "/register", component: RegisterView },
+  { 
+    path: "/login", 
+    component: LoginView,
+    meta: { requiresGuest: true }
+  },
+  { 
+    path: "/register", 
+    component: RegisterView,
+    meta: { requiresGuest: true }
+  },
   {
     path: "/dashboard",
     component: DashboardLayout,
+    meta: { requiresAuth: true },
     children: [
       { path: "", component: DashboardView },
       { path: "accounts", component: AccountsView },
       { path: "transfer", component: TransferPageView },
-      { path: "atm", component: ATMView, meta: { requiresAuth: true } },
-      {
-        path: "history",
-        component: TransactionHistoryView,
-        meta: { requiresAuth: true },
-      },
+      { path: "atm", component: ATMView },
+      { path: "pin-settings", component: PinSettingsView },
+      { path: "history", component: TransactionHistoryView },
+      { path: "search-customer", component: SearchCustomerView },
       {
         path: "approve",
         component: ApproveAccountsView,
@@ -53,6 +62,8 @@ const routes = [
     ],
   },
   { path: "/", redirect: "/login" },
+  // Catch-all route
+  { path: "/:pathMatch(.*)*", redirect: "/login" }
 ];
 
 const router = createRouter({
@@ -62,14 +73,22 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
+  const isAuthenticated = !!authStore.token;
+  
+  // Redirect authenticated users away from login/register pages
+  if (to.meta.requiresGuest && isAuthenticated) {
+    return next("/dashboard");
+  }
 
-  if (to.meta.requiresAuth && !authStore.token) {
+  // Redirect unauthenticated users to login
+  if (to.meta.requiresAuth && !isAuthenticated) {
     return next("/login");
   }
 
+  // Check role-based access
   if (
     to.meta.requiresRole &&
-    authStore.user?.role?.toLowerCase() !== to.meta.requiresRole
+    (!authStore.user?.role || authStore.user.role.toLowerCase() !== to.meta.requiresRole)
   ) {
     return next("/dashboard");
   }

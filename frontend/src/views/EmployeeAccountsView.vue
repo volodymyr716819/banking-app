@@ -152,19 +152,25 @@
   }
   
   .modal {
+    color: #ddd;
     position: fixed;
     top: 20%;
     left: 50%;
     transform: translateX(-50%);
-    background: #fff;
+    background: var(--gradient-primary);
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
   
   .modal label {
+    color: #ddd;
     display: block;
     margin-top: 10px;
+  }
+
+  .modal h3 {
+    color: #ddd;
   }
   
   .modal input {

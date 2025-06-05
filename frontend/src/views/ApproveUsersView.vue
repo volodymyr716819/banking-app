@@ -22,6 +22,7 @@
                     <td>{{ user.role }}</td>
                     <td>
                         <button @click="approveUser(user.id)" class="approve-button">Approve</button>
+                        <button class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded" @click="declineUser(user.id)">Decline</button>
                     </td>
                 </tr>
             </tbody>
@@ -42,7 +43,7 @@ const message = ref('');
 
 const fetchPendingUsers = async () => {
     try {
-        const res = await axios.get('http://localhost:8080/api/users/pending', {
+        const res = await axios.get('http://localhost:8080/api/users/pending', { // move to .env
             headers: {
                 Authorization: `Bearer ${auth.token}`
             }
@@ -64,6 +65,24 @@ const approveUser = async (userId) => {
         await fetchPendingUsers();
     } catch (err) {
         message.value = 'Approval failed. You might not have permission.';
+    }
+};
+
+const declineUser = async (userId) => {
+    try {
+        await axios.post(
+            `http://localhost:8080/api/users/${userId}/decline`,
+            {},
+            {
+                headers: {
+                    Authorization: `Bearer ${auth.token}`
+                }
+            }
+        );
+        message.value = `User ${userId} declined.`;
+        await fetchPendingUsers();
+    } catch (err) {
+        message.value = 'Decline failed. You might not have permission.';
     }
 };
 
