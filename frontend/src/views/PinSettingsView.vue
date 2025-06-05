@@ -223,7 +223,7 @@ onMounted(async () => {
     });
     
     if (!res.ok) {
-      throw new Error(await res.text());
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
     
     const accountsData = await res.json();
@@ -426,7 +426,7 @@ async function savePinChanges() {
       });
       
       if (!changeRes.ok) {
-        throw new Error(await changeRes.text());
+        throw new Error(`HTTP ${changeRes.status}: ${changeRes.statusText}`);
       }
       
       successMessage.value = "PIN changed successfully";
@@ -455,7 +455,7 @@ async function savePinChanges() {
       });
       
       if (!createRes.ok) {
-        throw new Error(await createRes.text());
+        throw new Error(`HTTP ${createRes.status}: ${createRes.statusText}`);
       }
       
       successMessage.value = "PIN created successfully";

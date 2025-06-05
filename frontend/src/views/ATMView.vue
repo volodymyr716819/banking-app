@@ -483,7 +483,7 @@ onMounted(async () => {
     });
 
     if (!res.ok) {
-      throw new Error(await res.text());
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
     // Get all accounts including unapproved ones
@@ -553,7 +553,7 @@ async function selectAccount() {
     );
 
     if (!pinStatusRes.ok) {
-      throw new Error(await pinStatusRes.text());
+      throw new Error(`HTTP ${pinStatusRes.status}: ${pinStatusRes.statusText}`);
     }
 
     const pinStatus = await pinStatusRes.json();
@@ -570,7 +570,7 @@ async function selectAccount() {
     );
 
     if (!balanceRes.ok) {
-      throw new Error(await balanceRes.text());
+      throw new Error(`HTTP ${balanceRes.status}: ${balanceRes.statusText}`);
     }
 
     balance.value = await balanceRes.json();
@@ -822,7 +822,6 @@ async function processTransaction() {
       }
     );
 
-    const text = await res.text();
     if (!res.ok) {
       // Create more specific error messages based on the response
       if (text.includes("not approved")) {
