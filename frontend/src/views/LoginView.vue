@@ -91,6 +91,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 
+console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
+
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')

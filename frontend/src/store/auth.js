@@ -36,8 +36,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-        const res = await api.post(`${apiUrl}/auth/login`, {
+        const res = await api.post(`/auth/login`, {
           email,
           password
         });
