@@ -161,6 +161,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../store/auth';
+import api from '../lib/api';
 
 // Auth & API
 const authStore = useAuthStore();
@@ -215,7 +216,7 @@ onMounted(async () => {
 
   try {
     // Load accounts
-    const res = await fetch(`http://localhost:8080/api/accounts/user/${user.id}`, {
+    const res = await api.get(`/accounts/user/${user.id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -238,7 +239,7 @@ onMounted(async () => {
     const accountsWithPinStatus = await Promise.all(
       approvedAccounts.map(async (account) => {
         try {
-          const pinRes = await fetch(`http://localhost:8080/api/atm/pinStatus?accountId=${account.id}`, {
+          const pinRes = await api.get(`/atm/pinStatus?accountId=${account.id}`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -387,8 +388,7 @@ async function savePinChanges() {
       }
       
       // Verify current PIN first
-      const verifyRes = await fetch('http://localhost:8080/api/pin/verify', {
-        method: 'POST',
+      const verifyRes = await api.post('/pin/verify', {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -413,8 +413,7 @@ async function savePinChanges() {
       }
       
       // Change PIN
-      const changeRes = await fetch('http://localhost:8080/api/pin/change', {
-        method: 'POST',
+      const changeRes = await api.post('/pin/change', {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -444,8 +443,7 @@ async function savePinChanges() {
       
     } else {
       // Creating new PIN
-      const createRes = await fetch('http://localhost:8080/api/pin/create', {
-        method: 'POST',
+      const createRes = await api.post('/pin/create', {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
