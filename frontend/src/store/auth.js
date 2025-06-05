@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import api from '../lib/api';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -37,7 +37,7 @@ export const useAuthStore = defineStore('auth', {
       
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-        const res = await axios.post(`${apiUrl}/auth/login`, {
+        const res = await api.post(`${apiUrl}/auth/login`, {
           email,
           password
         });
@@ -111,7 +111,7 @@ export const useAuthStore = defineStore('auth', {
       
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-        const res = await axios.get(`${apiUrl}/auth/validate`, {
+        const res = api.get(`${apiUrl}/auth/validate`, {
           headers: {
             Authorization: `Bearer ${this.token}`
           }
