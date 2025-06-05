@@ -3,8 +3,8 @@ package com.bankapp;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
+import com.bankapp.controller.AccountControllerTest;
 import com.bankapp.integration.BankingApplicationIntegrationTest;
-// import com.bankapp.controller.AccountControllerTest;
 // import com.bankapp.controller.TransactionControllerTest;
 // import com.bankapp.controller.AuthControllerTest;
 // import com.bankapp.controller.UserControllerTest;
@@ -16,7 +16,7 @@ import com.bankapp.integration.BankingApplicationIntegrationTest;
 @Suite
 @SelectClasses({
     BankingApplicationIntegrationTest.class,
-    // AccountControllerTest.class,
+    AccountControllerTest.class,
     // TransactionControllerTest.class,
     // AuthControllerTest.class,
     // UserControllerTest.class,
