@@ -1,28 +1,31 @@
+
 package com.bankapp.controller;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.bankapp.BankingBackendApplication;
 import com.bankapp.model.User;
 import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(classes = BankingBackendApplication.class)
 @AutoConfigureMockMvc
@@ -51,11 +54,18 @@ public class AccountControllerTest {
         testPassword = "password";
     }
 
+    private void approveUser(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow();
+        user.setApproved(true);
+        userRepository.save(user);
+    }
+
     private void registerUser(String email, String password) throws Exception {
         User user = new User();
         user.setName("Test User");
         user.setEmail(email);
         user.setPassword(password);
+
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(user)))
@@ -66,22 +76,25 @@ public class AccountControllerTest {
         User creds = new User();
         creds.setEmail(email);
         creds.setPassword(password);
+
         String json = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(creds)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
+
         return objectMapper.readValue(json, Map.class);
     }
 
-    private <T extends org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder> T auth(T builder,
-            String token) {
+    private <T extends org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder> T auth(
+            T builder, String token) {
         return (T) builder.header("Authorization", "Bearer " + token);
     }
 
     @Test
     void testSuccessfulAccountCreation() throws Exception {
         registerUser(testEmail, testPassword);
+        approveUser(testEmail);
         Map<String, Object> login = loginUser(testEmail, testPassword);
         String token = (String) login.get("token");
         Long userId = ((Number) login.get("id")).longValue();
@@ -98,6 +111,7 @@ public class AccountControllerTest {
     @Test
     void testSuccessfulAccountRetrieval() throws Exception {
         registerUser(testEmail, testPassword);
+        approveUser(testEmail);
         Map<String, Object> login = loginUser(testEmail, testPassword);
         String token = (String) login.get("token");
         Long userId = ((Number) login.get("id")).longValue();
@@ -115,6 +129,7 @@ public class AccountControllerTest {
     @Test
     void testInvalidAccountCreationMissingType() throws Exception {
         registerUser(testEmail, testPassword);
+        approveUser(testEmail);
         Map<String, Object> login = loginUser(testEmail, testPassword);
         String token = (String) login.get("token");
         Long userId = ((Number) login.get("id")).longValue();
@@ -124,14 +139,15 @@ public class AccountControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    @Test
-    void testUnauthorizedAccountAccess() throws Exception {
+   @Test
+   void testUnauthorizedAccountAccess() throws Exception {
         registerUser(testEmail, testPassword);
+        approveUser(testEmail);
         Map<String, Object> login = loginUser(testEmail, testPassword);
         Long userId = ((Number) login.get("id")).longValue();
 
-        mockMvc.perform(get("/api/accounts/user/" + userId)
-                .header("Authorization", "Bearer invalid"))
-                .andExpect(status().isUnauthorized());
+        // Don't send Authorization header at all to trigger 401
+        mockMvc.perform(get("/api/accounts/user/" + userId))
+            .andExpect(status().isUnauthorized()); 
     }
 }

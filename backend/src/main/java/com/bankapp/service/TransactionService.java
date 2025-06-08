@@ -23,6 +23,7 @@ import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.AtmOperationRepository;
 import com.bankapp.repository.TransactionRepository;
 import com.bankapp.util.IbanGenerator;
+import com.bankapp.exception.UnapprovedAccountException;
 
 @Service
 public class TransactionService {
@@ -248,4 +249,28 @@ public class TransactionService {
             transferMoney(request.getSenderAccountId(), request.getReceiverAccountId(), request.getAmount(), request.getDescription());
         }
     }
+
+    @Transactional
+    public void depositMoney(Long accountId, BigDecimal amount) {
+    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+        throw new IllegalArgumentException("Amount must be positive");
+    }
+
+    Account account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+    if (!account.isApproved()) {
+        throw new UnapprovedAccountException("Cannot deposit to an unapproved account");
+    }
+
+    account.setBalance(account.getBalance().add(amount));
+    accountRepository.save(account);
+
+    Transaction tx = new Transaction();
+    tx.setAmount(amount);
+    tx.setDescription("Deposit");
+    tx.setToAccount(account);
+    tx.setTransactionType(TransactionType.DEPOSIT);
+    transactionRepository.save(tx);
+}
 }

@@ -13,6 +13,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import com.bankapp.dto.AccountDTO;
 import com.bankapp.dto.UpdateLimitsRequest;
 import com.bankapp.model.Account;
@@ -22,6 +27,8 @@ import com.bankapp.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/accounts")
+@Tag(name = "Accounts", description = "API for managing user accounts")
+
 public class AccountController {
 
     @Autowired
@@ -47,6 +54,11 @@ public class AccountController {
     }
 
     @PostMapping("/create")
+    @Operation(summary = "Create a new account for a user")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Account created"),
+       @ApiResponse(responseCode = "400", description = "User not found")
+    })
     public ResponseEntity<?> createAccount(@RequestParam Long userId, @RequestParam String type) {
         User user = userRepository.findById(userId).orElse(null);
         if (user == null)
@@ -61,8 +73,14 @@ public class AccountController {
 
         return ResponseEntity.ok("Account created and pending approval");
     }
-
+    
     @GetMapping("/user/{userId}")
+    @Operation(summary = "Get accounts by user ID")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Accounts retrieved"),
+       @ApiResponse(responseCode = "403", description = "Access denied"),
+       @ApiResponse(responseCode = "401", description = "User not authenticated")
+    })
     public ResponseEntity<?> getAccountsByUserId(@PathVariable Long userId, Authentication authentication) {
         Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
         if (userOpt.isEmpty()) {
@@ -83,6 +101,11 @@ public class AccountController {
     }
 
     @PutMapping("/{accountId}")
+    @Operation(summary = "Update account type or approval status")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Account updated"),
+       @ApiResponse(responseCode = "400", description = "Invalid input or account not found")
+    })
     public ResponseEntity<?> updateAccount(@PathVariable Long accountId,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Boolean approved) {
@@ -108,6 +131,13 @@ public class AccountController {
     }
 
     @GetMapping("/pending")
+    @Operation(summary = "Get all pending accounts (employee only)")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Pending accounts retrieved"),
+       @ApiResponse(responseCode = "401", description = "User not authenticated"),
+       @ApiResponse(responseCode = "403", description = "Access denied"),
+       @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public ResponseEntity<?> getPendingAccounts(Authentication authentication) {
         try {
             String email = authentication != null ? authentication.getName() : null;
@@ -139,6 +169,12 @@ public class AccountController {
     }
 
     @PutMapping("/{accountId}/approve")
+    @Operation(summary = "Approve a specific account (employee only)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account approved"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
+    })
     public ResponseEntity<String> approveAccount(@PathVariable Long accountId, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
         if (!"employee".equalsIgnoreCase(user.getRole())) {
@@ -156,6 +192,10 @@ public class AccountController {
         return ResponseEntity.ok("Account approved successfully.");
     }
 
+       @Operation(summary = "Get all approved and open accounts (employee only)")
+       @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Approved accounts retrieved")
+    })
     @GetMapping("/approved")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<List<AccountDTO>> getApprovedAccounts() {
@@ -169,6 +209,11 @@ public class AccountController {
 
     @PutMapping("/{id}/limits")
     @PreAuthorize("hasRole('EMPLOYEE')")
+    @Operation(summary = "Update account limits (employee only)")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Limits updated successfully"),
+       @ApiResponse(responseCode = "404", description = "Account not found")
+    })
     public ResponseEntity<?> updateLimits(@PathVariable Long id, @RequestBody UpdateLimitsRequest request) {
         Optional<Account> optionalAccount = accountRepository.findById(id);
         if (optionalAccount.isEmpty()) {
@@ -185,6 +230,12 @@ public class AccountController {
 
     @PutMapping("/{id}/close")
     @PreAuthorize("hasRole('EMPLOYEE')")
+    @Operation(summary = "Close an account (employee only)")
+    @ApiResponses({  
+    @ApiResponse(responseCode = "200", description = "Account successfully closed"),
+       @ApiResponse(responseCode = "400", description = "Account already closed"),
+       @ApiResponse(responseCode = "404", description = "Account not found")
+    })
     public ResponseEntity<?> closeAccount(@PathVariable Long id) {
         Optional<Account> optional = accountRepository.findById(id);
         if (optional.isEmpty()) {

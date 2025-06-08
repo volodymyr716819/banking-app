@@ -9,11 +9,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/pin")
+@Tag(name = "PIN Management", description = "Endpoints for managing PINs: create, verify, change")
 public class PinManagementController {
 
     @Autowired
@@ -29,6 +35,11 @@ public class PinManagementController {
                 && accountOpt.get().getUser().getEmail().equals(auth.getName());
     }
 
+    @Operation(summary = "Check if a PIN has been set for the account")
+    @ApiResponses({  
+       @ApiResponse(responseCode = "200", description = "Returns whether a PIN is created"),
+       @ApiResponse(responseCode = "403", description = "Unauthorized access to account")
+    })
     @GetMapping("/check/{accountId}")
     public ResponseEntity<?> checkPinStatus(@PathVariable Long accountId, Authentication auth) {
         if (!isAuthorizedUser(accountId, auth)) {
@@ -38,6 +49,11 @@ public class PinManagementController {
         return ResponseEntity.ok(Map.of("pinCreated", status));
     }
 
+    @Operation(summary = "Create a new PIN for the account")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "PIN created successfully"),
+       @ApiResponse(responseCode = "403", description = "Unauthorized access to account")
+    })
     @PostMapping("/create")
     public ResponseEntity<?> createPin(@RequestBody PinRequest request, Authentication auth) {
         if (!isAuthorizedUser(request.getAccountId(), auth)) {
@@ -47,6 +63,11 @@ public class PinManagementController {
         return ResponseEntity.ok("PIN created successfully");
     }
 
+    @Operation(summary = "Verify entered PIN for the account")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Returns whether the PIN is valid"),
+       @ApiResponse(responseCode = "403", description = "Unauthorized access to account")
+    })
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPin(@RequestBody PinRequest request, Authentication auth) {
         if (!isAuthorizedUser(request.getAccountId(), auth)) {
@@ -56,6 +77,11 @@ public class PinManagementController {
         return ResponseEntity.ok(Map.of("valid", isValid));
     }
 
+    @Operation(summary = "Change the existing PIN for the account")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "PIN changed successfully"),
+        @ApiResponse(responseCode = "403", description = "Unauthorized access to account")
+    })
     @PostMapping("/change")
     public ResponseEntity<?> changePin(@RequestBody PinRequest request, Authentication auth) {
         if (!isAuthorizedUser(request.getAccountId(), auth)) {

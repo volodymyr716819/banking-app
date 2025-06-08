@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import com.bankapp.model.User;
 import com.bankapp.model.enums.RegistrationStatus;
 import com.bankapp.service.UserService;
@@ -24,6 +29,7 @@ import com.bankapp.security.JwtUtil;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication", description = "Endpoints for user login, registration, and token validation")
 public class AuthController {
 
     @Autowired
@@ -39,6 +45,11 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     // Handles login requests by authenticating credentials and returning JWT
+    @Operation(summary = "Authenticate user and return JWT token")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Login successful, JWT returned"),
+       @ApiResponse(responseCode = "401", description = "Invalid credentials")
+    })
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User request) {
         try {
@@ -67,6 +78,11 @@ public class AuthController {
     }
 
     // Registers a new user if email is not already taken
+    @Operation(summary = "Register a new user")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Registration successful, pending approval"),
+       @ApiResponse(responseCode = "400", description = "Validation error or email already exists")
+    })
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
         try {
@@ -78,6 +94,12 @@ public class AuthController {
     }
 
     // Validates the token and user status for authenticated sessions
+    @Operation(summary = "Validate JWT token and return user info")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Token is valid and user is authenticated"),
+        @ApiResponse(responseCode = "401", description = "Invalid or expired token"),
+        @ApiResponse(responseCode = "403", description = "Access forbidden")
+    })
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken(Authentication authentication) {
         try {

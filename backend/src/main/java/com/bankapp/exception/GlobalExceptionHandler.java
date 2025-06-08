@@ -65,7 +65,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(UnapprovedAccountException.class)
+    public ResponseEntity<ApiError> handleUnapprovedAccountException(
+        UnapprovedAccountException ex, HttpServletRequest request) {
     
+        ApiError apiError = new ApiError(
+            HttpStatus.BAD_REQUEST.value(),
+            "Account Not Approved",
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+    
+         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+    } 
+
     /**
      * Handle general exceptions
      */
@@ -85,5 +99,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         apiError.addDetail(Arrays.toString(ex.getStackTrace()).substring(0, 200) + "...");
         
         return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgumentException(
+        IllegalArgumentException ex, HttpServletRequest request) {
+
+        ApiError apiError = new ApiError(
+           HttpStatus.BAD_REQUEST.value(),
+           "Invalid Request",
+           ex.getMessage(),
+           request.getRequestURI()
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 }

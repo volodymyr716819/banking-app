@@ -18,7 +18,8 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.http.HttpStatus;
 import com.bankapp.security.JwtAuthenticationFilter;
 
 @Configuration
@@ -31,16 +32,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .exceptionHandling(ex -> ex
+                   .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                )
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                new AntPathRequestMatcher("/api/auth/login"),
-                                new AntPathRequestMatcher("/api/auth/register"),
-                                new AntPathRequestMatcher("/h2-console/**"))
-                        .permitAll()
+                            new AntPathRequestMatcher("/api/auth/login"),
+                            new AntPathRequestMatcher("/api/auth/register"),
+                            new AntPathRequestMatcher("/h2-console/**"),
+                            new AntPathRequestMatcher("/v3/api-docs/**"),
+                            new AntPathRequestMatcher("/swagger-ui/**"),
+                            new AntPathRequestMatcher("/swagger-ui.html")
+                        ).permitAll()
+                        .requestMatchers(
+                            new AntPathRequestMatcher("/api/accounts/user/**"),
+                            new AntPathRequestMatcher("/api/pin/**")
+                        ).authenticated()
                         .anyRequest().authenticated());
+
 
         http.headers(headers -> headers.frameOptions(frame -> frame.disable())); // for H2 console
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

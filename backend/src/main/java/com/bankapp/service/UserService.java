@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.bankapp.exception.UnapprovedAccountException;
 
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +46,7 @@ public class UserService {
 
         User user = found.get();
         if (!user.isApproved()) {
-            throw new RuntimeException("Account not approved");
+            throw new UnapprovedAccountException("Account must be approved before login.");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -75,7 +76,7 @@ public class UserService {
             if (userOpt.isEmpty()) return Optional.empty();
 
             User user = userOpt.get();
-            if (!user.isApproved()) throw new RuntimeException("Account is pending approval");
+            if (!user.isApproved()) throw new UnapprovedAccountException("Account is pending approval.");
 
             return Optional.of(user);
         }
