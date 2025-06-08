@@ -236,18 +236,30 @@ public class BankingApplicationIntegrationTest {
 
     @Test
     void testMoneyTransfer() throws Exception {
-        String token = loginAndGetToken(userEmail, userPassword);
-        Long senderId = createAccountForUser(approvedUser.getId(), token);
-        Long receiverId = createAccountForUser(approvedUser.getId(), token);
+        String senderToken = loginAndGetToken(userEmail, userPassword);
+        Long senderId = createAccountForUser(approvedUser.getId(), senderToken);
+
+        User receiverUser = new User();
+        receiverUser.setEmail("receiver@test.com");
+        receiverUser.setName("Receiver");
+        receiverUser.setPassword(passwordEncoder.encode("pass"));
+        receiverUser.setRole("CUSTOMER");
+        receiverUser.setRegistrationStatus(RegistrationStatus.APPROVED);
+        userRepository.save(receiverUser);
+
+        String receiverToken = loginAndGetToken("receiver@test.com", "pass");
+        Long receiverId = createAccountForUser(receiverUser.getId(), receiverToken);
+
         Account sender = accountRepository.findById(senderId).orElseThrow();
         sender.setApproved(true);
         sender.setBalance(new BigDecimal("200.00"));
         accountRepository.save(sender);
+
         Account receiver = accountRepository.findById(receiverId).orElseThrow();
         receiver.setApproved(true);
         accountRepository.save(receiver);
 
-        transfer(senderId, receiverId, new BigDecimal("50.00"), token);
+        transfer(senderId, receiverId, new BigDecimal("50.00"), senderToken);
 
         assertThat(accountRepository.findById(senderId).get().getBalance()).isEqualByComparingTo("150.00");
         assertThat(accountRepository.findById(receiverId).get().getBalance()).isEqualByComparingTo("50.00");
