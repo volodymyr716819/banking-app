@@ -474,32 +474,23 @@ onMounted(async () => {
   }
 
   try {
-    const response = await api.get(`/accounts/user/${user.id}`, {
+    const res = await api.get(`/accounts/user/${user.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
+    const userAccounts = res.data; 
 
-    // Fetch all accounts associated with the user, including those pending approval
-    const userAccounts = await response.json();
-
-    // Check if user has any accounts
     if (userAccounts.length === 0) {
       error.value = "No accounts found. Please open an account first.";
       return;
     }
 
-    // Filter and retain only approved accounts
     accounts.value = userAccounts.filter((account) => account.approved);
 
-    // Provide appropriate messaging based on account approval status
     if (accounts.value.length === 0) {
       const pendingAccounts = userAccounts.filter(
         (account) => !account.approved
       );
-
       error.value =
         pendingAccounts.length > 0
           ? "Your accounts are pending approval. ATM operations are available only for approved accounts. Please contact customer service for assistance."
