@@ -48,7 +48,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import api from '../lib/api';
 import { useAuthStore } from '../store/auth';
 
 const auth = useAuthStore();
@@ -74,7 +74,7 @@ const submitDisabled = computed(() => {
 
 const fetchAccounts = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/accounts/user/${auth.user.id}`, {
+    const response = await api.get(`/accounts/user/${auth.user.id}`, {
       headers: {
         Authorization: `Bearer ${auth.token}`
       }
@@ -105,7 +105,7 @@ const submitTransfer = async () => {
   }
   
   try {
-    const response = await axios.post('http://localhost:8080/api/transactions/transfer', {
+    const response = await api.post('/transactions/transfer', {
       senderAccountId: fromAccount.value,
       receiverAccountId: toAccountId.value,
       amount: parseFloat(amount.value),

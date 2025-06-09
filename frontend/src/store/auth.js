@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import api from '../lib/api';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -36,8 +36,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-        const res = await axios.post(`${apiUrl}/auth/login`, {
+        const res = await api.post(`/auth/login`, {
           email,
           password
         });
@@ -58,7 +57,7 @@ export const useAuthStore = defineStore('auth', {
         this.persistAuthState();
         
         // Set Authorization header for future requests
-        axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        api.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
         
         this.isLoading = false;
         return true;
@@ -82,7 +81,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('lastLogin');
       
       // Remove Authorization header
-      delete axios.defaults.headers.common['Authorization'];
+      delete api.defaults.headers.common['Authorization'];
     },
     
     persistAuthState() {
@@ -110,8 +109,7 @@ export const useAuthStore = defineStore('auth', {
       if (!this.token) return false;
       
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-        const res = await axios.get(`${apiUrl}/auth/validate`, {
+        const res = api.get(`/auth/validate`, {
           headers: {
             Authorization: `Bearer ${this.token}`
           }
@@ -150,7 +148,7 @@ export const useAuthStore = defineStore('auth', {
     // Initialize auth state and headers when app starts
     initAuth() {
       if (this.token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        api.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
         
         // Optionally validate token on init
         this.validateToken().catch(() => {}); // Silently handle validation errors

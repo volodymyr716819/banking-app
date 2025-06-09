@@ -124,7 +124,7 @@ import { useAuthStore } from "../store/auth";
 import { useRouter } from "vue-router";
 import { defineComponent, ref, onMounted } from 'vue';
 import UserProfileComponent from '../components/UserProfileComponent.vue';
-import axios from 'axios';
+import api from '../lib/api';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -166,7 +166,7 @@ const getUserInitials = () => {
 onMounted(async () => {
   if (auth.user && auth.user.id) {
     try {
-      const response = await axios.get(`http://localhost:8080/api/accounts/user/${auth.user.id}`, {
+      const response = await api.get(`/accounts/user/${auth.user.id}`, {
         headers: {
           Authorization: `Bearer ${auth.token}`
         }
