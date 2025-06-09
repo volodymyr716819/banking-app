@@ -478,7 +478,7 @@ onMounted(async () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const userAccounts = res.data; 
+    const userAccounts = res.data;
 
     if (userAccounts.length === 0) {
       error.value = "No accounts found. Please open an account first.";
@@ -540,13 +540,7 @@ async function selectAccount() {
       }
     );
 
-    if (!pinStatusRes.ok) {
-      throw new Error(
-        `HTTP ${pinStatusRes.status}: ${pinStatusRes.statusText}`
-      );
-    }
-
-    const pinStatus = await pinStatusRes.json();
+    const pinStatus = pinStatusRes.data;
     pinCreated.value = pinStatus.pinCreated;
 
     // Get balance
@@ -559,11 +553,7 @@ async function selectAccount() {
       }
     );
 
-    if (!balanceRes.ok) {
-      throw new Error(`HTTP ${balanceRes.status}: ${balanceRes.statusText}`);
-    }
-
-    balance.value = await balanceRes.json();
+    balance.value = balanceRes.data;
 
     // Route to appropriate state based on PIN status
     if (!pinCreated.value) {
@@ -601,20 +591,19 @@ async function createPin() {
   atmState.value = "processing";
 
   try {
-    const res = await api.post("/pin/create", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
+    const res = await api.post(
+      "/pin/create",
+      {
         accountId: selectedAccountId.value,
         pin: pinValue.value,
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error(await res.text());
-    }
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     // Save the PIN value to use for transactions
     verifiedPin.value = pinValue.value;
@@ -639,22 +628,21 @@ async function verifyPin() {
   atmState.value = "processing";
 
   try {
-    const res = await api.post("/pin/verify", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
+    const res = await api.post(
+      "/pin/verify",
+      {
         accountId: selectedAccountId.value,
         pin: pinValue.value,
-      }),
-    });
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-    if (!res.ok) {
-      throw new Error(await res.text());
-    }
-
-    const result = await res.json();
+    const result = res.data;
 
     if (result.valid) {
       // Keep pin value for ATM operations, don't clear it
@@ -797,36 +785,20 @@ async function processTransaction() {
     // Store current balance as previous balance before transaction
     previousBalance.value = balance.value;
 
-    const res = await api.post(`/atm/${operationType.value}`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
+    const res = await api.post(
+      `/atm/${operationType.value}`,
+      {
         accountId: selectedAccountId.value,
         amount: enteredAmount.value,
         pin: verifiedPin.value,
-      }),
-    });
-
-    if (!res.ok) {
-      // Create more specific error messages based on the response
-      if (text.includes("not approved")) {
-        throw new Error(
-          "Your account is not approved for ATM operations. Please contact customer service."
-        );
-      } else if (text.includes("closed")) {
-        throw new Error(
-          "This account is closed and cannot perform ATM operations."
-        );
-      } else if (text.includes("Insufficient balance")) {
-        throw new Error(
-          "Insufficient balance for this withdrawal. Please enter a smaller amount."
-        );
-      } else {
-        throw new Error(text);
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
-    }
+    );
 
     // Transaction was successful
     transactionSuccessful = true;
@@ -845,7 +817,23 @@ async function processTransaction() {
       animateWithdraw.value = true;
     }
   } catch (err) {
-    error.value = err.message;
+    if (err.response && err.response.data) {
+      const text = err.response.data;
+      if (text.includes("not approved")) {
+        error.value =
+          "Your account is not approved for ATM operations. Please contact customer service.";
+      } else if (text.includes("closed")) {
+        error.value =
+          "This account is closed and cannot perform ATM operations.";
+      } else if (text.includes("Insufficient balance")) {
+        error.value =
+          "Insufficient balance for this withdrawal. Please enter a smaller amount.";
+      } else {
+        error.value = text;
+      }
+    } else {
+      error.value = err.message;
+    }
     atmState.value = "error";
   }
 
@@ -903,8 +891,7 @@ async function updateBalance() {
       }
     );
 
-    if (!res.ok) throw new Error(await res.text());
-    balance.value = await res.json();
+    balance.value = res.data;
   } catch (err) {
     // Error handled by caller
     throw err;
