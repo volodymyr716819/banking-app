@@ -7404,3 +7404,13 @@ select u1_0.id,u1_0.approved,u1_0.email,u1_0.name,u1_0.password,u1_0.role from a
 	at java.base/java.lang.Thread.run(Thread.java:1583)
 2025-06-03 10:43:26 jdbc[3]: exception
 org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
+2025-06-09 12:37:43 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
+2025-06-09 12:47:14 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
+2025-06-09 12:52:23 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
+2025-06-09 12:58:29 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
+2025-06-09 12:59:41 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
