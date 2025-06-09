@@ -14,13 +14,6 @@
               <div class="welcome-stat-label">Accounts</div>
             </div>
           </div>
-          <div class="welcome-stat">
-            <span class="material-icons">today</span>
-            <div class="welcome-stat-content">
-              <div class="welcome-stat-value">{{formatDate(new Date())}}</div>
-              <div class="welcome-stat-label">Last Login</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

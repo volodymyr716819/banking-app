@@ -534,6 +534,7 @@ async function createPin() {
 }
 
 async function verifyPin() {
+  // Make sure PIN is 4 digits
   if (pinValue.value.length !== 4) {
     error.value = "PIN must be 4 digits"
     return
@@ -543,6 +544,7 @@ async function verifyPin() {
   atmState.value = 'processing'
   
   try {
+    // Attempt to verify PIN with server
     const res = await fetch('http://localhost:8080/api/pin/verify', {
       method: 'POST',
       headers: {
@@ -562,18 +564,33 @@ async function verifyPin() {
     const result = await res.json()
     
     if (result.valid) {
-      // Keep pin value for ATM operations, don't clear it
-      // Store the verified PIN in a separate variable
+      // PIN is correct - proceed to menu
       verifiedPin.value = pinValue.value
       atmState.value = 'menu'
     } else {
+      // PIN is incorrect - show error message
       error.value = "Invalid PIN. Please try again."
       pinValue.value = '' // Clear PIN
       atmState.value = 'pin-verify'
+      
+      // Return to welcome screen after 3 seconds
+      setTimeout(() => {
+        if (atmState.value === 'pin-verify') {
+          cancelOperation() // This resets to idle state
+        }
+      }, 3000)
     }
   } catch (err) {
+    // Handle errors from server
     error.value = "PIN verification failed: " + err.message
     atmState.value = 'pin-verify'
+    
+    // Return to welcome screen after 3 seconds
+    setTimeout(() => {
+      if (atmState.value === 'pin-verify') {
+        cancelOperation() // This resets to idle state
+      }
+    }, 3000)
   }
 }
 

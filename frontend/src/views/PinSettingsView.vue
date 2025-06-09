@@ -52,22 +52,6 @@
         <div class="modal-body">
           <div v-if="selectedAccountHasPin" class="pin-form">
             <div class="form-group">
-              <label>Current PIN</label>
-              <div class="pin-input">
-                <input 
-                  v-for="i in 4" 
-                  :key="'current-'+i" 
-                  ref="currentPinFields"
-                  type="password" 
-                  maxlength="1" 
-                  v-model="currentPin[i-1]"
-                  @input="focusNextInput('current', i-1)"
-                  @keydown.delete="handleDelete('current', i-1)"
-                />
-              </div>
-            </div>
-            
-            <div class="form-group">
               <label>New PIN</label>
               <div class="pin-input">
                 <input 
@@ -190,18 +174,9 @@ const confirmPinFields = ref([]);
 
 // Check if PIN form is valid
 const isPinFormValid = computed(() => {
-  // For creating new PIN
-  if (!selectedAccountHasPin.value) {
-    return newPin.value.every(digit => digit.length === 1) && 
-           confirmPin.value.every(digit => digit.length === 1) &&
-           newPin.value.join('') === confirmPin.value.join('');
-  }
-  
-  // For changing existing PIN
-  return currentPin.value.every(digit => digit.length === 1) &&
-         newPin.value.every(digit => digit.length === 1) && 
+  // Both creating and changing PIN have the same validation now
+  return newPin.value.every(digit => digit.length === 1) && 
          confirmPin.value.every(digit => digit.length === 1) &&
-         newPin.value.join('') !== currentPin.value.join('') &&
          newPin.value.join('') === confirmPin.value.join('');
 });
 
@@ -289,11 +264,9 @@ function selectAccount(accountId) {
   
   showPinModal.value = true;
   
-  // Focus first input on next tick
+  // Focus first input of new PIN on next tick
   setTimeout(() => {
-    if (selectedAccountHasPin.value && currentPinFields.value[0]) {
-      currentPinFields.value[0].focus();
-    } else if (newPinFields.value[0]) {
+    if (newPinFields.value[0]) {
       newPinFields.value[0].focus();
     }
   }, 50);
@@ -377,42 +350,9 @@ async function savePinChanges() {
     }
     
     if (selectedAccountHasPin.value) {
-      // Changing existing PIN
-      const currentPinValue = currentPin.value.join('');
+      // Changing existing PIN without verification
       
-      if (currentPinValue === newPinValue) {
-        modalError.value = "New PIN must be different from current PIN";
-        pinProcessing.value = false;
-        return;
-      }
-      
-      // Verify current PIN first
-      const verifyRes = await fetch('http://localhost:8080/api/pin/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          accountId: selectedAccountId.value,
-          pin: currentPinValue
-        })
-      });
-      
-      if (!verifyRes.ok) {
-        modalError.value = "Failed to verify current PIN";
-        pinProcessing.value = false;
-        return;
-      }
-      
-      const verifyResult = await verifyRes.json();
-      if (!verifyResult.valid) {
-        modalError.value = "Current PIN is incorrect";
-        pinProcessing.value = false;
-        return;
-      }
-      
-      // Change PIN
+      // Change PIN directly
       const changeRes = await fetch('http://localhost:8080/api/pin/change', {
         method: 'POST',
         headers: {
@@ -421,7 +361,6 @@ async function savePinChanges() {
         },
         body: JSON.stringify({
           accountId: selectedAccountId.value,
-          pin: currentPinValue,
           newPin: newPinValue
         })
       });

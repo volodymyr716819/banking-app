@@ -115,12 +115,7 @@
             </div>
           </div>
           
-          <div class="card-actions">
-            <button class="btn btn-outline">
-              <span class="material-icons action-icon">visibility</span>
-              View Details
-            </button>
-          </div>
+          <!-- View Details button removed -->
         </div>
       </div>
     </div>
