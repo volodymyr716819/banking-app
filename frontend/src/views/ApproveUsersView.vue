@@ -34,7 +34,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import api from '../lib/api';
 import { useAuthStore } from '../store/auth';
 
 const auth = useAuthStore();
@@ -43,7 +43,7 @@ const message = ref('');
 
 const fetchPendingUsers = async () => {
     try {
-        const res = await axios.get('http://localhost:8080/api/users/pending', { // move to .env
+        const res = await api.get('/users/pending', { // move to .env
             headers: {
                 Authorization: `Bearer ${auth.token}`
             }
@@ -56,7 +56,7 @@ const fetchPendingUsers = async () => {
 
 const approveUser = async (userId) => {
     try {
-        await axios.post(`http://localhost:8080/api/users/${userId}/approve`, {}, {
+        await api.post(`/users/${userId}/approve`, {}, {
             headers: {
                 Authorization: `Bearer ${auth.token}`
             }
@@ -70,8 +70,8 @@ const approveUser = async (userId) => {
 
 const declineUser = async (userId) => {
     try {
-        await axios.post(
-            `http://localhost:8080/api/users/${userId}/decline`,
+        await api.post(
+            `/users/${userId}/decline`,
             {},
             {
                 headers: {

@@ -32,7 +32,7 @@
   
   <script setup>
   import { ref, onMounted } from 'vue';
-  import axios from 'axios';
+  import api from '../lib/api';
   import { useAuthStore } from '../store/auth';
   
   const auth = useAuthStore();
@@ -40,7 +40,7 @@
   
   const fetchApprovedUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:8080/api/users/approved', {
+      const res = await api.get('/users/approved', {
         headers: {
           Authorization: `Bearer ${auth.token}`
         }

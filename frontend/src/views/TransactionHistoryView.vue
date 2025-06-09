@@ -91,7 +91,7 @@
 
 <script>
 import { ref, onMounted } from "vue";
-import axios from "axios";
+import api from '../lib/api';
 import { useAuthStore } from "../store/auth";
 
 export default {
@@ -112,8 +112,8 @@ export default {
       message.value = "Loading transactions...";
 
       try {
-        const response = await axios.get(
-          `http://localhost:8080/api/transactions/user/${auth.user.id}`,
+        const response = await api.get(
+          `/transactions/user/${auth.user.id}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,
@@ -157,8 +157,8 @@ export default {
 
     const fetchUserAccounts = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:8080/api/accounts/user/${auth.user.id}`,
+        const response = await api.get(
+          `/accounts/user/${auth.user.id}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,

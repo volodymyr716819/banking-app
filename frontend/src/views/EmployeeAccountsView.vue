@@ -50,7 +50,7 @@
   
   <script setup>
   import { ref, onMounted } from 'vue';
-  import axios from 'axios';
+  import api from '../lib/api';
   import { useAuthStore } from '../store/auth';
   
   const auth = useAuthStore();
@@ -59,7 +59,7 @@
   
   const fetchApprovedAccounts = async () => {
     try {
-      const res = await axios.get('http://localhost:8080/api/accounts/approved', {
+      const res = await api.get('/accounts/approved', {
         headers: {
           Authorization: `Bearer ${auth.token}`
         }
@@ -76,7 +76,7 @@
   
   const updateLimits = async () => {
     try {
-      await axios.put(`http://localhost:8080/api/accounts/${selectedAccount.value.id}/limits`, {
+      await api.put(`/accounts/${selectedAccount.value.id}/limits`, {
         dailyLimit: selectedAccount.value.dailyLimit,
         absoluteLimit: selectedAccount.value.absoluteLimit
       }, {
@@ -93,7 +93,7 @@
   
   const closeAccount = async (accountId) => {
     try {
-        await axios.put(`http://localhost:8080/api/accounts/${accountId}/close`, {}, {
+        await api.put(`/accounts/${accountId}/close`, {}, {
         headers: {
           Authorization: `Bearer ${auth.token}`
         }

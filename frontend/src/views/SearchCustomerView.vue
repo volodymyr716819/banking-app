@@ -139,7 +139,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import axios from 'axios';
+import api from '../lib/api';
 import { useAuthStore } from '../store/auth';
 
 const auth = useAuthStore();
@@ -170,7 +170,7 @@ const searchCustomers = async () => {
   try {
     let searchEndpoint = import.meta.env.VITE_API_URL || 'http://localhost:8080/api' + '/users/search';
     
-    const response = await axios.get(searchEndpoint, {
+    const response = await api.get(searchEndpoint, {
       params: { term: searchTerm.value },
       headers: {
         Authorization: `Bearer ${auth.token}`
