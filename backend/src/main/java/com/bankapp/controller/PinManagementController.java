@@ -2,17 +2,13 @@ package com.bankapp.controller;
 
 import com.bankapp.dto.PinRequest;
 import com.bankapp.model.Account;
-import com.bankapp.model.CardDetails;
 import com.bankapp.repository.AccountRepository;
-import com.bankapp.repository.CardDetailsRepository;
-import com.bankapp.util.PinHashUtil;
+import com.bankapp.service.PinService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -21,124 +17,51 @@ import java.util.Optional;
 public class PinManagementController {
 
     @Autowired
+    private PinService pinService;
+
+    @Autowired
     private AccountRepository accountRepository;
 
-    @Autowired
-    private CardDetailsRepository cardDetailsRepository;
-    
-    @Autowired
-    private PinHashUtil pinHashUtil;
-
-    /**
-     * Check if a PIN has been created for the account
-     */
-    @GetMapping("/check/{accountId}")
-    public ResponseEntity<?> checkPinStatus(@PathVariable Long accountId) {
+    // Check if authenticated user owns the account
+    private boolean isAuthorizedUser(Long accountId, Authentication auth) {
         Optional<Account> accountOpt = accountRepository.findById(accountId);
-        if (accountOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
-        }
-
-        Optional<CardDetails> cardDetailsOpt = cardDetailsRepository.findByAccountId(accountId);
-        Map<String, Object> response = new HashMap<>();
-        response.put("pinCreated", cardDetailsOpt.isPresent() && cardDetailsOpt.get().isPinCreated());
-        
-        return ResponseEntity.ok(response);
+        return accountOpt.isPresent()
+                && accountOpt.get().getUser().getEmail().equals(auth.getName());
     }
 
-    /**
-     * Create or update a PIN for an account
-     */
+    @GetMapping("/check/{accountId}")
+    public ResponseEntity<?> checkPinStatus(@PathVariable Long accountId, Authentication auth) {
+        if (!isAuthorizedUser(accountId, auth)) {
+            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized"));
+        }
+        boolean status = pinService.checkPinStatus(accountId);
+        return ResponseEntity.ok(Map.of("pinCreated", status));
+    }
+
     @PostMapping("/create")
-    public ResponseEntity<?> createPin(@RequestBody PinRequest pinRequest) {
-        try {
-            if (pinRequest.getPin() == null || pinRequest.getPin().length() != 4) {
-                return ResponseEntity.badRequest().body("PIN must be 4 digits");
-            }
-
-            Optional<Account> accountOpt = accountRepository.findById(pinRequest.getAccountId());
-            if (accountOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
-            }
-
-            Account account = accountOpt.get();
-            
-            // Hash the PIN before storing
-            String hashedPin = pinHashUtil.hashPin(pinRequest.getPin());
-            
-            // First, delete any existing card details to avoid unique constraint violations
-            cardDetailsRepository.deleteByAccountId(account.getId());
-            
-            // Create new card details
-            CardDetails cardDetails = new CardDetails(account, hashedPin);
-            cardDetails.setPinCreated(true);
-            cardDetails.setLastPinChanged(LocalDateTime.now());
-            
-            cardDetailsRepository.save(cardDetails);
-            
-            return ResponseEntity.ok("PIN created successfully");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error creating PIN: " + e.getMessage());
+    public ResponseEntity<?> createPin(@RequestBody PinRequest request, Authentication auth) {
+        if (!isAuthorizedUser(request.getAccountId(), auth)) {
+            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized"));
         }
+        pinService.createPin(request);
+        return ResponseEntity.ok("PIN created successfully");
     }
 
-    /**
-     * Verify a PIN for an account
-     */
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyPin(@RequestBody PinRequest pinRequest) {
-        Optional<Account> accountOpt = accountRepository.findById(pinRequest.getAccountId());
-        if (accountOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+    public ResponseEntity<?> verifyPin(@RequestBody PinRequest request, Authentication auth) {
+        if (!isAuthorizedUser(request.getAccountId(), auth)) {
+            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized"));
         }
-
-        Optional<CardDetails> cardDetailsOpt = cardDetailsRepository.findByAccountId(pinRequest.getAccountId());
-        if (cardDetailsOpt.isEmpty() || !cardDetailsOpt.get().isPinCreated()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("PIN not set for this account");
-        }
-
-        CardDetails cardDetails = cardDetailsOpt.get();
-        boolean isValid = pinHashUtil.verifyPin(pinRequest.getPin(), cardDetails.getHashedPin());
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("valid", isValid);
-        
-        return ResponseEntity.ok(response);
+        boolean isValid = pinService.verifyPin(request);
+        return ResponseEntity.ok(Map.of("valid", isValid));
     }
 
-    /**
-     * Change a PIN for an account
-     */
     @PostMapping("/change")
-    public ResponseEntity<?> changePin(@RequestBody PinRequest pinRequest) {
-        if (pinRequest.getNewPin() == null || pinRequest.getNewPin().length() != 4) {
-            return ResponseEntity.badRequest().body("New PIN must be 4 digits");
+    public ResponseEntity<?> changePin(@RequestBody PinRequest request, Authentication auth) {
+        if (!isAuthorizedUser(request.getAccountId(), auth)) {
+            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized"));
         }
-
-        Optional<Account> accountOpt = accountRepository.findById(pinRequest.getAccountId());
-        if (accountOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
-        }
-
-        Optional<CardDetails> cardDetailsOpt = cardDetailsRepository.findByAccountId(pinRequest.getAccountId());
-        if (cardDetailsOpt.isEmpty() || !cardDetailsOpt.get().isPinCreated()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("PIN not set for this account");
-        }
-
-        CardDetails cardDetails = cardDetailsOpt.get();
-        
-        // Verify current PIN
-        if (!pinHashUtil.verifyPin(pinRequest.getPin(), cardDetails.getHashedPin())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Current PIN is incorrect");
-        }
-        
-        // Hash and update the new PIN
-        String newHashedPin = pinHashUtil.hashPin(pinRequest.getNewPin());
-        cardDetails.setHashedPin(newHashedPin);
-        cardDetails.setLastPinChanged(LocalDateTime.now());
-        cardDetailsRepository.save(cardDetails);
-        
+        pinService.changePin(request);
         return ResponseEntity.ok("PIN changed successfully");
     }
 }

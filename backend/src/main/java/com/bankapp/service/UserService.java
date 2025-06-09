@@ -48,6 +48,10 @@ public class UserService {
             throw new RuntimeException("Account not approved");
         }
 
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return Optional.empty();
+        }
+
         return Optional.of(user);
     }
 
@@ -77,5 +81,15 @@ public class UserService {
         }
 
         return Optional.empty();
+    }
+
+    public void approveUser(Long id) {
+        User user = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRegistrationStatus() != RegistrationStatus.PENDING) {
+            throw new RuntimeException("User is not pending");
+        }
+        user.setRegistrationStatus(RegistrationStatus.APPROVED);
     }
 }

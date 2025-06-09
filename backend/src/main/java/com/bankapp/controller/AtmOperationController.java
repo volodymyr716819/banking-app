@@ -1,6 +1,7 @@
 package com.bankapp.controller;
 
 import com.bankapp.dto.AtmRequest;
+import com.bankapp.service.AtmService;
 import com.bankapp.model.Account;
 import com.bankapp.model.AtmOperation;
 import com.bankapp.model.CardDetails;
@@ -28,115 +29,65 @@ public class AtmOperationController {
     
     @Autowired
     private CardDetailsRepository cardDetailsRepository;
-    
+
+    @Autowired
+    private AtmService atmService;
+
+
     @Autowired
     private PinHashUtil pinHashUtil;
 
+    /**
+     * Endpoint to deposit money into an account via ATM.
+     *
+     * @param atmRequest contains account ID, amount to deposit, and PIN
+     * @return ResponseEntity with success message
+    */ 
     @PostMapping("/deposit")
     public ResponseEntity<?> deposit(@RequestBody AtmRequest atmRequest) {
-        // Verify PIN first
-        ResponseEntity<?> pinVerification = verifyPin(atmRequest);
-        if (pinVerification != null) {
-            return pinVerification;
-        }
-        
-        return performAtmOperation(atmRequest, "DEPOSIT");
+        atmService.processDeposit(
+        atmRequest.getAccountId(),
+        atmRequest.getAmount(),
+        atmRequest.getPin()
+    );
+    return ResponseEntity.ok("Deposit successful");
     }
 
+    /**
+     * Endpoint to withdraw money from an account via ATM.
+     *
+     * @param atmRequest contains account ID, amount to withdraw, and PIN
+     * @return ResponseEntity with success message
+    */
     @PostMapping("/withdraw")
     public ResponseEntity<?> withdraw(@RequestBody AtmRequest atmRequest) {
-        // Verify PIN first
-        ResponseEntity<?> pinVerification = verifyPin(atmRequest);
-        if (pinVerification != null) {
-            return pinVerification;
-        }
-        
-        return performAtmOperation(atmRequest, "WITHDRAW");
+        atmService.processWithdrawal(
+           atmRequest.getAccountId(),
+           atmRequest.getAmount(),
+           atmRequest.getPin()
+        );
+        return ResponseEntity.ok("Withdrawal successful");
     }
 
+    /**
+     * Checks the balance of an account by account ID.
+     *
+     * @param accountId the ID of the account
+     * @return ResponseEntity with balance or error if not found    
+    */
     @GetMapping("/balance")
     public ResponseEntity<?> getBalance(@RequestParam Long accountId) {
-        Optional<Account> accountOpt = accountRepository.findById(accountId);
-        if (accountOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("Account not found");
-        }
-        return ResponseEntity.ok(accountOpt.get().getBalance());
+        return atmService.getBalance(accountId);
     }
-    
+
+    /**
+     * Checks whether a PIN has been created for an account.
+     *
+     * @param accountId the ID of the account
+     * @return ResponseEntity with pinCreated status (true/false)
+    */
     @GetMapping("/pinStatus")
     public ResponseEntity<?> getPinStatus(@RequestParam Long accountId) {
-        Optional<Account> accountOpt = accountRepository.findById(accountId);
-        if (accountOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("Account not found");
-        }
-        
-        Optional<CardDetails> cardDetailsOpt = cardDetailsRepository.findByAccountId(accountId);
-        Map<String, Object> response = new HashMap<>();
-        response.put("pinCreated", cardDetailsOpt.isPresent() && cardDetailsOpt.get().isPinCreated());
-        
-        return ResponseEntity.ok(response);
-    }
-
-    private ResponseEntity<?> verifyPin(AtmRequest atmRequest) {
-        if (atmRequest.getPin() == null || atmRequest.getPin().isEmpty()) {
-            return ResponseEntity.badRequest().body("PIN is required");
-        }
-        
-        Optional<CardDetails> cardDetailsOpt = cardDetailsRepository.findByAccountId(atmRequest.getAccountId());
-        if (cardDetailsOpt.isEmpty() || !cardDetailsOpt.get().isPinCreated()) {
-            return ResponseEntity.badRequest().body("PIN not set for this account");
-        }
-        
-        CardDetails cardDetails = cardDetailsOpt.get();
-        if (!pinHashUtil.verifyPin(atmRequest.getPin(), cardDetails.getHashedPin())) {
-            return ResponseEntity.status(401).body("Invalid PIN");
-        }
-        
-        return null; // PIN verification passed
-    }
-
-    private ResponseEntity<String> performAtmOperation(AtmRequest atmRequest, String operationType) {
-        Optional<Account> accountOpt = accountRepository.findById(atmRequest.getAccountId());
-        if (accountOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Account not found");
-        }
-
-        Account account = accountOpt.get();
-        
-        // Check if account is approved
-        if (!account.isApproved()) {
-            return ResponseEntity.badRequest().body("Account is not approved for ATM operations");
-        }
-        
-        // Check if account is closed
-        if (account.isClosed()) {
-            return ResponseEntity.badRequest().body("Account is closed and cannot perform ATM operations");
-        }
-        
-        // Check balance for withdrawals
-        if (operationType.equals("WITHDRAW") && account.getBalance().compareTo(atmRequest.getAmount()) < 0) {
-            return ResponseEntity.badRequest().body("Insufficient balance");
-        }
-
-        // Process ATM operation
-        if (operationType.equals("DEPOSIT")) {
-            account.setBalance(account.getBalance().add(atmRequest.getAmount()));
-        } else {
-            account.setBalance(account.getBalance().subtract(atmRequest.getAmount()));
-        }
-
-        accountRepository.save(account);
-
-        // Record the ATM operation
-        AtmOperation atmOperation = new AtmOperation();
-        atmOperation.setAccount(account);
-        atmOperation.setAmount(atmRequest.getAmount());
-        boolean isDeposit = operationType.equals("DEPOSIT");
-        atmOperation.setOperationType(
-            isDeposit ? AtmOperation.OperationType.DEPOSIT : AtmOperation.OperationType.WITHDRAW
-        );
-        atmOperationRepository.save(atmOperation);
-
-        return ResponseEntity.ok("ATM Operation successful");
+        return atmService.getPinStatus(accountId);
     }
 }

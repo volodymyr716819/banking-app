@@ -29,6 +29,7 @@ import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.UserRepository;
 import com.bankapp.model.enums.RegistrationStatus;
 import com.bankapp.service.UserService;
+import com.bankapp.service.UserSearchService;
 
 @RestController
 @RequestMapping("/api/users")
@@ -37,9 +38,14 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserSearchService userSearchService;
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private UserService userService;
 
     private UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
@@ -57,9 +63,6 @@ public class UserController {
         String paddedId = String.format("%010d", account.getId());
         return countryCode + bankCode + paddedId;
     }
-
-    @Autowired
-    private UserService userService;
 
     @GetMapping
     public List<UserDTO> getAllUsers() {
@@ -94,15 +97,12 @@ public class UserController {
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<?> approveUser(@PathVariable Long id) {
-        Optional<User> userOpt = userRepository.findById(id);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        try {
+            userService.approveUser(id);
+            return ResponseEntity.ok("User approved successfully.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
-        User user = userOpt.get();
-        user.setRegistrationStatus(RegistrationStatus.APPROVED);
-        userRepository.save(user);
-        return ResponseEntity.ok("User approved successfully.");
     }
 
     @GetMapping("/approved")
@@ -127,15 +127,12 @@ public class UserController {
     @PostMapping("/{id}/decline")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<?> declineUser(@PathVariable Long id) {
-        Optional<User> userOpt = userRepository.findById(id);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        try {
+           userService.declineUser(id);
+           return ResponseEntity.ok("User declined successfully.");
+        } catch (RuntimeException e) {
+           return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
-        User user = userOpt.get();
-        user.setRegistrationStatus(RegistrationStatus.DECLINED);
-        userRepository.save(user);
-        return ResponseEntity.ok("User declined successfully.");
     }
 
     /**
@@ -144,126 +141,16 @@ public class UserController {
      */
     @GetMapping("/search")
     public ResponseEntity<?> searchUsers(
-            @RequestParam(required = false) String term,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String iban,
-            Authentication authentication) {
-
-        // Check if the user is authenticated
-        if (authentication == null) {
-            return ResponseEntity.badRequest().body("User not authenticated");
+        @RequestParam(required = false) String term,
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) String email,
+        @RequestParam(required = false) String iban,
+        Authentication authentication) {
+        
+        try {
+           return ResponseEntity.ok(userSearchService.searchUsers(term, name, email, iban, authentication));
+        } catch (IllegalArgumentException ex) {
+           return ResponseEntity.badRequest().body(ex.getMessage());
         }
-
-        // Get the authenticated user
-        Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        // Only authenticated users can search
-        if (!userOpt.get().isApproved()) {
-            return ResponseEntity.badRequest().body("User not approved");
-        }
-
-        // If term is provided, use it as the universal search term
-        if (term != null && !term.trim().isEmpty()) {
-            List<User> matchingUsers = userRepository.findApprovedCustomersBySearchTerm(term.trim());
-
-            // Check if the search term might be an IBAN
-            if (matchingUsers.isEmpty() && term.replaceAll("\\s+", "").toUpperCase().contains("BANK")) {
-                String cleanTerm = term.replaceAll("\\s+", "").toUpperCase();
-                if (cleanTerm.startsWith("NLBANK")) {
-                    try {
-                        String accountIdPart = cleanTerm.substring("NLBANK".length());
-                        Long accountId = Long.parseLong(accountIdPart);
-
-
-                        Optional<Account> account = accountRepository.findById(accountId);
-                        if (account.isPresent() && account.get().isApproved() && !account.get().isClosed()) {
-                            User accountOwner = account.get().getUser();
-                            if (accountOwner.isApproved() && "CUSTOMER".equalsIgnoreCase(accountOwner.getRole())) {
-                                matchingUsers = List.of(accountOwner);
-                            }
-                        }
-                    } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                        // invalid IBAN format
-                    }
-                }
-            }
-
-
-            List<UserSearchResultDTO> results = matchingUsers.stream()
-                    .map(user -> {
-                        List<Account> accounts = accountRepository.findByUserId(user.getId());
-                        List<String> ibans = accounts.stream()
-                                .filter(Account::isApproved)
-                                .filter(account -> !account.isClosed())
-                                .map(this::generateIban)
-                                .collect(Collectors.toList());
-                        return new UserSearchResultDTO(user.getId(), user.getName(), ibans);
-                    })
-                    .collect(Collectors.toList());
-
-
-            return ResponseEntity.ok(results);
-        }
-
-        // Legacy behavior for backward compatibility
-        // Validate that at least one search parameter is provided
-        if ((name == null || name.trim().isEmpty()) &&
-                (email == null || email.trim().isEmpty()) &&
-                (iban == null || iban.trim().isEmpty())) {
-            return ResponseEntity.badRequest().body("At least one search parameter is required");
-        }
-
-
-        List<User> matchingUsers = new ArrayList<>();
-
-        // If IBAN is provided, search by IBAN
-        if (iban != null && !iban.trim().isEmpty()) {
-            String cleanIban = iban.replaceAll("\\s+", "");
-
-            // Extract the numeric part (account ID) from the IBAN format
-            if (cleanIban.startsWith("NLBANK")) {
-                try {
-                    String accountIdPart = cleanIban.substring("NLBANK".length());
-                    Long accountId = Long.parseLong(accountIdPart);
-
-                    // Find the account by ID
-                    Optional<Account> accountOpt = accountRepository.findById(accountId);
-                    if (accountOpt.isPresent() && accountOpt.get().isApproved() && !accountOpt.get().isClosed()) {
-                        User accountOwner = accountOpt.get().getUser();
-                        if (accountOwner.isApproved() && "customer".equalsIgnoreCase(accountOwner.getRole())) {
-                            matchingUsers.add(accountOwner);
-                        }
-                    }
-                } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                    // invalid IBAN format
-                }
-            }
-        } else {
-            // Search by name and/or email
-            matchingUsers = userRepository.searchApprovedByNameEmailAndRole(
-                    (name != null && !name.trim().isEmpty()) ? name : null,
-                    (email != null && !email.trim().isEmpty()) ? email : null,
-                    "customer");
-        }
-
-        // Convert to DTOs with IBANs
-        List<UserSearchResultDTO> results = matchingUsers.stream()
-                .map(user -> {
-                    List<Account> accounts = accountRepository.findByUserId(user.getId());
-                    List<String> ibans = accounts.stream()
-                            .filter(Account::isApproved)
-                            .filter(account -> !account.isClosed())
-                            .map(this::generateIban)
-                            .collect(Collectors.toList());
-                    return new UserSearchResultDTO(user.getId(), user.getName(), ibans);
-                })
-                .collect(Collectors.toList());
-
-
-        return ResponseEntity.ok(results);
     }
 }

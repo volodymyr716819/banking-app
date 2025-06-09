@@ -13,6 +13,7 @@ import com.bankapp.util.PinHashUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -50,10 +51,11 @@ public class AtmService {
             throw new IllegalArgumentException("Deposit amount must be greater than zero");
         }
         
+        // Fetch and validate account existence
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
         
-        // Verify PIN
+        // Fetch and verify PIN against stored hash
         CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
         
@@ -101,10 +103,11 @@ public class AtmService {
             throw new IllegalArgumentException("Withdrawal amount must be greater than zero");
         }
         
+        // Fetch and validate account existence
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
         
-        // Verify PIN
+        // Fetch and verify PIN
         CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
         
@@ -121,7 +124,7 @@ public class AtmService {
             throw new IllegalStateException("Account is closed and cannot process withdrawals");
         }
         
-        // Check balance
+        // Check for sufficient funds
         if (account.getBalance().compareTo(amount) < 0) {
             throw new IllegalArgumentException("Insufficient balance for withdrawal");
         }
@@ -147,5 +150,19 @@ public class AtmService {
      */
     public List<AtmOperation> getAtmOperations(Long accountId) {
         return atmOperationRepository.findByAccount_Id(accountId);
+    }
+
+    public ResponseEntity<?> getBalance(Long accountId) {
+        return accountRepository.findById(accountId)
+                .filter(Account::isApproved)
+                .<ResponseEntity<?>>map(account -> ResponseEntity.ok(account.getBalance()))
+                .orElse(ResponseEntity.status(404).body("Account not found or not approved"));
+    }
+
+    public ResponseEntity<?> getPinStatus(Long accountId) {
+        boolean pinCreated = cardDetailsRepository.findByAccountId(accountId)
+                .map(card -> card.isPinCreated())
+                .orElse(false);
+        return ResponseEntity.ok().body(java.util.Map.of("pinCreated", pinCreated));
     }
 }
