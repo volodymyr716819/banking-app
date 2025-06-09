@@ -276,9 +276,7 @@
               <div class="transaction-details">
                 <p>
                   Your
-                  {{
-                    operationType === "deposit" ? "deposit" : "withdrawal"
-                  }}
+                  {{ operationType === "deposit" ? "deposit" : "withdrawal" }}
                   of
                   <span class="amount">€{{ enteredAmount.toFixed(2) }}</span>
                   has been completed.
@@ -476,40 +474,39 @@ onMounted(async () => {
   }
 
   try {
-    const res = await api.get(`/accounts/user/${user.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await api.get(`/accounts/user/${user.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    // Get all accounts including unapproved ones
-    const allAccounts = await res.json();
+    // Fetch all accounts associated with the user, including those pending approval
+    const userAccounts = await response.json();
 
-    // Check if the user has any accounts at all
-    if (allAccounts.length === 0) {
+    // Check if user has any accounts
+    if (userAccounts.length === 0) {
       error.value = "No accounts found. Please open an account first.";
       return;
     }
 
-    // Check if the user has any approved accounts
-    accounts.value = allAccounts.filter((acc) => acc.approved);
+    // Filter and retain only approved accounts
+    accounts.value = userAccounts.filter((account) => account.approved);
 
+    // Provide appropriate messaging based on account approval status
     if (accounts.value.length === 0) {
-      const pendingAccounts = allAccounts.filter((acc) => !acc.approved);
-      if (pendingAccounts.length > 0) {
-        error.value =
-          "Your accounts are pending approval. ATM operations are only available for approved accounts. Please contact customer service for assistance.";
-      } else {
-        error.value =
-          "No approved accounts found. Please contact customer service.";
-      }
+      const pendingAccounts = userAccounts.filter(
+        (account) => !account.approved
+      );
+
+      error.value =
+        pendingAccounts.length > 0
+          ? "Your accounts are pending approval. ATM operations are available only for approved accounts. Please contact customer service for assistance."
+          : "No approved accounts found. Please contact customer service.";
     }
   } catch (err) {
-    error.value = "Failed to load accounts: " + err.message;
+    error.value = `Failed to load accounts: ${err.message}`;
   }
 });
 
@@ -553,7 +550,9 @@ async function selectAccount() {
     );
 
     if (!pinStatusRes.ok) {
-      throw new Error(`HTTP ${pinStatusRes.status}: ${pinStatusRes.statusText}`);
+      throw new Error(
+        `HTTP ${pinStatusRes.status}: ${pinStatusRes.statusText}`
+      );
     }
 
     const pinStatus = await pinStatusRes.json();
@@ -807,20 +806,17 @@ async function processTransaction() {
     // Store current balance as previous balance before transaction
     previousBalance.value = balance.value;
 
-    const res = await api.post(
-      `/atm/${operationType.value}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          accountId: selectedAccountId.value,
-          amount: enteredAmount.value,
-          pin: verifiedPin.value,
-        }),
-      }
-    );
+    const res = await api.post(`/atm/${operationType.value}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        accountId: selectedAccountId.value,
+        amount: enteredAmount.value,
+        pin: verifiedPin.value,
+      }),
+    });
 
     if (!res.ok) {
       // Create more specific error messages based on the response
