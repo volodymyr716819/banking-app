@@ -653,10 +653,20 @@ async function verifyPin() {
       error.value = "Invalid PIN. Please try again.";
       pinValue.value = ""; // Clear PIN
       atmState.value = "pin-verify";
+      
+      // Auto-refresh back to idle state after 3 seconds when PIN is wrong
+      setTimeout(() => {
+        cancelOperation();
+      }, 3000);
     }
   } catch (err) {
     error.value = "PIN verification failed: " + err.message;
     atmState.value = "pin-verify";
+    
+    // Auto-refresh back to idle state after 3 seconds when PIN verification fails
+    setTimeout(() => {
+      cancelOperation();
+    }, 3000);
   }
 }
 
