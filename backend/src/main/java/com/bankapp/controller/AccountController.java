@@ -48,7 +48,6 @@ public class AccountController {
         dto.setBalance(account.getBalance());
         dto.setApproved(account.isApproved());
         dto.setClosed(account.isClosed());
-        dto.setIban(account.getIban());
         dto.setDailyLimit(account.getDailyLimit());
         dto.setAbsoluteLimit(account.getAbsoluteLimit());
         return dto;
