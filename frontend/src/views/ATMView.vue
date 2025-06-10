@@ -6,10 +6,7 @@
         <div class="bank-name">BANK APP ATM</div>
         <div class="card-reader">
           <div class="card-slot">
-            <div
-              class="card-slot-light"
-              :class="{ active: atmState !== 'idle' }"
-            ></div>
+            <div class="card-slot-light" :class="{ active: atmState !== 'idle' }"></div>
           </div>
           <div class="card-text">CARD / ACCOUNT</div>
         </div>
@@ -19,293 +16,218 @@
       <div class="screen-container">
         <div class="atm-screen">
           <div class="screen-content" :class="atmState">
-            <!-- Welcome / Idle State -->
-            <div v-if="atmState === 'idle'" class="screen-idle">
-              <div class="welcome-message">
-                <h2>Welcome to BankApp ATM</h2>
-                <p>Please select an account to begin</p>
-                <div class="atm-instructions">
-                  <p class="instruction-title">ATM Instructions:</p>
-                  <ul class="instruction-list">
-                    <li>Use the numeric keypad to enter amounts and PIN</li>
-                    <li>Press the buttons on screen to select options</li>
-                    <li>Follow on-screen instructions for each operation</li>
-                    <li>Use function keys for quick navigation</li>
-                  </ul>
-                </div>
-              </div>
-              <div v-if="accounts.length" class="account-selection">
-                <select
-                  id="account-select"
-                  v-model.number="selectedAccountId"
-                  @change="selectAccount"
-                >
-                  <option disabled :value="null">Select your account</option>
-                  <option
-                    v-for="account in accounts"
-                    :key="account.id"
-                    :value="account.id"
-                  >
-                    {{ account.type }} (ID: {{ account.id }})
-                  </option>
-                </select>
-                <button
-                  class="green-btn"
-                  @click="selectAccount"
-                  :disabled="!selectedAccountId"
-                >
-                  Proceed
-                </button>
-              </div>
-              <div v-else class="loading-accounts">
-                <div v-if="error" class="error-message">{{ error }}</div>
-                <div v-else class="loading-spinner"></div>
+          <!-- Welcome / Idle State -->
+          <div v-if="atmState === 'idle'" class="screen-idle">
+            <div class="welcome-message">
+              <h2>Welcome to BankApp ATM</h2>
+              <p>Please select an account to begin</p>
+              <div class="atm-instructions">
+                <p class="instruction-title">ATM Instructions:</p>
+                <ul class="instruction-list">
+                  <li>Use the numeric keypad to enter amounts and PIN</li>
+                  <li>Press the buttons on screen to select options</li>
+                  <li>Follow on-screen instructions for each operation</li>
+                  <li>Use function keys for quick navigation</li>
+                </ul>
               </div>
             </div>
+            <div v-if="accounts.length" class="account-selection">
+              <select id="account-select" v-model.number="selectedAccountId" @change="selectAccount">
+                <option disabled :value="null">Select your account</option>
+                <option v-for="account in accounts" :key="account.id" :value="account.id">
+                  {{ account.type }} (ID: {{ account.id }})
+                </option>
+              </select>
+              <button class="green-btn" @click="selectAccount" :disabled="!selectedAccountId">
+                Proceed
+              </button>
+            </div>
+            <div v-else class="loading-accounts">
+              <div v-if="error" class="error-message">{{ error }}</div>
+              <div v-else class="loading-spinner"></div>
+            </div>
+          </div>
+          
+          <!-- PIN Creation State -->
+          <div v-if="atmState === 'pin-create'" class="screen-pin">
+            <div class="pin-header">
+              <h3>Create Your PIN</h3>
+              <p>Please create a 4-digit PIN for your account</p>
+            </div>
+            <div class="pin-entry">
+              <div class="pin-display">
+                <div v-for="(digit, index) in 4" :key="index" class="pin-digit">
+                  {{ (pinValue.length > index) ? '•' : '' }}
+                </div>
+              </div>
+              <div class="pin-instructions">
+                Enter a 4-digit PIN and press confirm
+              </div>
+              <div v-if="error" class="error-message">
+                {{ error }}
+              </div>
+            </div>
+            <div class="confirm-row">
+              <button class="cancel-btn" @click="cancelOperation">Cancel</button>
+              <button class="green-btn" :disabled="pinValue.length !== 4" @click="createPin">
+                Create PIN
+              </button>
+            </div>
+          </div>
+          
+          <!-- PIN Verification State -->
+          <div v-if="atmState === 'pin-verify'" class="screen-pin">
+            <div class="pin-header">
+              <h3>Enter Your PIN</h3>
+              <p>Please enter your 4-digit PIN</p>
+            </div>
+            <div class="pin-entry">
+              <div class="pin-display">
+                <div v-for="(digit, index) in 4" :key="index" class="pin-digit">
+                  {{ (pinValue.length > index) ? '•' : '' }}
+                </div>
+              </div>
+              <div class="pin-instructions">
+                Enter your PIN and press confirm
+              </div>
+              <div v-if="error" class="error-message">
+                {{ error }}
+              </div>
+            </div>
+            <div class="confirm-row">
+              <button class="cancel-btn" @click="cancelOperation">Cancel</button>
+              <button class="green-btn" :disabled="pinValue.length !== 4" @click="verifyPin">
+                Confirm
+              </button>
+            </div>
+          </div>
 
-            <!-- PIN Creation State -->
-            <div v-if="atmState === 'pin-create'" class="screen-pin">
-              <div class="pin-header">
-                <h3>Create Your PIN</h3>
-                <p>Please create a 4-digit PIN for your account</p>
+          <!-- Main Menu State -->
+          <div v-if="atmState === 'menu'" class="screen-menu">
+            <div class="account-info">
+              <h3>Account: {{ getCurrentAccountLabel() }}</h3>
+              <div class="balance-display">
+                <span class="balance-label">Current Balance:</span>
+                <span class="balance-amount">€{{ typeof balance === 'number' ? balance.toFixed(2) : '---' }}</span>
               </div>
-              <div class="pin-entry">
-                <div class="pin-display">
-                  <div
-                    v-for="(digit, index) in 4"
-                    :key="index"
-                    class="pin-digit"
-                  >
-                    {{ pinValue.length > index ? "•" : "" }}
-                  </div>
-                </div>
-                <div class="pin-instructions">
-                  Enter a 4-digit PIN and press confirm
-                </div>
-                <div v-if="error" class="error-message">
-                  {{ error }}
-                </div>
-              </div>
-              <div class="confirm-row">
-                <button class="cancel-btn" @click="cancelOperation">
-                  Cancel
+            </div>
+            <div class="menu-options">
+              <h4>Please select an operation:</h4>
+              <div class="menu-buttons">
+                <button class="menu-btn deposit-btn" @click="startDeposit">
+                  <span class="icon">↓</span> Deposit
                 </button>
-                <button
-                  class="green-btn"
-                  :disabled="pinValue.length !== 4"
-                  @click="createPin"
-                >
-                  Create PIN
+                <button class="menu-btn withdraw-btn" @click="startWithdraw">
+                  <span class="icon">↑</span> Withdraw
+                </button>
+                <button class="menu-btn cancel-btn" @click="cancelOperation">
+                  <span class="icon">✕</span> Exit
                 </button>
               </div>
             </div>
+            <!-- Spacer to push content up -->
+            <div class="menu-spacer"></div>
+          </div>
 
-            <!-- PIN Verification State -->
-            <div v-if="atmState === 'pin-verify'" class="screen-pin">
-              <div class="pin-header">
-                <h3>Enter Your PIN</h3>
-                <p>Please enter your 4-digit PIN</p>
+          <!-- Amount Entry State -->
+          <div v-if="atmState === 'amount'" class="screen-amount">
+            <div class="operation-type">
+              <h3>{{ operationType === 'deposit' ? 'DEPOSIT' : 'WITHDRAWAL' }}</h3>
+              <button class="back-btn" @click="atmState = 'menu'">
+                ← Back to Menu
+              </button>
+            </div>
+            <div class="amount-entry">
+              <div class="amount-display">
+                € <span>{{ displayAmount }}</span>
               </div>
-              <div class="pin-entry">
-                <div class="pin-display">
-                  <div
-                    v-for="(digit, index) in 4"
-                    :key="index"
-                    class="pin-digit"
-                  >
-                    {{ pinValue.length > index ? "•" : "" }}
-                  </div>
-                </div>
-                <div class="pin-instructions">
-                  Enter your PIN and press confirm
-                </div>
-                <div v-if="error" class="error-message">
-                  {{ error }}
+              <div class="entry-instructions">
+                Enter amount and press confirm
+              </div>
+              <div class="error-message" v-if="error">
+                {{ error }}
+              </div>
+            </div>
+            <div class="amount-presets">
+              <div class="preset-row">
+                <div class="preset-label">Quick Amounts:</div>
+                <div class="preset-amounts">
+                  <button class="preset" @click="displayAmount = '10'">€10</button>
+                  <button class="preset" @click="displayAmount = '20'">€20</button>
+                  <button class="preset" @click="displayAmount = '50'">€50</button>
+                  <button class="preset" @click="displayAmount = '100'">€100</button>
                 </div>
               </div>
+            </div>
+            <div class="confirm-buttons">
               <div class="confirm-row">
-                <button class="cancel-btn" @click="cancelOperation">
-                  Cancel
-                </button>
-                <button
-                  class="green-btn"
-                  :disabled="pinValue.length !== 4"
-                  @click="verifyPin"
-                >
+                <button class="cancel-btn" @click="clearAmount">Clear</button>
+                <button class="green-btn" :disabled="enteredAmount <= 0" @click="confirmAmount">
                   Confirm
                 </button>
               </div>
             </div>
+          </div>
 
-            <!-- Main Menu State -->
-            <div v-if="atmState === 'menu'" class="screen-menu">
-              <div class="account-info">
-                <h3>Account: {{ getCurrentAccountLabel() }}</h3>
-                <div class="balance-display">
-                  <span class="balance-label">Current Balance:</span>
-                  <span class="balance-amount"
-                    >€{{
-                      typeof balance === "number" ? balance.toFixed(2) : "---"
-                    }}</span
-                  >
-                </div>
+          <!-- Confirmation State -->
+          <div v-if="atmState === 'confirm'" class="screen-confirm">
+            <h3>Confirm {{ operationType === 'deposit' ? 'Deposit' : 'Withdrawal' }}</h3>
+            <div class="confirmation-details">
+              <div class="confirm-row">
+                <div class="confirm-label">Account:</div>
+                <div class="confirm-value">{{ getCurrentAccountLabel() }}</div>
               </div>
-              <div class="menu-options">
-                <h4>Please select an operation:</h4>
-                <div class="menu-buttons">
-                  <button class="menu-btn deposit-btn" @click="startDeposit">
-                    <span class="icon">↓</span> Deposit
-                  </button>
-                  <button class="menu-btn withdraw-btn" @click="startWithdraw">
-                    <span class="icon">↑</span> Withdraw
-                  </button>
-                  <button class="menu-btn cancel-btn" @click="cancelOperation">
-                    <span class="icon">✕</span> Exit
-                  </button>
-                </div>
+              <div class="confirm-row">
+                <div class="confirm-label">Amount:</div>
+                <div class="confirm-value">€{{ enteredAmount.toFixed(2) }}</div>
               </div>
-              <!-- Spacer to push content up -->
-              <div class="menu-spacer"></div>
-            </div>
-
-            <!-- Amount Entry State -->
-            <div v-if="atmState === 'amount'" class="screen-amount">
-              <div class="operation-type">
-                <h3>
-                  {{ operationType === "deposit" ? "DEPOSIT" : "WITHDRAWAL" }}
-                </h3>
-                <button class="back-btn" @click="atmState = 'menu'">
-                  ← Back to Menu
-                </button>
-              </div>
-              <div class="amount-entry">
-                <div class="amount-display">
-                  € <span>{{ displayAmount }}</span>
-                </div>
-                <div class="entry-instructions">
-                  Enter amount and press confirm
-                </div>
-                <div class="error-message" v-if="error">
-                  {{ error }}
-                </div>
-              </div>
-              <div class="amount-presets">
-                <div class="preset-row">
-                  <div class="preset-label">Quick Amounts:</div>
-                  <div class="preset-amounts">
-                    <button class="preset" @click="displayAmount = '10'">
-                      €10
-                    </button>
-                    <button class="preset" @click="displayAmount = '20'">
-                      €20
-                    </button>
-                    <button class="preset" @click="displayAmount = '50'">
-                      €50
-                    </button>
-                    <button class="preset" @click="displayAmount = '100'">
-                      €100
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="confirm-buttons">
-                <div class="confirm-row">
-                  <button class="cancel-btn" @click="clearAmount">Clear</button>
-                  <button
-                    class="green-btn"
-                    :disabled="enteredAmount <= 0"
-                    @click="confirmAmount"
-                  >
-                    Confirm
-                  </button>
-                </div>
+              <div class="confirm-row">
+                <div class="confirm-label">Operation:</div>
+                <div class="confirm-value">{{ operationType === 'deposit' ? 'Deposit' : 'Withdrawal' }}</div>
               </div>
             </div>
-
-            <!-- Confirmation State -->
-            <div v-if="atmState === 'confirm'" class="screen-confirm">
-              <h3>
-                Confirm
-                {{ operationType === "deposit" ? "Deposit" : "Withdrawal" }}
-              </h3>
-              <div class="confirmation-details">
-                <div class="confirm-row">
-                  <div class="confirm-label">Account:</div>
-                  <div class="confirm-value">
-                    {{ getCurrentAccountLabel() }}
-                  </div>
-                </div>
-                <div class="confirm-row">
-                  <div class="confirm-label">Amount:</div>
-                  <div class="confirm-value">
-                    €{{ enteredAmount.toFixed(2) }}
-                  </div>
-                </div>
-                <div class="confirm-row">
-                  <div class="confirm-label">Operation:</div>
-                  <div class="confirm-value">
-                    {{ operationType === "deposit" ? "Deposit" : "Withdrawal" }}
-                  </div>
-                </div>
-              </div>
-              <div class="confirm-buttons">
-                <div class="confirm-row">
-                  <button class="cancel-btn" @click="atmState = 'amount'">
-                    Cancel
-                  </button>
-                  <button class="green-btn" @click="processTransaction">
-                    Confirm
-                  </button>
-                </div>
+            <div class="confirm-buttons">
+              <div class="confirm-row">
+                <button class="cancel-btn" @click="atmState = 'amount'">Cancel</button>
+                <button class="green-btn" @click="processTransaction">Confirm</button>
               </div>
             </div>
+          </div>
 
-            <!-- Processing State -->
-            <div v-if="atmState === 'processing'" class="screen-processing">
-              <div class="processing-animation">
-                <div class="spinner"></div>
-                <p>Processing your transaction...</p>
-                <p class="small">Please wait</p>
-              </div>
+          <!-- Processing State -->
+          <div v-if="atmState === 'processing'" class="screen-processing">
+            <div class="processing-animation">
+              <div class="spinner"></div>
+              <p>Processing your transaction...</p>
+              <p class="small">Please wait</p>
             </div>
+          </div>
 
-            <!-- Transaction success message will be shown in place of receipt prompt -->
-            <div v-if="atmState === 'success'" class="screen-success">
-              <div class="success-icon">✓</div>
-              <h3>Transaction Successful</h3>
-              <div class="transaction-details">
-                <p>
-                  Your
-                  {{ operationType === "deposit" ? "deposit" : "withdrawal" }}
-                  of
-                  <span class="amount">€{{ enteredAmount.toFixed(2) }}</span>
-                  has been completed.
-                </p>
-                <p>
-                  New Balance:
-                  <span class="balance"
-                    >€{{
-                      typeof balance === "number" ? balance.toFixed(2) : "---"
-                    }}</span
-                  >
-                </p>
-              </div>
-              <button class="green-btn" @click="returnToMenu">
+          <!-- Transaction success message will be shown in place of receipt prompt -->
+          <div v-if="atmState === 'success'" class="screen-success">
+            <div class="success-icon">✓</div>
+            <h3>Transaction Successful</h3>
+            <div class="transaction-details">
+              <p>Your {{ operationType === 'deposit' ? 'deposit' : 'withdrawal' }} of 
+                <span class="amount">€{{ enteredAmount.toFixed(2) }}</span> has been completed.</p>
+              <p>New Balance: <span class="balance">€{{ typeof balance === 'number' ? balance.toFixed(2) : '---' }}</span></p>
+            </div>
+            <button class="green-btn" @click="returnToMenu">
+              Return to Menu
+            </button>
+          </div>
+
+          <!-- Error State -->
+          <div v-if="atmState === 'error'" class="screen-error">
+            <div class="error-icon">❌</div>
+            <h3>Error</h3>
+            <p class="error-message">{{ error }}</p>
+            <div class="action-row">
+              <button class="blue-btn" @click="returnToMenu">
                 Return to Menu
               </button>
             </div>
-
-            <!-- Error State -->
-            <div v-if="atmState === 'error'" class="screen-error">
-              <div class="error-icon">❌</div>
-              <h3>Error</h3>
-              <p class="error-message">{{ error }}</p>
-              <div class="action-row">
-                <button class="blue-btn" @click="returnToMenu">
-                  Return to Menu
-                </button>
-              </div>
-            </div>
+          </div>
           </div>
         </div>
       </div>
@@ -314,36 +236,25 @@
       <div class="atm-controls">
         <div class="keypad">
           <div class="keypad-section">
-            <button
-              v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]"
-              :key="num"
+            <button 
+              v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]" 
+              :key="num" 
               @click="enterDigit(num)"
-              :class="{
-                'keypad-btn': true,
-                disabled: !['amount', 'pin-create', 'pin-verify'].includes(
-                  atmState
-                ),
-              }"
+              :class="{'keypad-btn': true, 'disabled': !['amount', 'pin-create', 'pin-verify'].includes(atmState)}"
             >
               {{ num }}
             </button>
-            <button
-              class="keypad-btn keypad-decimal"
+            <button 
+              class="keypad-btn keypad-decimal" 
               @click="enterDecimal()"
-              :class="{
-                disabled: atmState !== 'amount' || displayAmount.includes('.'),
-              }"
+              :class="{'disabled': atmState !== 'amount' || displayAmount.includes('.')}"
             >
               .
             </button>
-            <button
-              class="keypad-btn keypad-delete"
+            <button 
+              class="keypad-btn keypad-delete" 
               @click="deleteDigit()"
-              :class="{
-                disabled: !['amount', 'pin-create', 'pin-verify'].includes(
-                  atmState
-                ),
-              }"
+              :class="{'disabled': !['amount', 'pin-create', 'pin-verify'].includes(atmState)}"
             >
               ⌫
             </button>
@@ -351,20 +262,14 @@
         </div>
 
         <div class="cash-slots">
-          <div
-            class="cash-slot deposit-slot"
-            :class="{ active: animateDeposit }"
-          >
+          <div class="cash-slot deposit-slot" :class="{ active: animateDeposit }">
             <div class="slot-label">INSERT CASH</div>
             <div class="slot-animation">
               <div class="cash-bills" v-if="animateDeposit"></div>
             </div>
           </div>
-
-          <div
-            class="cash-slot withdraw-slot"
-            :class="{ active: animateWithdraw }"
-          >
+          
+          <div class="cash-slot withdraw-slot" :class="{ active: animateWithdraw }">
             <div class="slot-label">TAKE CASH</div>
             <div class="slot-animation">
               <div class="cash-bills" v-if="animateWithdraw"></div>
@@ -379,135 +284,141 @@
 <script setup>
 /**
  * ATM Component
- *
+ * 
  * A full-featured ATM interface that allows users to:
  * - Select accounts
  * - Create/verify PINs
  * - Deposit and withdraw funds
  * - See success/error messages
- *
+ * 
  * The component implements a state machine pattern for managing the ATM flow
  * between different screens and operations.
  */
-import { ref, computed, onMounted } from "vue";
-import { useAuthStore } from "../store/auth";
-import api from "../lib/api";
+import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '../store/auth'
 
 // Auth & API integration
-const authStore = useAuthStore();
-const user = authStore.user;
-const token = authStore.token;
+const authStore = useAuthStore()
+const user = authStore.user
+const token = authStore.token
 
 // Account Data - Managed reactively
-const accounts = ref([]);
-const selectedAccountId = ref(null);
-const balance = ref(null);
+const accounts = ref([])
+const selectedAccountId = ref(null)
+const balance = ref(null)
 
 // ATM State Management - Implements state machine pattern
-const atmState = ref("idle"); // States: idle, pin-create, pin-verify, menu, amount, confirm, processing, success, error
+const atmState = ref('idle') // States: idle, pin-create, pin-verify, menu, amount, confirm, processing, success, error
 /**
  * Operation state
  * @type {import('vue').Ref<string>} - 'deposit' or 'withdraw'
  */
-const operationType = ref("");
+const operationType = ref('') 
 
 /**
  * Amount input display value
  * @type {import('vue').Ref<string>}
  */
-const displayAmount = ref("");
+const displayAmount = ref('')
 
 /**
  * Error message for user feedback
  * @type {import('vue').Ref<string>}
  */
-const error = ref("");
+const error = ref('')
 
 /**
  * Success/info message for user feedback
  * @type {import('vue').Ref<string>}
  */
-const message = ref("");
+const message = ref('')
 
 /**
  * PIN input value during creation/verification
  * @type {import('vue').Ref<string>}
  */
-const pinValue = ref("");
+const pinValue = ref('')
 
 /**
  * Stores verified PIN for transaction operations
  * @type {import('vue').Ref<string>}
  */
-const verifiedPin = ref("");
+const verifiedPin = ref('')
 
 /**
  * Flag indicating if PIN has been created for the account
  * @type {import('vue').Ref<boolean>}
  */
-const pinCreated = ref(false);
+const pinCreated = ref(false)
 
 /**
  * Stores account balance before transaction for comparison
  * @type {import('vue').Ref<number|null>}
  */
-const previousBalance = ref(null);
+const previousBalance = ref(null)
 
 /**
  * Animation state flags for cash movements
  * @type {import('vue').Ref<boolean>}
  */
-const animateDeposit = ref(false);
-const animateWithdraw = ref(false);
+const animateDeposit = ref(false)
+const animateWithdraw = ref(false)
 
 // Computed Properties
 const enteredAmount = computed(() => {
-  const amount = parseFloat(displayAmount.value || 0);
-  return isNaN(amount) ? 0 : amount;
-});
+  const amount = parseFloat(displayAmount.value || 0)
+  return isNaN(amount) ? 0 : amount
+})
 
 // Lifecycle Hooks
 onMounted(async () => {
   if (!user?.id) {
-    error.value = "Not logged in. Please log in to use the ATM.";
-    return;
+    error.value = "Not logged in. Please log in to use the ATM."
+    return
   }
 
   try {
-    const res = await api.get(`/accounts/user/${user.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const userAccounts = res.data;
-
-    if (userAccounts.length === 0) {
-      error.value = "No accounts found. Please open an account first.";
-      return;
+    const res = await fetch(`http://localhost:8080/api/accounts/user/${user.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    
+    if (!res.ok) {
+      throw new Error(await res.text())
     }
-
-    accounts.value = userAccounts.filter((account) => account.approved);
-
+    
+    // Get all accounts including unapproved ones
+    const allAccounts = await res.json()
+    
+    // Check if the user has any accounts at all
+    if (allAccounts.length === 0) {
+      error.value = "No accounts found. Please open an account first."
+      return
+    }
+    
+    // Check if the user has any approved accounts
+    accounts.value = allAccounts.filter(acc => acc.approved)
+    
     if (accounts.value.length === 0) {
-      const pendingAccounts = userAccounts.filter(
-        (account) => !account.approved
-      );
-      error.value =
-        pendingAccounts.length > 0
-          ? "Your accounts are pending approval. ATM operations are available only for approved accounts. Please contact customer service for assistance."
-          : "No approved accounts found. Please contact customer service.";
+      const pendingAccounts = allAccounts.filter(acc => !acc.approved)
+      if (pendingAccounts.length > 0) {
+        error.value = "Your accounts are pending approval. ATM operations are only available for approved accounts. Please contact customer service for assistance."
+      } else {
+        error.value = "No approved accounts found. Please contact customer service."
+      }
     }
   } catch (err) {
-    error.value = `Failed to load accounts: ${err.message}`;
+    error.value = "Failed to load accounts: " + err.message
   }
-});
+})
 
 // Helper Functions
 function getCurrentAccountLabel() {
-  const account = accounts.value.find(
-    (acc) => acc.id === selectedAccountId.value
-  );
-  return account ? `${account.type} (ID: ${account.id})` : "Unknown Account";
+  const account = accounts.value.find(acc => acc.id === selectedAccountId.value)
+  return account ? `${account.type} (ID: ${account.id})` : 'Unknown Account'
 }
+
 
 /**
  * ATM Flow Functions
@@ -522,52 +433,54 @@ function getCurrentAccountLabel() {
  */
 async function selectAccount() {
   if (!selectedAccountId.value) {
-    error.value = "Please select an account";
-    return;
+    error.value = "Please select an account"
+    return
   }
-
-  error.value = "";
-  atmState.value = "processing";
-
+  
+  error.value = ''
+  atmState.value = 'processing'
+  
   try {
     // First check PIN status
-    const pinStatusRes = await api.get(
-      `/atm/pinStatus?accountId=${selectedAccountId.value}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const pinStatusRes = await fetch(`http://localhost:8080/api/atm/pinStatus?accountId=${selectedAccountId.value}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    );
-
-    const pinStatus = pinStatusRes.data;
-    pinCreated.value = pinStatus.pinCreated;
-
+    })
+    
+    if (!pinStatusRes.ok) {
+      throw new Error(await pinStatusRes.text())
+    }
+    
+    const pinStatus = await pinStatusRes.json()
+    pinCreated.value = pinStatus.pinCreated
+    
     // Get balance
-    const balanceRes = await api.get(
-      `/atm/balance?accountId=${selectedAccountId.value}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const balanceRes = await fetch(`http://localhost:8080/api/atm/balance?accountId=${selectedAccountId.value}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    );
-
-    balance.value = balanceRes.data;
-
+    })
+    
+    if (!balanceRes.ok) {
+      throw new Error(await balanceRes.text())
+    }
+    
+    balance.value = await balanceRes.json()
+    
     // Route to appropriate state based on PIN status
     if (!pinCreated.value) {
       // PIN needs to be created first
-      pinValue.value = "";
-      atmState.value = "pin-create";
+      pinValue.value = ''
+      atmState.value = 'pin-create'
     } else {
       // PIN verification needed
-      pinValue.value = "";
-      atmState.value = "pin-verify";
+      pinValue.value = ''
+      atmState.value = 'pin-verify'
     }
   } catch (err) {
-    error.value = "Failed to load account: " + err.message;
-    atmState.value = "error";
+    error.value = "Failed to load account: " + err.message
+    atmState.value = 'error'
   }
 }
 
@@ -583,184 +496,203 @@ async function selectAccount() {
  */
 async function createPin() {
   if (pinValue.value.length !== 4) {
-    error.value = "PIN must be 4 digits";
-    return;
+    error.value = "PIN must be 4 digits"
+    return
   }
 
-  error.value = "";
-  atmState.value = "processing";
-
+  error.value = ''
+  atmState.value = 'processing'
+  
   try {
-    const res = await api.post(
-      "/pin/create",
-      {
-        accountId: selectedAccountId.value,
-        pin: pinValue.value,
+    const res = await fetch('http://localhost:8080/api/pin/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
       },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
+      body: JSON.stringify({
+        accountId: selectedAccountId.value,
+        pin: pinValue.value
+      })
+    })
+    
+    if (!res.ok) {
+      throw new Error(await res.text())
+    }
+    
     // Save the PIN value to use for transactions
-    verifiedPin.value = pinValue.value;
-    pinCreated.value = true;
-
+    verifiedPin.value = pinValue.value
+    pinCreated.value = true
+    
     // Skip PIN verification since we just created it
-    message.value = "PIN created successfully";
-    atmState.value = "menu";
+    message.value = "PIN created successfully"
+    atmState.value = 'menu'
   } catch (err) {
-    error.value = "Failed to create PIN: " + err.message;
-    atmState.value = "error";
+    error.value = "Failed to create PIN: " + err.message
+    atmState.value = 'error'
   }
 }
 
 async function verifyPin() {
+  // Make sure PIN is 4 digits
   if (pinValue.value.length !== 4) {
-    error.value = "PIN must be 4 digits";
-    return;
+    error.value = "PIN must be 4 digits"
+    return
   }
 
-  error.value = "";
-  atmState.value = "processing";
-
+  error.value = ''
+  atmState.value = 'processing'
+  
   try {
-    const res = await api.post(
-      "/pin/verify",
-      {
-        accountId: selectedAccountId.value,
-        pin: pinValue.value,
+    // Attempt to verify PIN with server
+    const res = await fetch('http://localhost:8080/api/pin/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
       },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const result = res.data;
-
+      body: JSON.stringify({
+        accountId: selectedAccountId.value,
+        pin: pinValue.value
+      })
+    })
+    
+    if (!res.ok) {
+      throw new Error(await res.text())
+    }
+    
+    const result = await res.json()
+    
     if (result.valid) {
-      // Keep pin value for ATM operations, don't clear it
-      // Store the verified PIN in a separate variable
-      verifiedPin.value = pinValue.value;
-      atmState.value = "menu";
+      // PIN is correct - proceed to menu
+      verifiedPin.value = pinValue.value
+      atmState.value = 'menu'
     } else {
-      error.value = "Invalid PIN. Please try again.";
-      pinValue.value = ""; // Clear PIN
-      atmState.value = "pin-verify";
+      // PIN is incorrect - show error message
+      error.value = "Invalid PIN. Please try again."
+      pinValue.value = '' // Clear PIN
+      atmState.value = 'pin-verify'
+      
+      // Return to welcome screen after 3 seconds
+      setTimeout(() => {
+        if (atmState.value === 'pin-verify') {
+          cancelOperation() // This resets to idle state
+        }
+      }, 3000)
     }
   } catch (err) {
-    error.value = "PIN verification failed: " + err.message;
-    atmState.value = "pin-verify";
+    // Handle errors from server
+    error.value = "PIN verification failed: " + err.message
+    atmState.value = 'pin-verify'
+    
+    // Return to welcome screen after 3 seconds
+    setTimeout(() => {
+      if (atmState.value === 'pin-verify') {
+        cancelOperation() // This resets to idle state
+      }
+    }, 3000)
   }
 }
 
 function startDeposit() {
-  operationType.value = "deposit";
-  displayAmount.value = "";
-  error.value = "";
-  atmState.value = "amount";
+  operationType.value = 'deposit'
+  displayAmount.value = ''
+  error.value = ''
+  atmState.value = 'amount'
 }
 
 function startWithdraw() {
-  operationType.value = "withdraw";
-  displayAmount.value = "";
-  error.value = "";
-  atmState.value = "amount";
+  operationType.value = 'withdraw'
+  displayAmount.value = ''
+  error.value = ''
+  atmState.value = 'amount'
 }
 
 function cancelOperation() {
-  atmState.value = "idle";
-  selectedAccountId.value = null; // Reset the account selection
-  operationType.value = "";
-  displayAmount.value = "";
-  pinValue.value = "";
-  verifiedPin.value = ""; // Clear the verified PIN
-  error.value = "";
+  atmState.value = 'idle'
+  selectedAccountId.value = null // Reset the account selection
+  operationType.value = ''
+  displayAmount.value = ''
+  pinValue.value = ''
+  verifiedPin.value = '' // Clear the verified PIN
+  error.value = ''
 }
+
 
 // Amount Input Functions
 function enterDigit(digit) {
   // Handle PIN entry
-  if (atmState.value === "pin-create" || atmState.value === "pin-verify") {
+  if (atmState.value === 'pin-create' || atmState.value === 'pin-verify') {
     // Limit PIN to 4 digits
-    if (pinValue.value.length >= 4) return;
-
-    pinValue.value += digit.toString();
-    return;
+    if (pinValue.value.length >= 4) return
+    
+    pinValue.value += digit.toString()
+    return
   }
-
+  
   // Handle amount entry
-  if (atmState.value !== "amount") return;
-
+  if (atmState.value !== 'amount') return
+  
   // Limit to reasonable amount length
-  if (displayAmount.value.replace(".", "").length >= 8) return;
-
-  if (displayAmount.value === "0") {
-    displayAmount.value = digit.toString();
+  if (displayAmount.value.replace('.', '').length >= 8) return
+  
+  if (displayAmount.value === '0') {
+    displayAmount.value = digit.toString()
   } else {
-    displayAmount.value += digit.toString();
+    displayAmount.value += digit.toString()
   }
 }
 
 function enterDecimal() {
   // Only relevant for amount entry
-  if (atmState.value !== "amount") return;
-  if (displayAmount.value.includes(".")) return;
-
-  if (displayAmount.value === "") {
-    displayAmount.value = "0.";
+  if (atmState.value !== 'amount') return
+  if (displayAmount.value.includes('.')) return
+  
+  if (displayAmount.value === '') {
+    displayAmount.value = '0.'
   } else {
-    displayAmount.value += ".";
+    displayAmount.value += '.'
   }
 }
 
 function deleteDigit() {
   // Handle PIN entry
-  if (atmState.value === "pin-create" || atmState.value === "pin-verify") {
+  if (atmState.value === 'pin-create' || atmState.value === 'pin-verify') {
     if (pinValue.value.length > 0) {
-      pinValue.value = pinValue.value.slice(0, -1);
+      pinValue.value = pinValue.value.slice(0, -1)
     }
-    return;
+    return
   }
-
+  
   // Handle amount entry
-  if (atmState.value !== "amount") return;
+  if (atmState.value !== 'amount') return
   if (displayAmount.value.length > 0) {
-    displayAmount.value = displayAmount.value.slice(0, -1);
+    displayAmount.value = displayAmount.value.slice(0, -1)
   }
 }
 
 function clearAmount() {
-  if (atmState.value === "pin-create" || atmState.value === "pin-verify") {
-    pinValue.value = "";
+  if (atmState.value === 'pin-create' || atmState.value === 'pin-verify') {
+    pinValue.value = ''
   } else {
-    displayAmount.value = "";
+    displayAmount.value = ''
   }
 }
 
 function confirmAmount() {
-  error.value = "";
-
+  error.value = ''
+  
   if (enteredAmount.value <= 0) {
-    error.value = "Amount must be greater than zero";
-    return;
+    error.value = "Amount must be greater than zero"
+    return
   }
-
-  if (
-    operationType.value === "withdraw" &&
-    enteredAmount.value > balance.value
-  ) {
-    error.value = "Insufficient funds";
-    return;
+  
+  if (operationType.value === 'withdraw' && enteredAmount.value > balance.value) {
+    error.value = "Insufficient funds"
+    return
   }
-
-  atmState.value = "confirm";
+  
+  atmState.value = 'confirm'
 }
 
 /**
@@ -770,107 +702,102 @@ function confirmAmount() {
  * @returns {Promise<void>}
  */
 async function processTransaction() {
-  error.value = "";
-  atmState.value = "processing";
-  let transactionSuccessful = false;
-
+  error.value = ''
+  atmState.value = 'processing'
+  let transactionSuccessful = false
+  
   try {
     // Check if the verified PIN is available
     if (!verifiedPin.value) {
-      throw new Error(
-        "PIN verification required. Please restart the transaction."
-      );
+      throw new Error("PIN verification required. Please restart the transaction.");
     }
-
+    
     // Store current balance as previous balance before transaction
     previousBalance.value = balance.value;
-
-    const res = await api.post(
-      `/atm/${operationType.value}`,
-      {
+    
+    const res = await fetch(`http://localhost:8080/api/atm/${operationType.value}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
         accountId: selectedAccountId.value,
         amount: enteredAmount.value,
-        pin: verifiedPin.value,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        pin: verifiedPin.value
+      })
+    })
+    
+    const text = await res.text()
+    if (!res.ok) {
+      // Create more specific error messages based on the response
+      if (text.includes("not approved")) {
+        throw new Error("Your account is not approved for ATM operations. Please contact customer service.");
+      } else if (text.includes("closed")) {
+        throw new Error("This account is closed and cannot perform ATM operations.");
+      } else if (text.includes("Insufficient balance")) {
+        throw new Error("Insufficient balance for this withdrawal. Please enter a smaller amount.");
+      } else {
+        throw new Error(text);
       }
-    );
-
+    }
+    
     // Transaction was successful
-    transactionSuccessful = true;
-
+    transactionSuccessful = true
+    
     // Try to update balance - but don't block the transaction flow if this fails
     try {
-      await updateBalance();
+      await updateBalance()
     } catch (balanceErr) {
       // Continue with transaction even if balance update fails
     }
-
+    
     // Animate cash movement
-    if (operationType.value === "deposit") {
-      animateDeposit.value = true;
+    if (operationType.value === 'deposit') {
+      animateDeposit.value = true
     } else {
-      animateWithdraw.value = true;
+      animateWithdraw.value = true
     }
+    
   } catch (err) {
-    if (err.response && err.response.data) {
-      const text = err.response.data;
-      if (text.includes("not approved")) {
-        error.value =
-          "Your account is not approved for ATM operations. Please contact customer service.";
-      } else if (text.includes("closed")) {
-        error.value =
-          "This account is closed and cannot perform ATM operations.";
-      } else if (text.includes("Insufficient balance")) {
-        error.value =
-          "Insufficient balance for this withdrawal. Please enter a smaller amount.";
-      } else {
-        error.value = text;
-      }
-    } else {
-      error.value = err.message;
-    }
-    atmState.value = "error";
+    error.value = err.message
+    atmState.value = 'error'
   }
-
+  
   // Show success message after successful transaction
   if (transactionSuccessful) {
     // Show cash animation first
-    if (operationType.value === "deposit") {
-      animateDeposit.value = true;
+    if (operationType.value === 'deposit') {
+      animateDeposit.value = true
     } else {
-      animateWithdraw.value = true;
+      animateWithdraw.value = true
     }
-
+    
     // Transition to success state after animation
     setTimeout(() => {
       // Stop cash animations
-      animateDeposit.value = false;
-      animateWithdraw.value = false;
-
+      animateDeposit.value = false
+      animateWithdraw.value = false
+      
       // Show success message
-      atmState.value = "success";
+      atmState.value = 'success'
       // Reset operation type immediately to ensure menu buttons are visible
-      operationType.value = "";
-
+      operationType.value = ''
+      
       // Automatically return to menu after 5 seconds
       setTimeout(() => {
         // If user is still on the success screen, reset to idle state
-        if (atmState.value === "success") {
-          atmState.value = "idle";
-          selectedAccountId.value = null; // Reset the account selection
-          operationType.value = "";
-          displayAmount.value = "";
-          pinValue.value = "";
-          verifiedPin.value = "";
-          error.value = "";
+        if (atmState.value === 'success') {
+          atmState.value = 'idle'
+          selectedAccountId.value = null  // Reset the account selection
+          operationType.value = ''
+          displayAmount.value = ''
+          pinValue.value = ''
+          verifiedPin.value = ''
+          error.value = ''
         }
-      }, 5000);
-    }, 2000);
+      }, 5000)
+    }, 2000)
   }
 }
 
@@ -882,16 +809,14 @@ async function processTransaction() {
  */
 async function updateBalance() {
   try {
-    const res = await api.get(
-      `/atm/balance?accountId=${selectedAccountId.value}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const res = await fetch(`http://localhost:8080/api/atm/balance?accountId=${selectedAccountId.value}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    );
-
-    balance.value = res.data;
+    })
+    
+    if (!res.ok) throw new Error(await res.text())
+    balance.value = await res.json()
   } catch (err) {
     // Error handled by caller
     throw err;
@@ -904,19 +829,19 @@ async function updateBalance() {
  */
 function returnToMenu() {
   // Reset all operation-related states
-  operationType.value = "";
-  displayAmount.value = "";
-  error.value = "";
-
+  operationType.value = ''
+  displayAmount.value = ''
+  error.value = ''
+  
   // After transaction success, return to idle state and reset account selection
-  if (atmState.value === "success") {
-    atmState.value = "idle";
-    selectedAccountId.value = null; // Reset the account selection
-    pinValue.value = "";
-    verifiedPin.value = "";
+  if (atmState.value === 'success') {
+    atmState.value = 'idle'
+    selectedAccountId.value = null  // Reset the account selection
+    pinValue.value = ''
+    verifiedPin.value = ''
   } else {
     // For other scenarios, go back to menu
-    atmState.value = "menu";
+    atmState.value = 'menu'
   }
 }
 </script>
@@ -983,7 +908,9 @@ function returnToMenu() {
   max-width: 650px;
   background-color: #e0e0e0;
   border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 0 0 10px #d0d0d0;
+  box-shadow: 
+    0 10px 25px rgba(0, 0, 0, 0.2),
+    0 0 0 10px #d0d0d0;
   overflow: visible; /* Changed from hidden to ensure buttons are fully visible */
   display: flex;
   flex-direction: column;
@@ -1149,15 +1076,13 @@ function returnToMenu() {
   cursor: not-allowed;
 }
 
-.keypad-decimal,
-.keypad-delete {
+.keypad-decimal, .keypad-delete {
   background: linear-gradient(to bottom, #205080, #104070);
   border-color: #003366;
   color: white;
 }
 
-.keypad-decimal:hover:not(.disabled),
-.keypad-delete:hover:not(.disabled) {
+.keypad-decimal:hover:not(.disabled), .keypad-delete:hover:not(.disabled) {
   background: linear-gradient(to bottom, #306090, #205080);
 }
 
@@ -1174,8 +1099,7 @@ function returnToMenu() {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
-.cash-slot,
-.receipt-slot {
+.cash-slot, .receipt-slot {
   background-color: #222;
   padding: 8px;
   border-radius: 4px;
@@ -1188,11 +1112,11 @@ function returnToMenu() {
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
-.cash-slot.active,
-.receipt-slot.active {
+.cash-slot.active, .receipt-slot.active {
   border-color: #4caf50;
   box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
 }
+
 
 .slot-label {
   color: #aaa;
@@ -1237,19 +1161,14 @@ function returnToMenu() {
   border: 1px solid #eee;
   border-bottom: none;
   box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-  background-image: linear-gradient(
-      90deg,
-      transparent 0%,
-      transparent 90%,
-      rgba(200, 200, 200, 0.2) 91%,
-      transparent 92%
-    ),
+  background-image: 
+    linear-gradient(90deg, transparent 0%, transparent 90%, rgba(200, 200, 200, 0.2) 91%, transparent 92%),
     linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
   background-size: 100% 100%, 100% 5px;
 }
 
 @keyframes cashAnimation {
-  0% {
+  0% { 
     transform: translateY(-20px);
     opacity: 0;
   }
@@ -1264,7 +1183,7 @@ function returnToMenu() {
 }
 
 @keyframes receiptAnimation {
-  0% {
+  0% { 
     height: 0;
     opacity: 0.8;
   }
@@ -1297,10 +1216,7 @@ function returnToMenu() {
 }
 
 /* Button Styles */
-.green-btn,
-.blue-btn,
-.cancel-btn,
-.menu-btn {
+.green-btn, .blue-btn, .cancel-btn, .menu-btn {
   padding: 10px 16px;
   border-radius: 4px;
   font-weight: 600;
@@ -1452,13 +1368,8 @@ function returnToMenu() {
 }
 
 /* Screen State Styles */
-.screen-idle,
-.screen-amount,
-.screen-confirm,
-.screen-processing,
-.screen-receipt,
-.screen-error,
-.screen-pin {
+.screen-idle, .screen-amount, .screen-confirm, 
+.screen-processing, .screen-receipt, .screen-error, .screen-pin {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1547,12 +1458,8 @@ function returnToMenu() {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error-message {
@@ -1616,8 +1523,7 @@ function returnToMenu() {
   flex-grow: 1;
 }
 
-.confirm-row,
-.action-row {
+.confirm-row, .action-row {
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -1711,8 +1617,7 @@ function returnToMenu() {
 }
 
 /* Confirm Screen */
-.confirmation-details,
-.receipt-details {
+.confirmation-details, .receipt-details {
   margin: 15px 0;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
@@ -1720,23 +1625,20 @@ function returnToMenu() {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.confirm-row,
-.receipt-row {
+.confirm-row, .receipt-row {
   display: flex;
   margin-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 8px;
 }
 
-.confirm-label,
-.receipt-label {
+.confirm-label, .receipt-label {
   width: 40%;
   color: rgba(255, 255, 255, 0.8);
   font-weight: 600;
 }
 
-.confirm-value,
-.receipt-value {
+.confirm-value, .receipt-value {
   width: 60%;
   color: white;
 }
@@ -1824,12 +1726,8 @@ function returnToMenu() {
 }
 
 @keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 .transaction-success {
@@ -1921,29 +1819,6 @@ function returnToMenu() {
   max-width: 80%;
 }
 
-/* Debug element for forcing receipt prompt */
-.debug-force-receipt-prompt {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 9999;
-  background: rgba(255, 0, 0, 0.9);
-  padding: 8px;
-  border-radius: 4px;
-  border: 2px solid yellow;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-}
-
-.debug-force-receipt-prompt button {
-  background: #f44336;
-  color: white;
-  border: 2px solid white;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  border-radius: 4px;
-}
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
@@ -1951,68 +1826,67 @@ function returnToMenu() {
     padding: 10px;
     min-height: auto;
   }
-
+  
   .atm-machine {
     border-radius: 8px;
     margin-bottom: 30px;
     max-width: 100%;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2), 0 0 0 5px #d0d0d0;
+    box-shadow: 
+      0 5px 15px rgba(0, 0, 0, 0.2),
+      0 0 0 5px #d0d0d0;
   }
-
+  
   .atm-screen {
     height: auto;
     min-height: 320px;
   }
-
+  
   .atm-controls {
     flex-direction: column;
     align-items: center;
     padding: 15px 10px;
     margin: 10px;
   }
-
-  .keypad,
-  .cash-slots {
+  
+  .keypad, .cash-slots {
     width: 100%;
     max-width: 350px;
     margin-bottom: 16px;
   }
-
+  
   .menu-buttons {
     grid-template-columns: 1fr;
     gap: 8px;
   }
-
+  
   .account-selection {
     gap: 10px;
   }
-
-  .account-selection select,
+  
+  .account-selection select, 
   .account-selection .green-btn {
     max-width: 100%;
   }
-
+  
   .welcome-message h2 {
     font-size: 1.5rem;
   }
-
+  
   .instruction-list {
     font-size: 0.8rem;
   }
-
+  
   .keypad-btn {
     height: 40px;
   }
-
+  
   /* Ensure all buttons are properly visible */
   .screen-content {
     padding: 15px 10px;
     overflow-y: auto;
   }
-
-  .screen-idle,
-  .screen-success,
-  .screen-error {
+  
+  .screen-idle, .screen-success, .screen-error {
     padding-bottom: 20px;
   }
 }

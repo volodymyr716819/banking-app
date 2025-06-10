@@ -115,12 +115,7 @@
             </div>
           </div>
           
-          <div class="card-actions">
-            <button class="btn btn-outline">
-              <span class="material-icons action-icon">visibility</span>
-              View Details
-            </button>
-          </div>
+          <!-- View Details button removed -->
         </div>
       </div>
     </div>
@@ -150,13 +145,13 @@ const errorMessage = ref('');
 const searchPerformed = ref(false);
 const copiedIban = ref('');
 
-// Define page title
+// The page title for this view
 const __pageTitle = 'Find Customer';
 
-// Expose the page title to the parent component
+// Makes the page title available to the parent component
 defineExpose({ __pageTitle });
 
-// Search for customers
+// Searches for customers using the provided search term
 const searchCustomers = async () => {
   if (!searchTerm.value.trim()) {
     errorMessage.value = 'Please enter a search term';
@@ -201,12 +196,12 @@ const searchCustomers = async () => {
   }
 };
 
-// Format IBAN with spaces for readability when displaying
+// Formats IBAN with spaces for better readability
 const formatIban = (iban) => {
   return iban.replace(/(.{4})/g, '$1 ').trim();
 };
 
-// Copy IBAN to clipboard
+// Copies the IBAN to the clipboard with feedback
 const copyToClipboard = (text) => {
   navigator.clipboard.writeText(text)
     .then(() => {
@@ -220,7 +215,7 @@ const copyToClipboard = (text) => {
     });
 };
 
-// Clear search and reset results
+// Clears the search input and resets results
 const clearSearch = () => {
   searchTerm.value = '';
   searchResults.value = [];
@@ -228,7 +223,7 @@ const clearSearch = () => {
   errorMessage.value = '';
 };
 
-// Get customer initials for avatar
+// Extracts initials from customer name for the avatar
 const getCustomerInitials = (name) => {
   if (!name) return 'C';
   

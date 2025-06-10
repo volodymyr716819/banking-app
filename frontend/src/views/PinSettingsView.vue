@@ -2,167 +2,139 @@
   <div class="pin-settings-container">
     <div class="pin-settings-card">
       <h2 class="card-title">PIN Management</h2>
-
+      
       <div v-if="loading" class="loading-spinner"></div>
-
+      
       <div v-else-if="error" class="error-message">
         {{ error }}
       </div>
-
+      
       <div v-else class="pin-settings-content">
         <div class="accounts-list" v-if="accounts.length > 0">
           <h3>Select Account to Manage PIN</h3>
-
-          <div
-            v-for="account in accounts"
-            :key="account.id"
-            class="account-item"
-          >
+          
+          <div v-for="account in accounts" :key="account.id" class="account-item">
             <div class="account-info">
               <div class="account-name">{{ account.type }}</div>
               <div class="account-id">ID: {{ account.id }}</div>
             </div>
-
+            
             <div class="pin-status">
-              <span
-                :class="{
-                  'pin-set': account.pinCreated,
-                  'pin-not-set': !account.pinCreated,
-                }"
-              >
-                {{ account.pinCreated ? "PIN Set" : "No PIN" }}
+              <span :class="{'pin-set': account.pinCreated, 'pin-not-set': !account.pinCreated}">
+                {{ account.pinCreated ? 'PIN Set' : 'No PIN' }}
               </span>
             </div>
-
-            <button
-              class="manage-pin-btn"
+            
+            <button 
+              class="manage-pin-btn" 
               @click="selectAccount(account.id)"
-              :class="{
-                'create-btn': !account.pinCreated,
-                'change-btn': account.pinCreated,
-              }"
+              :class="{'create-btn': !account.pinCreated, 'change-btn': account.pinCreated}"
             >
-              {{ account.pinCreated ? "Change PIN" : "Create PIN" }}
+              {{ account.pinCreated ? 'Change PIN' : 'Create PIN' }}
             </button>
           </div>
         </div>
-
+        
         <div v-else class="no-accounts">
           No approved accounts found. Please contact customer service.
         </div>
       </div>
     </div>
-
+    
     <!-- PIN Management Modal -->
     <div v-if="showPinModal" class="pin-modal-overlay" @click="cancelPin">
       <div class="pin-modal" @click.stop>
         <div class="modal-header">
-          <h3>{{ selectedAccountHasPin ? "Change PIN" : "Create PIN" }}</h3>
+          <h3>{{ selectedAccountHasPin ? 'Change PIN' : 'Create PIN' }}</h3>
           <button class="close-btn" @click="cancelPin">×</button>
         </div>
-
+        
         <div class="modal-body">
           <div v-if="selectedAccountHasPin" class="pin-form">
             <div class="form-group">
-              <label>Current PIN</label>
-              <div class="pin-input">
-                <input
-                  v-for="i in 4"
-                  :key="'current-' + i"
-                  ref="currentPinFields"
-                  type="password"
-                  maxlength="1"
-                  v-model="currentPin[i - 1]"
-                  @input="focusNextInput('current', i - 1)"
-                  @keydown.delete="handleDelete('current', i - 1)"
-                />
-              </div>
-            </div>
-
-            <div class="form-group">
               <label>New PIN</label>
               <div class="pin-input">
-                <input
-                  v-for="i in 4"
-                  :key="'new-' + i"
+                <input 
+                  v-for="i in 4" 
+                  :key="'new-'+i"
                   ref="newPinFields"
-                  type="password"
-                  maxlength="1"
-                  v-model="newPin[i - 1]"
-                  @input="focusNextInput('new', i - 1)"
-                  @keydown.delete="handleDelete('new', i - 1)"
+                  type="password" 
+                  maxlength="1" 
+                  v-model="newPin[i-1]"
+                  @input="focusNextInput('new', i-1)"
+                  @keydown.delete="handleDelete('new', i-1)"
                 />
               </div>
             </div>
-
+            
             <div class="form-group">
               <label>Confirm New PIN</label>
               <div class="pin-input">
-                <input
-                  v-for="i in 4"
-                  :key="'confirm-' + i"
+                <input 
+                  v-for="i in 4" 
+                  :key="'confirm-'+i"
                   ref="confirmPinFields"
-                  type="password"
-                  maxlength="1"
-                  v-model="confirmPin[i - 1]"
-                  @input="focusNextInput('confirm', i - 1)"
-                  @keydown.delete="handleDelete('confirm', i - 1)"
+                  type="password" 
+                  maxlength="1" 
+                  v-model="confirmPin[i-1]"
+                  @input="focusNextInput('confirm', i-1)"
+                  @keydown.delete="handleDelete('confirm', i-1)"
                 />
               </div>
             </div>
           </div>
-
+          
           <div v-else class="pin-form">
             <div class="form-group">
               <label>New PIN</label>
               <div class="pin-input">
-                <input
-                  v-for="i in 4"
-                  :key="'new-' + i"
+                <input 
+                  v-for="i in 4" 
+                  :key="'new-'+i"
                   ref="newPinFields"
-                  type="password"
-                  maxlength="1"
-                  v-model="newPin[i - 1]"
-                  @input="focusNextInput('new', i - 1)"
-                  @keydown.delete="handleDelete('new', i - 1)"
+                  type="password" 
+                  maxlength="1" 
+                  v-model="newPin[i-1]"
+                  @input="focusNextInput('new', i-1)"
+                  @keydown.delete="handleDelete('new', i-1)"
                 />
               </div>
             </div>
-
+            
             <div class="form-group">
               <label>Confirm PIN</label>
               <div class="pin-input">
-                <input
-                  v-for="i in 4"
-                  :key="'confirm-' + i"
+                <input 
+                  v-for="i in 4" 
+                  :key="'confirm-'+i"
                   ref="confirmPinFields"
-                  type="password"
-                  maxlength="1"
-                  v-model="confirmPin[i - 1]"
-                  @input="focusNextInput('confirm', i - 1)"
-                  @keydown.delete="handleDelete('confirm', i - 1)"
+                  type="password" 
+                  maxlength="1" 
+                  v-model="confirmPin[i-1]"
+                  @input="focusNextInput('confirm', i-1)"
+                  @keydown.delete="handleDelete('confirm', i-1)"
                 />
               </div>
             </div>
           </div>
-
+          
           <div v-if="modalError" class="error-message">
             {{ modalError }}
           </div>
-
+          
           <div v-if="successMessage" class="success-message">
             {{ successMessage }}
           </div>
         </div>
-
+        
         <div class="modal-footer">
           <button class="cancel-btn" @click="cancelPin">Cancel</button>
-          <button
-            class="save-btn"
+          <button 
+            class="save-btn" 
             @click="savePinChanges"
             :disabled="!isPinFormValid || pinProcessing"
           >
-            {{ pinProcessing ? "Processing..." : "Save" }}
+            {{ pinProcessing ? 'Processing...' : 'Save' }}
           </button>
         </div>
       </div>
@@ -171,9 +143,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { useAuthStore } from "../store/auth";
-import api from "../lib/api";
+import { ref, computed, onMounted } from 'vue';
+import { useAuthStore } from '../store/auth';
 
 // Auth & API
 const authStore = useAuthStore();
@@ -182,19 +153,19 @@ const token = authStore.token;
 
 // Data management
 const loading = ref(true);
-const error = ref("");
+const error = ref('');
 const accounts = ref([]);
-const modalError = ref("");
-const successMessage = ref("");
+const modalError = ref('');
+const successMessage = ref('');
 const pinProcessing = ref(false);
 
 // PIN management
 const showPinModal = ref(false);
 const selectedAccountId = ref(null);
 const selectedAccountHasPin = ref(false);
-const currentPin = ref(["", "", "", ""]);
-const newPin = ref(["", "", "", ""]);
-const confirmPin = ref(["", "", "", ""]);
+const currentPin = ref(['', '', '', '']);
+const newPin = ref(['', '', '', '']);
+const confirmPin = ref(['', '', '', '']);
 
 // References for PIN input fields
 const currentPinFields = ref([]);
@@ -203,23 +174,10 @@ const confirmPinFields = ref([]);
 
 // Check if PIN form is valid
 const isPinFormValid = computed(() => {
-  // For creating new PIN
-  if (!selectedAccountHasPin.value) {
-    return (
-      newPin.value.every((digit) => digit.length === 1) &&
-      confirmPin.value.every((digit) => digit.length === 1) &&
-      newPin.value.join("") === confirmPin.value.join("")
-    );
-  }
-
-  // For changing existing PIN
-  return (
-    currentPin.value.every((digit) => digit.length === 1) &&
-    newPin.value.every((digit) => digit.length === 1) &&
-    confirmPin.value.every((digit) => digit.length === 1) &&
-    newPin.value.join("") !== currentPin.value.join("") &&
-    newPin.value.join("") === confirmPin.value.join("")
-  );
+  // Both creating and changing PIN have the same validation now
+  return newPin.value.every(digit => digit.length === 1) && 
+         confirmPin.value.every(digit => digit.length === 1) &&
+         newPin.value.join('') === confirmPin.value.join('');
 });
 
 // Load accounts on mount
@@ -232,49 +190,57 @@ onMounted(async () => {
 
   try {
     // Load accounts
-    const res = await api.get(`/accounts/user/${user.id}`, {
+    const res = await fetch(`http://localhost:8080/api/accounts/user/${user.id}`, {
       headers: {
-        Authorization: `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     });
-
-    const accountsData = res.data;
-    const approvedAccounts = accountsData.filter((acc) => acc.approved);
-
+    
+    if (!res.ok) {
+      throw new Error(await res.text());
+    }
+    
+    const accountsData = await res.json();
+    const approvedAccounts = accountsData.filter(acc => acc.approved);
+    
     if (approvedAccounts.length === 0) {
-      error.value =
-        "No approved accounts found. Please contact customer service.";
+      error.value = "No approved accounts found. Please contact customer service.";
       loading.value = false;
       return;
     }
-
+    
     // Check PIN status for each account
     const accountsWithPinStatus = await Promise.all(
       approvedAccounts.map(async (account) => {
         try {
-          const pinRes = await api.get(
-            `/atm/pinStatus?accountId=${account.id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+          const pinRes = await fetch(`http://localhost:8080/api/atm/pinStatus?accountId=${account.id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`
             }
-          );
-
-          return {
-            ...account,
-            pinCreated: pinRes.data.pinCreated,
-          };
+          });
+          
+          if (pinRes.ok) {
+            const pinStatus = await pinRes.json();
+            return {
+              ...account,
+              pinCreated: pinStatus.pinCreated
+            };
+          } else {
+            return {
+              ...account,
+              pinCreated: false
+            };
+          }
         } catch (err) {
           console.error("Error checking PIN status:", err);
           return {
             ...account,
-            pinCreated: false,
+            pinCreated: false
           };
         }
       })
     );
-
+    
     accounts.value = accountsWithPinStatus;
     loading.value = false;
   } catch (err) {
@@ -286,23 +252,21 @@ onMounted(async () => {
 // Select account for PIN management
 function selectAccount(accountId) {
   selectedAccountId.value = accountId;
-  const account = accounts.value.find((acc) => acc.id === accountId);
+  const account = accounts.value.find(acc => acc.id === accountId);
   selectedAccountHasPin.value = account ? account.pinCreated : false;
-
+  
   // Reset form values
-  modalError.value = "";
-  successMessage.value = "";
-  currentPin.value = ["", "", "", ""];
-  newPin.value = ["", "", "", ""];
-  confirmPin.value = ["", "", "", ""];
-
+  modalError.value = '';
+  successMessage.value = '';
+  currentPin.value = ['', '', '', ''];
+  newPin.value = ['', '', '', ''];
+  confirmPin.value = ['', '', '', ''];
+  
   showPinModal.value = true;
-
-  // Focus first input on next tick
+  
+  // Focus first input of new PIN on next tick
   setTimeout(() => {
-    if (selectedAccountHasPin.value && currentPinFields.value[0]) {
-      currentPinFields.value[0].focus();
-    } else if (newPinFields.value[0]) {
+    if (newPinFields.value[0]) {
       newPinFields.value[0].focus();
     }
   }, 50);
@@ -313,10 +277,10 @@ function focusNextInput(fieldType, index) {
   if (index < 3) {
     const nextField = getFieldRefByType(fieldType)[index + 1];
     if (nextField) nextField.focus();
-  } else if (fieldType === "current" && newPinFields.value[0]) {
+  } else if (fieldType === 'current' && newPinFields.value[0]) {
     // Move to the new PIN field after completing current PIN
     newPinFields.value[0].focus();
-  } else if (fieldType === "new" && confirmPinFields.value[0]) {
+  } else if (fieldType === 'new' && confirmPinFields.value[0]) {
     // Move to the confirm PIN field after completing new PIN
     confirmPinFields.value[0].focus();
   }
@@ -325,7 +289,7 @@ function focusNextInput(fieldType, index) {
 // Handle backspace in PIN fields
 function handleDelete(fieldType, index) {
   const pinArray = getPinArrayByType(fieldType);
-  if (index > 0 && pinArray[index] === "") {
+  if (index > 0 && pinArray[index] === '') {
     const prevField = getFieldRefByType(fieldType)[index - 1];
     if (prevField) {
       prevField.focus();
@@ -336,28 +300,20 @@ function handleDelete(fieldType, index) {
 // Helper to get the correct field reference by type
 function getFieldRefByType(fieldType) {
   switch (fieldType) {
-    case "current":
-      return currentPinFields.value;
-    case "new":
-      return newPinFields.value;
-    case "confirm":
-      return confirmPinFields.value;
-    default:
-      return [];
+    case 'current': return currentPinFields.value;
+    case 'new': return newPinFields.value;
+    case 'confirm': return confirmPinFields.value;
+    default: return [];
   }
 }
 
 // Helper to get the correct PIN array by type
 function getPinArrayByType(fieldType) {
   switch (fieldType) {
-    case "current":
-      return currentPin.value;
-    case "new":
-      return newPin.value;
-    case "confirm":
-      return confirmPin.value;
-    default:
-      return [];
+    case 'current': return currentPin.value;
+    case 'new': return newPin.value;
+    case 'confirm': return confirmPin.value;
+    default: return [];
   }
 }
 
@@ -365,121 +321,109 @@ function getPinArrayByType(fieldType) {
 function cancelPin() {
   showPinModal.value = false;
   selectedAccountId.value = null;
-  modalError.value = "";
-  successMessage.value = "";
-  currentPin.value = ["", "", "", ""];
-  newPin.value = ["", "", "", ""];
-  confirmPin.value = ["", "", "", ""];
+  modalError.value = '';
+  successMessage.value = '';
+  currentPin.value = ['', '', '', ''];
+  newPin.value = ['', '', '', ''];
+  confirmPin.value = ['', '', '', ''];
 }
 
 // Save PIN changes
 async function savePinChanges() {
-  modalError.value = "";
-  successMessage.value = "";
+  modalError.value = '';
+  successMessage.value = '';
   pinProcessing.value = true;
-
+  
   try {
-    const newPinValue = newPin.value.join("");
-
+    const newPinValue = newPin.value.join('');
+    
     if (!/^\d{4}$/.test(newPinValue)) {
       modalError.value = "PIN must be 4 digits";
       pinProcessing.value = false;
       return;
     }
-
-    if (newPinValue !== confirmPin.value.join("")) {
+    
+    if (newPinValue !== confirmPin.value.join('')) {
       modalError.value = "PINs do not match";
       pinProcessing.value = false;
       return;
     }
-
+    
     if (selectedAccountHasPin.value) {
-      // Changing existing PIN
-      const currentPinValue = currentPin.value.join("");
-
-      if (currentPinValue === newPinValue) {
-        modalError.value = "New PIN must be different from current PIN";
-        pinProcessing.value = false;
-        return;
-      }
-
-      // Verify current PIN first
-      const verifyRes = await api.post(
-        "/pin/verify",
-        {
-          accountId: selectedAccountId.value,
-          pin: currentPinValue,
+      // Changing existing PIN without verification
+      
+      // Change PIN directly
+      const changeRes = await fetch('http://localhost:8080/api/pin/change', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const verifyResult = verifyRes.data;
-      if (!verifyResult.valid) {
-        modalError.value = "Current PIN is incorrect";
-        pinProcessing.value = false;
-        return;
-      }
-
-      // Change PIN
-      await api.post(
-        "/pin/change",
-        {
+        body: JSON.stringify({
           accountId: selectedAccountId.value,
-          pin: currentPinValue,
-          newPin: newPinValue,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+          newPin: newPinValue
+        })
+      });
+      
+      if (!changeRes.ok) {
+        throw new Error(await changeRes.text());
+      }
+      
       successMessage.value = "PIN changed successfully";
+      
+      // Update account PIN status
+      const updatedAccounts = accounts.value.map(account => {
+        if (account.id === selectedAccountId.value) {
+          return { ...account, pinCreated: true };
+        }
+        return account;
+      });
+      
+      accounts.value = updatedAccounts;
+      
     } else {
       // Creating new PIN
-      await api.post(
-        "/pin/create",
-        {
-          accountId: selectedAccountId.value,
-          pin: newPinValue,
+      const createRes = await fetch('http://localhost:8080/api/pin/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      successMessage.value = "PIN created successfully";
-    }
-
-    // Update account PIN status
-    accounts.value = accounts.value.map((account) => {
-      if (account.id === selectedAccountId.value) {
-        return { ...account, pinCreated: true };
+        body: JSON.stringify({
+          accountId: selectedAccountId.value,
+          pin: newPinValue
+        })
+      });
+      
+      if (!createRes.ok) {
+        throw new Error(await createRes.text());
       }
-      return account;
-    });
-
+      
+      successMessage.value = "PIN created successfully";
+      
+      // Update account PIN status
+      const updatedAccounts = accounts.value.map(account => {
+        if (account.id === selectedAccountId.value) {
+          return { ...account, pinCreated: true };
+        }
+        return account;
+      });
+      
+      accounts.value = updatedAccounts;
+    }
+    
     // Reset form after success
-    currentPin.value = ["", "", "", ""];
-    newPin.value = ["", "", "", ""];
-    confirmPin.value = ["", "", "", ""];
-
+    currentPin.value = ['', '', '', ''];
+    newPin.value = ['', '', '', ''];
+    confirmPin.value = ['', '', '', ''];
+    
     // Auto-close modal after a delay
     setTimeout(() => {
       showPinModal.value = false;
       selectedAccountId.value = null;
-      successMessage.value = "";
+      successMessage.value = '';
     }, 2000);
+    
   } catch (err) {
     modalError.value = "Failed to save PIN: " + err.message;
   } finally {
@@ -528,12 +472,8 @@ async function savePinChanges() {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .accounts-list {
