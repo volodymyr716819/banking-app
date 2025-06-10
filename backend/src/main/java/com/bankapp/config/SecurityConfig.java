@@ -1,5 +1,6 @@
 package com.bankapp.config;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,20 +32,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                new AntPathRequestMatcher("/api/auth/login"),
-                                new AntPathRequestMatcher("/api/auth/register"),
-                                new AntPathRequestMatcher("/h2-console/**"))
-                        .permitAll()
-                        .anyRequest().authenticated());
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    new AntPathRequestMatcher("/api/auth/login"),
+                    new AntPathRequestMatcher("/api/auth/register"),
+                    new AntPathRequestMatcher("/h2-console/**")
+                ).permitAll()
+                .anyRequest().authenticated()
+            );
 
-        http.headers(headers -> headers.frameOptions(frame -> frame.disable())); // for H2 console
+        http.headers(headers -> headers.frameOptions(frame -> frame.disable())); // Allow H2 console
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 
@@ -62,17 +63,23 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allow both local development and production frontend
+        // Allow both local dev and GitHub Pages frontend
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "https://volodymyr716819.github.io"));
+            "http://localhost:5173",
+            "https://volodymyr716819.github.io"
+        ));
 
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        config.setExposedHeaders(List.of("Authorization")); // allow frontend to read JWT if sent
+        config.setAllowCredentials(true); // allow cookies/headers with credentials
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
+        // Debug print
+        System.out.println("CORS config applied for: " + config.getAllowedOrigins());
+
         return source;
     }
 }
