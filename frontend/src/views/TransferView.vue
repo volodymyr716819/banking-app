@@ -120,7 +120,7 @@ const submitTransfer = async () => {
     message.value = 'Transfer successful!';
     messageType.value = 'success';
     fromAccount.value = '';
-    toAccountId.value = '';
+    toAccountIban.value = '';
     amount.value = '';
     description.value = '';
     await fetchAccounts(); // Refresh accounts to show updated balances
