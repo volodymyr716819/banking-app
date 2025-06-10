@@ -77,7 +77,7 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:5173",
                 "https://volodymyr716819.github.io",
-                "https://banking-app-test-fxbj.onrender.com"));
+                "https://banking-app-fxbj.onrender.com"));
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
