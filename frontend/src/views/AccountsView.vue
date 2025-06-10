@@ -64,7 +64,7 @@
 
 <script>
 import { ref, onMounted } from "vue";
-import axios from "axios";
+import api from '../lib/api';
 import { useAuthStore } from "../store/auth";
 import { useRouter } from 'vue-router';
 
@@ -80,8 +80,8 @@ export default {
 
     const fetchAccounts = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:8080/api/accounts/user/${auth.user.id}`,
+        const response = await api.get(
+          `/accounts/user/${auth.user.id}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,
@@ -97,8 +97,8 @@ export default {
 
     const createAccount = async () => {
       try {
-        await axios.post(
-          `http://localhost:8080/api/accounts/create?userId=${auth.user.id}&type=${newAccountType.value}`,
+        await api.post(
+          `/accounts/create?userId=${auth.user.id}&type=${newAccountType.value}`,
           {},
           {
             headers: {
