@@ -25,9 +25,57 @@
           </option>
         </select>
       </div>
+      
+      <div class="filter-section">
+        <label>Date Range:</label>
+        <div class="date-range-inputs">
+          <input 
+            type="date" 
+            v-model="startDate" 
+            placeholder="Start Date"
+            class="date-input"
+          />
+          <span class="date-separator">to</span>
+          <input 
+            type="date" 
+            v-model="endDate" 
+            placeholder="End Date"
+            class="date-input"
+          />
+        </div>
+      </div>
+      
+      <div class="filter-section">
+        <label>Amount Range:</label>
+        <div class="amount-range-inputs">
+          <div class="amount-input-wrapper">
+            <span class="currency-symbol">€</span>
+            <input 
+              type="number" 
+              v-model="minAmount" 
+              placeholder="Min" 
+              min="0"
+              step="0.01"
+              class="amount-input"
+            />
+          </div>
+          <span class="amount-separator">to</span>
+          <div class="amount-input-wrapper">
+            <span class="currency-symbol">€</span>
+            <input 
+              type="number" 
+              v-model="maxAmount" 
+              placeholder="Max" 
+              min="0"
+              step="0.01"
+              class="amount-input"
+            />
+          </div>
+        </div>
+      </div>
 
       <button
-        v-if="selectedTransactionType || filterAccount"
+        v-if="selectedTransactionType || filterAccount || startDate || endDate || minAmount || maxAmount"
         @click="clearFilters"
         class="clear-filters-button"
       >
@@ -90,7 +138,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import api from '../lib/api';
 import { useAuthStore } from "../store/auth";
 
@@ -102,6 +150,10 @@ export default {
     const message = ref("");
     const accounts = ref([]);
     const filterAccount = ref("");
+    const startDate = ref("");
+    const endDate = ref("");
+    const minAmount = ref("");
+    const maxAmount = ref("");
 
     const fetchTransactions = async () => {
       if (!auth.user || !auth.user.id) {
@@ -112,8 +164,23 @@ export default {
       message.value = "Loading transactions...";
 
       try {
+        // Create filter parameters
+        const params = new URLSearchParams();
+        
+        // Add date filters if provided
+        if (startDate.value) params.append('startDate', startDate.value);
+        if (endDate.value) params.append('endDate', endDate.value);
+        
+        // Add amount filters if provided
+        if (minAmount.value && !isNaN(minAmount.value)) params.append('minAmount', minAmount.value);
+        if (maxAmount.value && !isNaN(maxAmount.value)) params.append('maxAmount', maxAmount.value);
+        
+        // Build query string
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+        
+        // Fetch transactions with filters
         const response = await api.get(
-          `/transactions/user/${auth.user.id}`,
+          `/transactions/user/${auth.user.id}${queryString}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,
@@ -175,29 +242,59 @@ export default {
       fetchTransactions();
       fetchUserAccounts();
     });
+    
+    // Watch for changes in filter parameters and refetch data from server
+    watch([startDate, endDate, minAmount, maxAmount], () => {
+      fetchTransactions();
+    });
 
     const clearFilters = () => {
       selectedTransactionType.value = "";
       filterAccount.value = "";
+      startDate.value = "";
+      endDate.value = "";
+      minAmount.value = "";
+      maxAmount.value = "";
     };
 
     const getFilteredTransactions = () => {
       let result = transactions.value;
 
-      // Filter by transaction type if selected
+      // Filter by transaction type
       if (selectedTransactionType.value) {
-        result = result.filter(
-          (tx) => tx.transactionType === selectedTransactionType.value
-        );
+        result = result.filter(tx => tx.transactionType === selectedTransactionType.value);
       }
 
-      // Filter by account if selected
+      // Filter by account
       if (filterAccount.value) {
-        result = result.filter(
-          (tx) =>
-            tx.fromAccountIban === filterAccount.value ||
-            tx.toAccountIban === filterAccount.value
+        result = result.filter(tx => 
+          tx.fromAccountIban === filterAccount.value || 
+          tx.toAccountIban === filterAccount.value
         );
+      }
+      
+      // Apply client-side date filters
+      if (startDate.value) {
+        const startDateObj = new Date(startDate.value);
+        startDateObj.setHours(0, 0, 0, 0); // Beginning of day
+        result = result.filter(tx => new Date(tx.timestamp) >= startDateObj);
+      }
+      
+      if (endDate.value) {
+        const endDateObj = new Date(endDate.value);
+        endDateObj.setHours(23, 59, 59, 999); // End of day
+        result = result.filter(tx => new Date(tx.timestamp) <= endDateObj);
+      }
+      
+      // Apply client-side amount filters
+      if (minAmount.value && !isNaN(minAmount.value)) {
+        const minVal = parseFloat(minAmount.value);
+        result = result.filter(tx => parseFloat(tx.amount) >= minVal);
+      }
+      
+      if (maxAmount.value && !isNaN(maxAmount.value)) {
+        const maxVal = parseFloat(maxAmount.value);
+        result = result.filter(tx => parseFloat(tx.amount) <= maxVal);
       }
 
       return result;
@@ -253,6 +350,10 @@ export default {
       getTransactionTypeClass,
       accounts,
       filterAccount,
+      startDate,
+      endDate,
+      minAmount,
+      maxAmount,
       clearFilters,
     };
   },
@@ -306,10 +407,55 @@ h1 {
     box-shadow var(--transition-fast);
 }
 
-.filter-section select:focus {
+.filter-section select:focus,
+.filter-section input:focus {
   border-color: var(--primary-light);
   outline: 0;
   box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+}
+
+.date-range-inputs,
+.amount-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.date-separator,
+.amount-separator {
+  color: var(--gray-600);
+  font-size: var(--font-size-sm);
+}
+
+.date-input {
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--gray-300);
+  background-color: var(--white);
+  font-size: var(--font-size-sm);
+  min-width: 140px;
+}
+
+.amount-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.currency-symbol {
+  position: absolute;
+  left: var(--spacing-2);
+  color: var(--gray-600);
+  font-size: var(--font-size-sm);
+}
+
+.amount-input {
+  padding: var(--spacing-2) var(--spacing-3) var(--spacing-2) var(--spacing-5);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--gray-300);
+  background-color: var(--white);
+  font-size: var(--font-size-sm);
+  width: 100px;
 }
 
 .clear-filters-button {

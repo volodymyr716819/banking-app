@@ -1,6 +1,11 @@
 package com.bankapp.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,6 +41,8 @@ public class TransactionService {
 
     @Autowired
     private AtmOperationRepository atmOperationRepository;
+    
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // Converts a Transaction entity into a DTO for frontend use
     private TransactionHistoryDTO mapTransactionToDTO(Transaction t) {
@@ -61,43 +68,66 @@ public class TransactionService {
         return dto;
     }
 
-    // Retrieves all transactions and ATM operations for a given user
+    // Get user transaction history without filters
     public List<TransactionHistoryDTO> getUserTransactionHistory(Long userId) {
-        // Fetch all transactions of the user
+        return getUserTransactionHistory(userId, null, null, null, null);
+    }
+    
+    // Get user transaction history with optional date and amount filters
+    public List<TransactionHistoryDTO> getUserTransactionHistory(
+            Long userId, 
+            String startDateStr, 
+            String endDateStr, 
+            BigDecimal minAmount, 
+            BigDecimal maxAmount) {
+        
+        // Get regular bank transfers
         List<Transaction> transactions = transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(userId, userId);
         
-        // Fetch all ATM operations associated with this user
+        // Get ATM operations (deposits/withdrawals)
         List<AtmOperation> atmOperations = atmOperationRepository.findByAccount_User_Id(userId);
 
-        // Convert Transaction entities into a list of DTOs for response
+        // Convert to DTOs for frontend
         List<TransactionHistoryDTO> transactionHistory = transactions.stream()
                 .map(this::mapTransactionToDTO)
                 .collect(Collectors.toList());
 
-        // Convert ATM operations into a list of DTOs
         List<TransactionHistoryDTO> atmHistory = atmOperations.stream()
                 .map(this::mapAtmOperationToDTO)
                 .collect(Collectors.toList());
 
-        // Map transactions to DTOs into a single list
+        // Combine all transactions
         List<TransactionHistoryDTO> combinedHistory = new ArrayList<>();
         combinedHistory.addAll(transactionHistory);
         combinedHistory.addAll(atmHistory);
 
-        // Sort newest to oldest
+        // Sort by date (newest first)
         combinedHistory.sort(Comparator.comparing(TransactionHistoryDTO::getTimestamp).reversed());
-
-        return combinedHistory;
+        
+        // Apply date and amount filters
+        return filterTransactions(combinedHistory, startDateStr, endDateStr, minAmount, maxAmount);
     }
 
-    // Retrieves all transactions and ATM operations for a specific account
+    // Get account transaction history without filters
     public List<TransactionHistoryDTO> getAccountTransactionHistory(Long accountId) {
-        // Find all transactions of the account
+        return getAccountTransactionHistory(accountId, null, null, null, null);
+    }
+    
+    // Get account transaction history with optional date and amount filters
+    public List<TransactionHistoryDTO> getAccountTransactionHistory(
+            Long accountId,
+            String startDateStr,
+            String endDateStr,
+            BigDecimal minAmount,
+            BigDecimal maxAmount) {
+            
+        // Get regular bank transfers for this account
         List<Transaction> transactions = transactionRepository.findByFromAccount_IdOrToAccount_Id(accountId, accountId);
-        // Get all ATM transaction entities for this account
+        
+        // Get ATM operations for this account
         List<AtmOperation> atmOperations = atmOperationRepository.findByAccount_Id(accountId);
 
-        // Convert both sets to DTOs
+        // Convert to DTOs for frontend
         List<TransactionHistoryDTO> transactionHistory = transactions.stream()
                 .map(this::mapTransactionToDTO)
                 .collect(Collectors.toList());
@@ -106,22 +136,37 @@ public class TransactionService {
                 .map(this::mapAtmOperationToDTO)
                 .collect(Collectors.toList());
 
-        // Combine and sort the histories
+        // Combine both transaction types
         List<TransactionHistoryDTO> combinedHistory = new ArrayList<>();
         combinedHistory.addAll(transactionHistory);
         combinedHistory.addAll(atmHistory);
 
+        // Sort by date (newest first)
         combinedHistory.sort(Comparator.comparing(TransactionHistoryDTO::getTimestamp).reversed());
-        return combinedHistory;
+        
+        // Apply date and amount filters
+        return filterTransactions(combinedHistory, startDateStr, endDateStr, minAmount, maxAmount);
     }
 
-    // Converts IBAN to account and returns history for it
+    // Get account history by IBAN without filters
     public List<TransactionHistoryDTO> getAccountTransactionHistoryByIban(String iban) {
+        return getAccountTransactionHistoryByIban(iban, null, null, null, null);
+    }
+    
+    // Get account history by IBAN with optional date and amount filters
+    public List<TransactionHistoryDTO> getAccountTransactionHistoryByIban(
+            String iban,
+            String startDateStr,
+            String endDateStr,
+            BigDecimal minAmount,
+            BigDecimal maxAmount) {
+        // Find account by IBAN
         Optional<Account> accountOpt = accountRepository.findByIban(iban);
         if (accountOpt.isEmpty()) {
             throw new IllegalArgumentException("Account not found for IBAN: " + iban);
         }
-        return getAccountTransactionHistory(accountOpt.get().getId());
+        // Get transaction history using account ID
+        return getAccountTransactionHistory(accountOpt.get().getId(), startDateStr, endDateStr, minAmount, maxAmount);
     }
 
     // Handles transferring money from one account to another (by ID)
@@ -203,27 +248,53 @@ public class TransactionService {
         transferMoney(senderOpt.get().getId(), receiverOpt.get().getId(), amount, description);
     }
 
-    // Returns transaction history for a given IBAN if requester is authorized
+    // Get account history by IBAN with authentication check
     public List<TransactionHistoryDTO> getTransactionHistoryByIbanWithAuth(String iban, User requester) {
+        return getTransactionHistoryByIbanWithAuth(iban, requester, null, null, null, null);
+    }
+    
+    // Get account history by IBAN with authentication and filters
+    public List<TransactionHistoryDTO> getTransactionHistoryByIbanWithAuth(
+            String iban, 
+            User requester,
+            String startDateStr,
+            String endDateStr,
+            BigDecimal minAmount,
+            BigDecimal maxAmount) {
+        // Find the account
         Account account = accountRepository.findByIban(iban)
         .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
-        // Only allow access if requester owns account or is an employee
+        // Check authorization - only account owner or bank employee can view
         if (!account.getUser().getId().equals(requester.getId()) &&
            !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
            throw new IllegalArgumentException("Access denied");
         }
 
-         return getAccountTransactionHistory(account.getId());
+        // Return filtered transaction history
+        return getAccountTransactionHistory(account.getId(), startDateStr, endDateStr, minAmount, maxAmount);
     }
     
-    // Returns full transaction history for a user with access check
+    // Get user transaction history with authentication check
     public List<TransactionHistoryDTO> getTransactionsByUserWithAuth(Long userId, User requester) {
+        return getTransactionsByUserWithAuth(userId, requester, null, null, null, null);
+    }
+    
+    // Get user transaction history with authentication and filters
+    public List<TransactionHistoryDTO> getTransactionsByUserWithAuth(
+            Long userId, 
+            User requester,
+            String startDateStr,
+            String endDateStr,
+            BigDecimal minAmount,
+            BigDecimal maxAmount) {
+        // Check authorization - only the user or bank employee can view
         if (!requester.getId().equals(userId) && !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
             throw new IllegalArgumentException("Access denied");
         }
 
-        return getUserTransactionHistory(userId);
+        // Return filtered transaction history
+        return getUserTransactionHistory(userId, startDateStr, endDateStr, minAmount, maxAmount);
     }
 
     // Entry point for transfers (decides between IBAN or account ID logic)
@@ -273,4 +344,66 @@ public class TransactionService {
     tx.setTransactionType(TransactionType.DEPOSIT);
     transactionRepository.save(tx);
 }
+
+    // Filter transactions by date range and amount
+    private List<TransactionHistoryDTO> filterTransactions(
+            List<TransactionHistoryDTO> transactions,
+            String startDateStr,
+            String endDateStr,
+            BigDecimal minAmount,
+            BigDecimal maxAmount) {
+        
+        // Convert date strings to actual date objects
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+        
+        if (startDateStr != null && !startDateStr.isEmpty()) {
+            try {
+                LocalDate date = LocalDate.parse(startDateStr, DATE_FORMATTER);
+                startDate = date.atStartOfDay(); // Use beginning of day for start date
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid start date format. Use yyyy-MM-dd");
+            }
+        }
+        
+        if (endDateStr != null && !endDateStr.isEmpty()) {
+            try {
+                LocalDate date = LocalDate.parse(endDateStr, DATE_FORMATTER);
+                endDate = date.atTime(LocalTime.MAX); // Use end of day for end date
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid end date format. Use yyyy-MM-dd");
+            }
+        }
+        
+        // Create final copies for lambda use
+        final LocalDateTime finalStartDate = startDate;
+        final LocalDateTime finalEndDate = endDate;
+        final BigDecimal finalMinAmount = minAmount;
+        final BigDecimal finalMaxAmount = maxAmount;
+        
+        // Apply all filters (date and amount)
+        return transactions.stream()
+            .filter(tx -> {
+                // Skip transactions before start date
+                if (finalStartDate != null && tx.getTimestamp().isBefore(finalStartDate)) {
+                    return false;
+                }
+                // Skip transactions after end date
+                if (finalEndDate != null && tx.getTimestamp().isAfter(finalEndDate)) {
+                    return false;
+                }
+                
+                // Skip transactions less than minimum amount
+                if (finalMinAmount != null && tx.getAmount().compareTo(finalMinAmount) < 0) {
+                    return false;
+                }
+                // Skip transactions more than maximum amount
+                if (finalMaxAmount != null && tx.getAmount().compareTo(finalMaxAmount) > 0) {
+                    return false;
+                }
+                
+                return true;
+            })
+            .collect(Collectors.toList());
+    }
 }

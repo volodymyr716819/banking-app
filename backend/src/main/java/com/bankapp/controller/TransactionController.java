@@ -1,5 +1,6 @@
 package com.bankapp.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,16 +61,23 @@ public class TransactionController {
     return ResponseEntity.ok("Transfer completed successfully");
     }
 
-    // GET endpoint to fetch all transactions for a given account ID
+    // Get transactions for an account with optional date and amount filters
     @Operation(summary = "Get all transactions for an account by account ID")
     @ApiResponses({
        @ApiResponse(responseCode = "200", description = "Returns transaction history for account"),
        @ApiResponse(responseCode = "500", description = "Error retrieving transaction history")
     })
     @GetMapping("/account/{accountId}")
-    public ResponseEntity<?> getTransactionHistory(@PathVariable Long accountId) {
+    public ResponseEntity<?> getTransactionHistory(
+            @PathVariable Long accountId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount) {
         try {
-            List<TransactionHistoryDTO> transactions = transactionService.getAccountTransactionHistory(accountId);
+            // Get transactions with filters
+            List<TransactionHistoryDTO> transactions = transactionService.getAccountTransactionHistory(
+                accountId, startDate, endDate, minAmount, maxAmount);
             return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -77,7 +85,7 @@ public class TransactionController {
         }
     }
 
-    // GET endpoint to fetch transactions by IBAN, restricted to account owner or employee
+    // Get transactions by IBAN with filters (requires authentication)
     @Operation(summary = "Get transactions for an account by IBAN (authorized user only)")
     @ApiResponses({
        @ApiResponse(responseCode = "200", description = "Returns transaction history for IBAN"),
@@ -86,16 +94,25 @@ public class TransactionController {
        @ApiResponse(responseCode = "500", description = "Error retrieving transaction history")
     })
     @GetMapping("/account")
-    public ResponseEntity<?> getTransactionHistoryByIban(@RequestParam String iban, Authentication authentication) {
+    public ResponseEntity<?> getTransactionHistoryByIban(
+            @RequestParam String iban, 
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            Authentication authentication) {
         try {
+            // Get authenticated user
             Optional<User> userOpt = getAuthenticatedUser(authentication);
 
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
             }
 
+            // Get transactions with authentication check
             User user = userOpt.get();
-            List<TransactionHistoryDTO> transactions = transactionService.getTransactionHistoryByIbanWithAuth(iban, user);
+            List<TransactionHistoryDTO> transactions = transactionService.getTransactionHistoryByIbanWithAuth(
+                iban, user, startDate, endDate, minAmount, maxAmount);
             return ResponseEntity.ok(transactions);
 
         } catch (IllegalArgumentException e) {
@@ -106,7 +123,7 @@ public class TransactionController {
         }
     }
 
-    // GET endpoint to fetch all transactions made by a user (by userId), with authorization check
+    // Get all user transactions with filters (requires authentication)
     @Operation(summary = "Get all transactions made by a specific user (with authorization)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Returns transactions by user ID"),
@@ -115,16 +132,25 @@ public class TransactionController {
         @ApiResponse(responseCode = "500", description = "Error retrieving user transactions")
     })
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getTransactionsByUser(@PathVariable Long userId, Authentication authentication) {
+    public ResponseEntity<?> getTransactionsByUser(
+            @PathVariable Long userId, 
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            Authentication authentication) {
         try {
+            // Get authenticated user
             Optional<User> userOpt = getAuthenticatedUser(authentication);
 
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
             }
 
+            // Get transactions with authorization check
             User authUser = userOpt.get();
-            List<TransactionHistoryDTO> transactions = transactionService.getTransactionsByUserWithAuth(userId, authUser);
+            List<TransactionHistoryDTO> transactions = transactionService.getTransactionsByUserWithAuth(
+                userId, authUser, startDate, endDate, minAmount, maxAmount);
             return ResponseEntity.ok(transactions);
             
         } catch (IllegalArgumentException e) {
