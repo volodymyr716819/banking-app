@@ -23,6 +23,15 @@ public class UserSearchService {
 
     @Autowired
     private AccountRepository accountRepository;
+    
+    // For testing purposes - allows setter injection
+    public void setUserRepository(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+    
+    public void setAccountRepository(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
+    }
 
     // Search for customers by name and return their IBANs
     public List<UserSearchResultDTO> searchUsers(String term, String name, String email, String iban, Authentication authentication) {
