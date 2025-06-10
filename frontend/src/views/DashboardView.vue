@@ -14,13 +14,6 @@
               <div class="welcome-stat-label">Accounts</div>
             </div>
           </div>
-          <div class="welcome-stat">
-            <span class="material-icons">today</span>
-            <div class="welcome-stat-content">
-              <div class="welcome-stat-value">{{formatDate(new Date())}}</div>
-              <div class="welcome-stat-label">Last Login</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -136,16 +129,6 @@ const formatRole = (role) => {
   return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
 };
 
-// Format date to a readable format
-const formatDate = (date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
-};
 
 // Get user initials for avatar
 const getUserInitials = () => {
