@@ -783,4 +783,105 @@ public class BankingStepDefinitions {
                               
         assertTrue(isEmptyOrError, "Expected empty response or error, but got: " + content);
     }
+    
+    //==============================
+    // Customer Search
+    //==============================
+    
+    @When("I search for customers with name {string}")
+    public void iSearchForCustomersWithName(String name) throws Exception {
+        // Use the search endpoint with name parameter
+        lastResponse = mockMvc.perform(get("/api/users/search")
+                .param("name", name)
+                .header("Authorization", "Bearer " + currentUserToken))
+                .andReturn();
+    }
+    
+    @When("I search for customers with email {string}")
+    public void iSearchForCustomersWithEmail(String email) throws Exception {
+        // Use the search endpoint with email parameter
+        lastResponse = mockMvc.perform(get("/api/users/search")
+                .param("email", email)
+                .header("Authorization", "Bearer " + currentUserToken))
+                .andReturn();
+    }
+    
+    @When("I search for customers with IBAN {string}")
+    public void iSearchForCustomersWithIBAN(String iban) throws Exception {
+        // Use the search endpoint with IBAN parameter
+        lastResponse = mockMvc.perform(get("/api/users/search")
+                .param("iban", iban)
+                .header("Authorization", "Bearer " + currentUserToken))
+                .andReturn();
+    }
+    
+    @Then("I should see customer {string} in the search results")
+    public void iShouldSeeCustomerInTheSearchResults(String customerName) throws Exception {
+        // Check that the response contains the customer name
+        String content = lastResponse.getResponse().getContentAsString();
+        assertTrue(content.contains(customerName), 
+            "Expected to find customer name '" + customerName + "' in the response: " + content);
+    }
+    
+    @And("the search results should include customer's IBAN {string}")
+    public void theSearchResultsShouldIncludeCustomersIBAN(String iban) throws Exception {
+        // Check that the response contains the IBAN
+        String content = lastResponse.getResponse().getContentAsString();
+        assertTrue(content.contains(iban), 
+            "Expected to find IBAN '" + iban + "' in the response: " + content);
+    }
+    
+    @Then("I should receive empty search results")
+    public void iShouldReceiveEmptySearchResults() throws Exception {
+        // Check that we got an empty array or no results
+        String content = lastResponse.getResponse().getContentAsString();
+        
+        // Response should be successful but empty
+        assertEquals(200, lastResponse.getResponse().getStatus());
+        
+        // Check if response is an empty array
+        boolean isEmpty = content.equals("[]") || 
+                        content.contains("\"results\":[]") ||
+                        content.contains("\"data\":[]") || 
+                        content.contains("\"customers\":[]") ||
+                        !content.contains("\"name\"");
+                        
+        assertTrue(isEmpty, "Expected empty search results, but got: " + content);
+    }
+    
+    @Given("there is a customer with a closed account:")
+    public void thereIsACustomerWithAClosedAccount(List<Map<String, String>> customers) {
+        for (Map<String, String> customerData : customers) {
+            User user = new User();
+            user.setName(customerData.get("name"));
+            user.setEmail(customerData.get("email"));
+            user.setPassword(passwordEncoder.encode("password123"));
+            user.setRole("CUSTOMER");
+            user.setApproved(true);
+            userRepository.save(user);
+
+            Account account = new Account();
+            account.setUser(user);
+            account.setType(customerData.get("account_type"));
+            account.setBalance(new BigDecimal(customerData.get("balance")));
+            account.setApproved(true);
+            account.setClosed(true); // This account is closed
+            account.setIban(customerData.get("iban"));
+            account.setDailyLimit(new BigDecimal("5000.00"));
+            account.setAbsoluteLimit(new BigDecimal("10000.00"));
+            accountRepository.save(account);
+
+            testData.put("user_" + user.getEmail(), user);
+            testData.put("account_" + user.getEmail(), account);
+        }
+    }
+    
+    @When("I try to search for customers")
+    public void iTryToSearchForCustomers() throws Exception {
+        // Try to search for customers as a regular user
+        lastResponse = mockMvc.perform(get("/api/users/search")
+                .param("name", "test")
+                .header("Authorization", "Bearer " + currentUserToken))
+                .andReturn();
+    }
 }

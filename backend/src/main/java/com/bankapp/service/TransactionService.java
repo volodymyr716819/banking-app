@@ -375,24 +375,30 @@ public class TransactionService {
             }
         }
         
+        // Create final copies for lambda use
+        final LocalDateTime finalStartDate = startDate;
+        final LocalDateTime finalEndDate = endDate;
+        final BigDecimal finalMinAmount = minAmount;
+        final BigDecimal finalMaxAmount = maxAmount;
+        
         // Apply all filters (date and amount)
         return transactions.stream()
             .filter(tx -> {
                 // Skip transactions before start date
-                if (startDate != null && tx.getTimestamp().isBefore(startDate)) {
+                if (finalStartDate != null && tx.getTimestamp().isBefore(finalStartDate)) {
                     return false;
                 }
                 // Skip transactions after end date
-                if (endDate != null && tx.getTimestamp().isAfter(endDate)) {
+                if (finalEndDate != null && tx.getTimestamp().isAfter(finalEndDate)) {
                     return false;
                 }
                 
                 // Skip transactions less than minimum amount
-                if (minAmount != null && tx.getAmount().compareTo(minAmount) < 0) {
+                if (finalMinAmount != null && tx.getAmount().compareTo(finalMinAmount) < 0) {
                     return false;
                 }
                 // Skip transactions more than maximum amount
-                if (maxAmount != null && tx.getAmount().compareTo(maxAmount) > 0) {
+                if (finalMaxAmount != null && tx.getAmount().compareTo(finalMaxAmount) > 0) {
                     return false;
                 }
                 
