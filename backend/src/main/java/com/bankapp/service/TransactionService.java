@@ -1,7 +1,6 @@
 package com.bankapp.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -40,167 +39,80 @@ public class TransactionService {
 
     // Converts a Transaction entity into a DTO for frontend use
     private TransactionHistoryDTO mapTransactionToDTO(Transaction t) {
-        // Create basic transaction info
-        TransactionHistoryDTO dto = createBasicTransactionDTO(t.getId(), t.getAmount(), 
-                                                             t.getTimestamp(), t.getDescription());
-        
-        // Set account IDs if they exist
-        setAccountDetails(dto, t.getFromAccount(), t.getToAccount());
-        
-        // Set transaction type
-        String txType = (t.getTransactionType() != null) ? 
-                        t.getTransactionType().toString() : "UNKNOWN";
-        dto.setTransactionType(txType);
-        
+        TransactionHistoryDTO dto = new TransactionHistoryDTO();
+        dto.setTransactionId(t.getId());
+        dto.setSenderAccountId(t.getFromAccount() != null ? t.getFromAccount().getId() : null);
+        dto.setReceiverAccountId(t.getToAccount() != null ? t.getToAccount().getId() : null);
+        dto.setAmount(t.getAmount());
+        dto.setTimestamp(t.getTimestamp());
+        dto.setDescription(t.getDescription());
+        dto.setTransactionType(t.getTransactionType() != null ? t.getTransactionType().toString() : "UNKNOWN");
         return dto;
     }
 
     // Converts an ATM operation (withdraw/deposit) into a DTO
     private TransactionHistoryDTO mapAtmOperationToDTO(AtmOperation atm) {
-        // Create basic transaction info
-        TransactionHistoryDTO dto = createBasicTransactionDTO(atm.getId(), atm.getAmount(), 
-                                                             atm.getTimestamp(), 
-                                                             "ATM " + atm.getOperationType());
-        
-        // Set transaction type
-        dto.setTransactionType(atm.getOperationType().toString());
-        
-        // Set account details for ATM operations
-        if (atm.getAccount() != null) {
-            // For deposits, set as receiver
-            if (atm.getOperationType().toString().equals("DEPOSIT")) {
-                dto.setToAccountIban(atm.getAccount().getIban());
-                dto.setToAccountHolderName(atm.getAccount().getUser().getName());
-                dto.setReceiverAccountId(atm.getAccount().getId());
-            } 
-            // For withdrawals, set as sender
-            else if (atm.getOperationType().toString().equals("WITHDRAW")) {
-                dto.setFromAccountIban(atm.getAccount().getIban());
-                dto.setFromAccountHolderName(atm.getAccount().getUser().getName());
-                dto.setSenderAccountId(atm.getAccount().getId());
-            }
-        }
-        
-        return dto;
-    }
-    
-    // Creates a DTO with the basic shared transaction properties
-    private TransactionHistoryDTO createBasicTransactionDTO(Long id, BigDecimal amount, 
-                                                          LocalDateTime timestamp, String description) {
         TransactionHistoryDTO dto = new TransactionHistoryDTO();
-        dto.setTransactionId(id);
-        dto.setAmount(amount);
-        dto.setTimestamp(timestamp);
-        dto.setDescription(description);
+        dto.setTransactionId(atm.getId());
+        dto.setAmount(atm.getAmount());
+        dto.setTimestamp(atm.getTimestamp());
+        dto.setDescription("ATM " + atm.getOperationType());
+        dto.setTransactionType(atm.getOperationType().toString());
         return dto;
-    }
-    
-    // Sets account details on a transaction DTO
-    private void setAccountDetails(TransactionHistoryDTO dto, Account fromAccount, Account toAccount) {
-        // Set sender account details if it exists
-        if (fromAccount != null) {
-            dto.setSenderAccountId(fromAccount.getId());
-            dto.setFromAccountIban(fromAccount.getIban());
-            dto.setFromAccountHolderName(fromAccount.getUser().getName());
-        }
-        
-        // Set receiver account details if it exists
-        if (toAccount != null) {
-            dto.setReceiverAccountId(toAccount.getId());
-            dto.setToAccountIban(toAccount.getIban());
-            dto.setToAccountHolderName(toAccount.getUser().getName());
-        }
     }
 
     // Retrieves all transactions and ATM operations for a given user
     public List<TransactionHistoryDTO> getUserTransactionHistory(Long userId) {
-        // Get database transactions and ATM operations
-        List<Transaction> transactions = fetchUserTransactions(userId);
-        List<AtmOperation> atmOperations = fetchUserAtmOperations(userId);
-        
-        // Convert to DTOs and combine
-        return combineAndSortTransactionHistory(transactions, atmOperations);
-    }
-    
-    // Fetches all transactions for a specific user
-    private List<Transaction> fetchUserTransactions(Long userId) {
-        // Fetch both sent and received transactions
+        // Fetch all transactions of the user
         List<Transaction> transactions = transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(userId, userId);
         
-        // Log transaction count and first transaction if available
-        System.out.println("Found " + transactions.size() + " transactions for user " + userId);
-        if (!transactions.isEmpty()) {
-            Transaction firstTx = transactions.get(0);
-            System.out.println("Sample transaction: ID=" + firstTx.getId() + 
-                              ", from=" + (firstTx.getFromAccount() != null ? firstTx.getFromAccount().getId() : "null") + 
-                              ", to=" + (firstTx.getToAccount() != null ? firstTx.getToAccount().getId() : "null") + 
-                              ", amount=" + firstTx.getAmount());
-        }
-        
-        return transactions;
-    }
-    
-    // Fetches all ATM operations for a specific user
-    private List<AtmOperation> fetchUserAtmOperations(Long userId) {
-        return atmOperationRepository.findByAccount_User_Id(userId);
-    }
-    
-    // Combines and sorts transaction and ATM operation history
-    private List<TransactionHistoryDTO> combineAndSortTransactionHistory(
-            List<Transaction> transactions, List<AtmOperation> atmOperations) {
-        
-        // Convert transactions to DTOs
-        List<TransactionHistoryDTO> transactionDTOs = transactions.stream()
+        // Fetch all ATM operations associated with this user
+        List<AtmOperation> atmOperations = atmOperationRepository.findByAccount_User_Id(userId);
+
+        // Convert Transaction entities into a list of DTOs for response
+        List<TransactionHistoryDTO> transactionHistory = transactions.stream()
                 .map(this::mapTransactionToDTO)
                 .collect(Collectors.toList());
-        
-        // Convert ATM operations to DTOs
-        List<TransactionHistoryDTO> atmDTOs = atmOperations.stream()
+
+        // Convert ATM operations into a list of DTOs
+        List<TransactionHistoryDTO> atmHistory = atmOperations.stream()
                 .map(this::mapAtmOperationToDTO)
                 .collect(Collectors.toList());
-        
-        // Combine both types
+
+        // Map transactions to DTOs into a single list
         List<TransactionHistoryDTO> combinedHistory = new ArrayList<>();
-        combinedHistory.addAll(transactionDTOs);
-        combinedHistory.addAll(atmDTOs);
-        
+        combinedHistory.addAll(transactionHistory);
+        combinedHistory.addAll(atmHistory);
+
         // Sort newest to oldest
         combinedHistory.sort(Comparator.comparing(TransactionHistoryDTO::getTimestamp).reversed());
-        
+
         return combinedHistory;
     }
 
     // Retrieves all transactions and ATM operations for a specific account
     public List<TransactionHistoryDTO> getAccountTransactionHistory(Long accountId) {
-        // Get database transactions and ATM operations
-        List<Transaction> transactions = fetchAccountTransactions(accountId);
-        List<AtmOperation> atmOperations = fetchAccountAtmOperations(accountId);
-        
-        // Convert to DTOs and combine
-        return combineAndSortTransactionHistory(transactions, atmOperations);
-    }
-    
-    // Fetches all transactions for a specific account
-    private List<Transaction> fetchAccountTransactions(Long accountId) {
-        // Fetch both sent and received transactions
+        // Find all transactions of the account
         List<Transaction> transactions = transactionRepository.findByFromAccount_IdOrToAccount_Id(accountId, accountId);
-        
-        // Log transaction count and first transaction if available
-        System.out.println("Found " + transactions.size() + " transactions for account " + accountId);
-        if (!transactions.isEmpty()) {
-            Transaction firstTx = transactions.get(0);
-            System.out.println("Sample transaction: ID=" + firstTx.getId() + 
-                              ", from=" + (firstTx.getFromAccount() != null ? firstTx.getFromAccount().getIban() : "null") + 
-                              ", to=" + (firstTx.getToAccount() != null ? firstTx.getToAccount().getIban() : "null") + 
-                              ", amount=" + firstTx.getAmount());
-        }
-        
-        return transactions;
-    }
-    
-    // Fetches all ATM operations for a specific account
-    private List<AtmOperation> fetchAccountAtmOperations(Long accountId) {
-        return atmOperationRepository.findByAccount_Id(accountId);
+        // Get all ATM transaction entities for this account
+        List<AtmOperation> atmOperations = atmOperationRepository.findByAccount_Id(accountId);
+
+        // Convert both sets to DTOs
+        List<TransactionHistoryDTO> transactionHistory = transactions.stream()
+                .map(this::mapTransactionToDTO)
+                .collect(Collectors.toList());
+
+        List<TransactionHistoryDTO> atmHistory = atmOperations.stream()
+                .map(this::mapAtmOperationToDTO)
+                .collect(Collectors.toList());
+
+        // Combine and sort the histories
+        List<TransactionHistoryDTO> combinedHistory = new ArrayList<>();
+        combinedHistory.addAll(transactionHistory);
+        combinedHistory.addAll(atmHistory);
+
+        combinedHistory.sort(Comparator.comparing(TransactionHistoryDTO::getTimestamp).reversed());
+        return combinedHistory;
     }
 
     // Converts IBAN to account and returns history for it
@@ -293,49 +205,25 @@ public class TransactionService {
 
     // Returns transaction history for a given IBAN if requester is authorized
     public List<TransactionHistoryDTO> getTransactionHistoryByIbanWithAuth(String iban, User requester) {
-        // Find the account by IBAN
-        Account account = findAccountByIban(iban);
-        
-        // Check if user has permission to view this account
-        checkAccountAccessPermission(account, requester);
-        
-        // Get the transaction history
-        return getAccountTransactionHistory(account.getId());
-    }
-    
-    // Find account by IBAN or throw exception
-    private Account findAccountByIban(String iban) {
-        return accountRepository.findByIban(iban)
-            .orElseThrow(() -> new IllegalArgumentException("Account not found for IBAN: " + iban));
-    }
-    
-    // Check if user has permission to access account
-    private void checkAccountAccessPermission(Account account, User requester) {
-        boolean isOwner = account.getUser().getId().equals(requester.getId());
-        boolean isEmployee = requester.getRole().equalsIgnoreCase("EMPLOYEE");
-        
-        if (!isOwner && !isEmployee) {
-            throw new IllegalArgumentException("Access denied");
+        Account account = accountRepository.findByIban(iban)
+        .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        // Only allow access if requester owns account or is an employee
+        if (!account.getUser().getId().equals(requester.getId()) &&
+           !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
+           throw new IllegalArgumentException("Access denied");
         }
+
+         return getAccountTransactionHistory(account.getId());
     }
     
     // Returns full transaction history for a user with access check
     public List<TransactionHistoryDTO> getTransactionsByUserWithAuth(Long userId, User requester) {
-        // Check if user has permission to view transactions
-        checkUserAccessPermission(userId, requester);
-        
-        // Get the transaction history
-        return getUserTransactionHistory(userId);
-    }
-    
-    // Check if user has permission to access user data
-    private void checkUserAccessPermission(Long userId, User requester) {
-        boolean isSameUser = requester.getId().equals(userId);
-        boolean isEmployee = requester.getRole().equalsIgnoreCase("EMPLOYEE");
-        
-        if (!isSameUser && !isEmployee) {
+        if (!requester.getId().equals(userId) && !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
             throw new IllegalArgumentException("Access denied");
         }
+
+        return getUserTransactionHistory(userId);
     }
 
     // Entry point for transfers (decides between IBAN or account ID logic)

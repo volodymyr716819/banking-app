@@ -10,8 +10,6 @@ import com.bankapp.repository.AtmOperationRepository;
 import com.bankapp.repository.CardDetailsRepository;
 import com.bankapp.util.PinHashUtil;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +19,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Service that handles ATM operations including deposits, withdrawals, and balance inquiries
 @Service
 public class AtmService {
-    private static final Logger logger = LoggerFactory.getLogger(AtmService.class);
 
     @Autowired
     private AccountRepository accountRepository;
@@ -38,7 +34,17 @@ public class AtmService {
     @Autowired
     private PinHashUtil pinHashUtil;
     
-    // Processes a deposit transaction, updates account balance and returns operation record
+    /**
+     * Process a deposit to an account via ATM
+     * @param accountId the ID of the account to deposit to
+     * @param amount the amount to deposit
+     * @param pin the PIN for verification
+     * @return the ATM operation record
+     * @throws ResourceNotFoundException if the account is not found
+     * @throws InvalidPinException if the PIN is invalid
+     * @throws IllegalStateException if the account is not approved or is closed
+     * @throws IllegalArgumentException if the amount is zero or negative
+     */
     @Transactional
     public AtmOperation processDeposit(Long accountId, BigDecimal amount, String pin) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -49,8 +55,13 @@ public class AtmService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
         
-        // Verify the PIN is correct
-        verifyPin(accountId, pin);
+        // Fetch and verify PIN against stored hash
+        CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
+        
+        if (!pinHashUtil.verifyPin(pin, cardDetails.getHashedPin())) {
+            throw new InvalidPinException("Invalid PIN provided");
+        }
         
         // Check account status
         if (!account.isApproved()) {
@@ -75,7 +86,17 @@ public class AtmService {
         return atmOperationRepository.save(operation);
     }
     
-    // Processes a withdrawal transaction, verifies sufficient funds and returns operation record
+    /**
+     * Process a withdrawal from an account via ATM
+     * @param accountId the ID of the account to withdraw from
+     * @param amount the amount to withdraw
+     * @param pin the PIN for verification
+     * @return the ATM operation record
+     * @throws ResourceNotFoundException if the account is not found
+     * @throws InvalidPinException if the PIN is invalid
+     * @throws IllegalStateException if the account is not approved or is closed
+     * @throws IllegalArgumentException if the amount is zero or negative, or if the account has insufficient balance
+     */
     @Transactional
     public AtmOperation processWithdrawal(Long accountId, BigDecimal amount, String pin) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -86,8 +107,13 @@ public class AtmService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
         
-        // Verify the PIN is correct
-        verifyPin(accountId, pin);
+        // Fetch and verify PIN
+        CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
+        
+        if (!pinHashUtil.verifyPin(pin, cardDetails.getHashedPin())) {
+            throw new InvalidPinException("Invalid PIN provided");
+        }
         
         // Check account status
         if (!account.isApproved()) {
@@ -117,7 +143,11 @@ public class AtmService {
         return atmOperationRepository.save(operation);
     }
     
-    // Returns list of all ATM operations for a specific account
+    /**
+     * Get ATM operations for an account
+     * @param accountId the ID of the account to get operations for
+     * @return the list of ATM operations
+     */
     public List<AtmOperation> getAtmOperations(Long accountId) {
         return atmOperationRepository.findByAccount_Id(accountId);
     }
@@ -129,37 +159,10 @@ public class AtmService {
                 .orElse(ResponseEntity.status(404).body("Account not found or not approved"));
     }
 
-    // Checks if a PIN has been created for an account and returns the status
     public ResponseEntity<?> getPinStatus(Long accountId) {
-        // Find card details for this account
         boolean pinCreated = cardDetailsRepository.findByAccountId(accountId)
-                // Check if PIN has been created
-                .map(CardDetails::isPinCreated)
-                // Default to false if no card details found
+                .map(card -> card.isPinCreated())
                 .orElse(false);
-        
-        // Return simple response with PIN status
         return ResponseEntity.ok().body(java.util.Map.of("pinCreated", pinCreated));
-    }
-    
-    // Verifies that a PIN is correct for the specified account
-    private void verifyPin(Long accountId, String pin) {
-        // Look up card details for the account
-        CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
-                .orElseThrow(() -> {
-                            return new ResourceNotFoundException("CardDetails", "accountId", accountId);
-                });
-        
-        // Make sure PIN has been set
-        if (!cardDetails.isPinCreated()) {
-            throw new InvalidPinException("PIN not set for this account");
-        }
-        
-        // Verify the PIN matches
-        if (!pinHashUtil.verifyPin(pin, cardDetails.getHashedPin())) {
-            throw new InvalidPinException("Invalid PIN provided");
-        }
-        
-        // PIN is valid - verification successful
     }
 }

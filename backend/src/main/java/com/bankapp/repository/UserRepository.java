@@ -14,10 +14,10 @@ import com.bankapp.model.enums.RegistrationStatus;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // Finds a user by their email address
+    /* unchanged  */
     Optional<User> findByEmail(String email);
 
-    // Status-based lookup methods
+    /* ---------- status-based look-ups ---------- */
     List<User> findByRegistrationStatus(RegistrationStatus registrationStatus);
 
     List<User> findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus registrationStatus,
@@ -33,7 +33,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             RegistrationStatus registrationStatus,
             String role);
 
-    // Search methods for finding approved customers
+    /* ---------- search helpers for approved customers ---------- */
     @Query("""
            SELECT u FROM User u
            WHERE (LOWER(u.name)  LIKE LOWER(CONCAT('%', :term, '%'))
