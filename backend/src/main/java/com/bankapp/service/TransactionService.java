@@ -64,9 +64,8 @@ public class TransactionService {
     // Retrieves all transactions and ATM operations for a given user
     public List<TransactionHistoryDTO> getUserTransactionHistory(Long userId) {
         // Fetch all transactions of the user
-        List<Transaction> transactions = transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(userId,
-                userId);
-
+        List<Transaction> transactions = transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(userId, userId);
+        
         // Fetch all ATM operations associated with this user
         List<AtmOperation> atmOperations = atmOperationRepository.findByAccount_User_Id(userId);
 
@@ -162,7 +161,7 @@ public class TransactionService {
         // Perform balance update
         sender.setBalance(sender.getBalance().subtract(amount));
         receiver.setBalance(receiver.getBalance().add(amount));
-
+        
         accountRepository.save(sender);
         accountRepository.save(receiver);
 
@@ -207,17 +206,17 @@ public class TransactionService {
     // Returns transaction history for a given IBAN if requester is authorized
     public List<TransactionHistoryDTO> getTransactionHistoryByIbanWithAuth(String iban, User requester) {
         Account account = accountRepository.findByIban(iban)
-                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
         // Only allow access if requester owns account or is an employee
         if (!account.getUser().getId().equals(requester.getId()) &&
-                !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
-            throw new IllegalArgumentException("Access denied");
+           !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
+           throw new IllegalArgumentException("Access denied");
         }
 
-        return getAccountTransactionHistory(account.getId());
+         return getAccountTransactionHistory(account.getId());
     }
-
+    
     // Returns full transaction history for a user with access check
     public List<TransactionHistoryDTO> getTransactionsByUserWithAuth(Long userId, User requester) {
         if (!requester.getId().equals(userId) && !requester.getRole().equalsIgnoreCase("EMPLOYEE")) {
@@ -231,38 +230,47 @@ public class TransactionService {
     @Transactional
     public void processTransfer(TransferRequest request) {
         if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount must be greater than zero");
+           throw new IllegalArgumentException("Amount must be greater than zero");
         }
 
-        // Always use IBAN lookup
+        boolean usingIban = request.getSenderIban() != null && !request.getSenderIban().isEmpty() &&
+                         request.getReceiverIban() != null && !request.getReceiverIban().isEmpty();
+
+        // If both IBANs are used, delegate to IBAN-based transfer method
+        if (usingIban) {
         transferMoneyByIban(
-                request.getSenderIban(),
-                request.getReceiverIban(),
-                request.getAmount(),
-                request.getDescription());
+            request.getSenderIban(),
+            request.getReceiverIban(),
+            request.getAmount(),
+            request.getDescription()
+        );
+        // else fallback to ID-based transfer
+        } else {
+            transferMoney(request.getSenderAccountId(), request.getReceiverAccountId(), request.getAmount(), request.getDescription());
+        }
     }
 
     @Transactional
     public void depositMoney(Long accountId, BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
-
-        if (!account.isApproved()) {
-            throw new UnapprovedAccountException("Cannot deposit to an unapproved account");
-        }
-
-        account.setBalance(account.getBalance().add(amount));
-        accountRepository.save(account);
-
-        Transaction tx = new Transaction();
-        tx.setAmount(amount);
-        tx.setDescription("Deposit");
-        tx.setToAccount(account);
-        tx.setTransactionType(TransactionType.DEPOSIT);
-        transactionRepository.save(tx);
+    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+        throw new IllegalArgumentException("Amount must be positive");
     }
+
+    Account account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+    if (!account.isApproved()) {
+        throw new UnapprovedAccountException("Cannot deposit to an unapproved account");
+    }
+
+    account.setBalance(account.getBalance().add(amount));
+    accountRepository.save(account);
+
+    Transaction tx = new Transaction();
+    tx.setAmount(amount);
+    tx.setDescription("Deposit");
+    tx.setToAccount(account);
+    tx.setTransactionType(TransactionType.DEPOSIT);
+    transactionRepository.save(tx);
+}
 }
