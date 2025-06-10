@@ -27,7 +27,6 @@ import com.bankapp.model.User;
 import com.bankapp.model.enums.RegistrationStatus;
 import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.UserRepository;
-import com.bankapp.model.enums.RegistrationStatus;
 import com.bankapp.service.UserService;
 import com.bankapp.service.UserSearchService;
 
@@ -111,9 +110,7 @@ public class UserController {
         return userRepository.findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus.APPROVED, "CUSTOMER");
     }
 
-    /**
-     * Legacy search endpoints - kept for backward compatibility
-     */
+    // Search endpoints for finding customers by name or email
     @GetMapping("/find-by-name")
     public ResponseEntity<?> searchUsersByName(@RequestParam String name, Authentication authentication) {
         return searchUsers(name, null, null, null, authentication);
@@ -135,10 +132,7 @@ public class UserController {
         }
     }
 
-    /**
-     * Simplified search endpoint with a single search term
-     * Search term can be a name, email, or IBAN
-     */
+    // Search endpoint that accepts term, name, email, or IBAN parameters
     @GetMapping("/search")
     public ResponseEntity<?> searchUsers(
         @RequestParam(required = false) String term,

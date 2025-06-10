@@ -38,6 +38,7 @@ public class TransactionController {
 
     // Retrieves authenticated user from JWT authentication
     private Optional<User> getAuthenticatedUser(Authentication auth) {
+        // Get user by email from the authentication object
         return userRepository.findByEmail(auth.getName());
     }  
 
@@ -45,13 +46,17 @@ public class TransactionController {
     @PostMapping("/transfer")
     public ResponseEntity<?> transferMoney(@RequestBody TransferRequest transferRequest) {
         try {
+            // Process the transfer
             transactionService.processTransfer(transferRequest);
+            
+            // Return success message
             return ResponseEntity.ok("Transfer completed successfully");
         } catch (IllegalArgumentException e) {
+            // Handle validation errors
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-              .body("An error occurred during the transfer: " + e.getMessage());
+            // Handle unexpected errors
+            return handleTransactionError(e, "An error occurred during the transfer");
         }
     }
 
@@ -59,11 +64,15 @@ public class TransactionController {
     @GetMapping("/account/{accountId}")
     public ResponseEntity<?> getTransactionHistory(@PathVariable Long accountId) {
         try {
-            List<TransactionHistoryDTO> transactions = transactionService.getAccountTransactionHistory(accountId);
+            // Get account transactions
+            List<TransactionHistoryDTO> transactions = 
+                transactionService.getAccountTransactionHistory(accountId);
+            
+            // Return successful response
             return ResponseEntity.ok(transactions);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error retrieving transaction history: " + e.getMessage());
+            // Handle unexpected errors
+            return handleTransactionError(e, "Error retrieving transaction history");
         }
     }
 
@@ -71,43 +80,62 @@ public class TransactionController {
     @GetMapping("/account")
     public ResponseEntity<?> getTransactionHistoryByIban(@RequestParam String iban, Authentication authentication) {
         try {
-            Optional<User> userOpt = getAuthenticatedUser(authentication);
-
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
-            }
-
-            User user = userOpt.get();
-            List<TransactionHistoryDTO> transactions = transactionService.getTransactionHistoryByIbanWithAuth(iban, user);
+            // Get authenticated user
+            User user = validateAndGetUser(authentication);
+            
+            // Get transactions with authorization check
+            List<TransactionHistoryDTO> transactions = transactionService
+                .getTransactionHistoryByIbanWithAuth(iban, user);
+            
+            // Return successful response
             return ResponseEntity.ok(transactions);
-
+            
         } catch (IllegalArgumentException e) {
+            // Handle permission errors
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-              .body("Error retrieving transaction history: " + e.getMessage());
+            // Handle unexpected errors
+            return handleTransactionError(e, "Error retrieving transaction history");
         }
+    }
+    
+    // Validate and get the authenticated user
+    private User validateAndGetUser(Authentication authentication) {
+        Optional<User> userOpt = getAuthenticatedUser(authentication);
+        
+        if (userOpt.isEmpty()) {
+            throw new IllegalArgumentException("User not found");
+        }
+        
+        return userOpt.get();
+    }
+    
+    // Handle transaction errors and return appropriate response
+    private ResponseEntity<?> handleTransactionError(Exception e, String message) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(message + ": " + e.getMessage());
     }
 
     // GET endpoint to fetch all transactions made by a user (by userId), with authorization check
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getTransactionsByUser(@PathVariable Long userId, Authentication authentication) {
         try {
-            Optional<User> userOpt = getAuthenticatedUser(authentication);
-
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
-            }
-
-            User authUser = userOpt.get();
-            List<TransactionHistoryDTO> transactions = transactionService.getTransactionsByUserWithAuth(userId, authUser);
+            // Get authenticated user
+            User authUser = validateAndGetUser(authentication);
+            
+            // Get user transactions with authorization check
+            List<TransactionHistoryDTO> transactions = 
+                transactionService.getTransactionsByUserWithAuth(userId, authUser);
+            
+            // Return successful response
             return ResponseEntity.ok(transactions);
             
         } catch (IllegalArgumentException e) {
+            // Handle permission errors
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body("Error retrieving user transactions: " + e.getMessage());
+            // Handle unexpected errors
+            return handleTransactionError(e, "Error retrieving user transactions");
         }
     }
 }
