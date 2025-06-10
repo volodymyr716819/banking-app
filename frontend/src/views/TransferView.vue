@@ -18,8 +18,8 @@
       </div>
 
       <div class="form-group">
-        <label for="to">Receiver IBAN:</label>
-        <input type="text" v-model="toAccountIban" placeholder="Enter receiver's IBAN" required />
+        <label for="to">To Account ID:</label>
+        <input type="number" v-model="toAccountId" placeholder="Enter receiver's account ID" required />
       </div>
 
       <div class="form-group">
@@ -54,7 +54,7 @@ import { useAuthStore } from '../store/auth';
 const auth = useAuthStore();
 const accounts = ref([]);
 const fromAccount = ref('');
-const toAccountIban = ref('');
+const toAccountId = ref('');
 const amount = ref('');
 const description = ref('');
 const message = ref('');
@@ -107,7 +107,7 @@ const submitTransfer = async () => {
   try {
     const response = await api.post('/transactions/transfer', {
       senderAccountId: fromAccount.value,
-      receiverIBAN: toAccountIban.value,
+      receiverAccountId: toAccountId.value,
       amount: parseFloat(amount.value),
       description: description.value
     }, {
@@ -120,7 +120,7 @@ const submitTransfer = async () => {
     message.value = 'Transfer successful!';
     messageType.value = 'success';
     fromAccount.value = '';
-    toAccountIban.value = '';
+    toAccountId.value = '';
     amount.value = '';
     description.value = '';
     await fetchAccounts(); // Refresh accounts to show updated balances
