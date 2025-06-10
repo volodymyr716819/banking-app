@@ -69,7 +69,7 @@ const selectedAccountIsNotApproved = computed(() => {
 
 // Computed property to disable submit button when needed
 const submitDisabled = computed(() => {
-  return selectedAccountIsNotApproved.value || !fromAccount.value || !toAccountId.value || !amount.value;
+  return selectedAccountIsNotApproved.value || !fromAccount.value || !toAccountIban.value || !amount.value;
 });
 
 const fetchAccounts = async () => {
@@ -107,7 +107,7 @@ const submitTransfer = async () => {
   try {
     const response = await api.post('/transactions/transfer', {
       senderAccountId: fromAccount.value,
-      receiverIBAN: toAccountIban.value,
+      receiverIban: toAccountIban.value,
       amount: parseFloat(amount.value),
       description: description.value
     }, {
@@ -120,7 +120,7 @@ const submitTransfer = async () => {
     message.value = 'Transfer successful!';
     messageType.value = 'success';
     fromAccount.value = '';
-    toAccountIban.value = '';
+    toAccountId.value = '';
     amount.value = '';
     description.value = '';
     await fetchAccounts(); // Refresh accounts to show updated balances
