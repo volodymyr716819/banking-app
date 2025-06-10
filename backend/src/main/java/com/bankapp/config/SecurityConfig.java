@@ -20,6 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import com.bankapp.security.JwtAuthenticationFilter;
 
 @Configuration
@@ -33,26 +34,24 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .exceptionHandling(ex -> ex
-                   .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                )
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                            new AntPathRequestMatcher("/api/auth/login"),
-                            new AntPathRequestMatcher("/api/auth/register"),
-                            new AntPathRequestMatcher("/h2-console/**"),
-                            new AntPathRequestMatcher("/v3/api-docs/**"),
-                            new AntPathRequestMatcher("/swagger-ui/**"),
-                            new AntPathRequestMatcher("/swagger-ui.html")
-                        ).permitAll()
+                                new AntPathRequestMatcher("/api/auth/login"),
+                                new AntPathRequestMatcher("/api/auth/register"),
+                                new AntPathRequestMatcher("/h2-console/**"),
+                                new AntPathRequestMatcher("/v3/api-docs/**"),
+                                new AntPathRequestMatcher("/swagger-ui/**"),
+                                new AntPathRequestMatcher("/swagger-ui.html"))
+                        .permitAll()
                         .requestMatchers(
-                            new AntPathRequestMatcher("/api/accounts/user/**"),
-                            new AntPathRequestMatcher("/api/pin/**")
-                        ).authenticated()
+                                new AntPathRequestMatcher("/api/accounts/user/**"),
+                                new AntPathRequestMatcher("/api/pin/**"))
+                        .authenticated()
                         .anyRequest().authenticated());
-
 
         http.headers(headers -> headers.frameOptions(frame -> frame.disable())); // for H2 console
         http.headers(headers -> headers.frameOptions(frame -> frame.disable())); // Allow H2 console
