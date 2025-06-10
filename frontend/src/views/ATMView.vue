@@ -1819,29 +1819,6 @@ function returnToMenu() {
   max-width: 80%;
 }
 
-/* Debug element for forcing receipt prompt */
-.debug-force-receipt-prompt {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 9999;
-  background: rgba(255, 0, 0, 0.9);
-  padding: 8px;
-  border-radius: 4px;
-  border: 2px solid yellow;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-.debug-force-receipt-prompt button {
-  background: #f44336;
-  color: white;
-  border: 2px solid white;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  border-radius: 4px;
-}
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {

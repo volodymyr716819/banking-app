@@ -15,44 +15,27 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 
-/**
- * Service that handles all bank card PIN operations
- * 
- * This service manages PIN creation, verification, and changing for
- * customer bank accounts. It ensures secure handling of PINs by
- * using character arrays and secure hashing.
- */
+// Service for handling bank card PIN operations including creation, verification, and changing
 @Service
 public class PinService {
 
-    // Dependencies
+    // Repositories and utilities
     @Autowired private AccountRepository accountRepository;
     @Autowired private CardDetailsRepository cardDetailsRepository;
     @Autowired private PinHashUtil pinHashUtil;
     
-    // Constants
+    // PIN configuration constants
     private static final int PIN_LENGTH = 4;
     private static final char PIN_MASK_CHAR = '0';
     
-    /**
-     * Check if a PIN has been created for the given account
-     * 
-     * @param accountId ID of the account to check
-     * @return true if PIN exists, false otherwise
-     */
+    // Checks if a PIN has been created for the given account
     public boolean checkPinStatus(Long accountId) {
         return findCardDetails(accountId)
                 .map(CardDetails::isPinCreated)
                 .orElse(false);
     }
 
-    /**
-     * Create a new PIN for an account
-     * 
-     * @param pinRequest Request containing account ID and PIN
-     * @throws IllegalArgumentException if PIN is invalid
-     * @throws RuntimeException if account not found
-     */
+    // Creates a new PIN for an account
     public void createPin(PinRequest pinRequest) {
         // Extract and validate PIN
         char[] pinChars = pinRequest.getPin();
@@ -72,13 +55,7 @@ public class PinService {
         saveNewCardDetails(account, hashedPin);
     }
 
-    /**
-     * Verify if a provided PIN matches the stored PIN for an account
-     * 
-     * @param pinRequest Request containing account ID and PIN to verify
-     * @return true if PIN is correct, false otherwise
-     * @throws RuntimeException if PIN not set for the account
-     */
+    // Verifies if a provided PIN matches the stored PIN for an account
     public boolean verifyPin(PinRequest pinRequest) {
         // Find card details with PIN validation
         CardDetails cardDetails = findCardDetailsWithPin(pinRequest.getAccountId());
@@ -91,13 +68,7 @@ public class PinService {
         return pinHashUtil.verifyPin(pin, cardDetails.getHashedPin());
     }
 
-    /**
-     * Change the PIN for an account
-     * 
-     * @param pinRequest Request containing account ID and new PIN
-     * @throws IllegalArgumentException if new PIN format is invalid
-     * @throws ResourceNotFoundException if account not found
-     */
+    // Changes the PIN for an existing account
     public void changePin(PinRequest pinRequest) {
         // Get the new PIN and validate it
         char[] newPinChars = pinRequest.getNewPin();
@@ -123,67 +94,36 @@ public class PinService {
         updateCardDetails(cardDetails, newPin);
     }
     
-    /**
-     * Validate that a PIN has the correct format (4 digits)
-     * 
-     * @param pinChars PIN character array to validate
-     * @throws IllegalArgumentException if PIN format is invalid
-     */
+    // Validates that a PIN has the correct format (4 digits)
     private void validatePinFormat(char[] pinChars) {
         if (pinChars == null || pinChars.length != PIN_LENGTH) {
             throw new IllegalArgumentException("PIN must be exactly " + PIN_LENGTH + " digits");
         }
     }
     
-    /**
-     * Find an account by ID
-     * 
-     * @param accountId ID of the account to find
-     * @return Account object
-     * @throws RuntimeException if account not found
-     */
+    // Finds an account by ID or throws exception if not found
     private Account findAccount(Long accountId) {
         return accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
     }
     
-    /**
-     * Find card details by account ID
-     * 
-     * @param accountId ID of the account
-     * @return Optional containing card details if found
-     */
+    // Finds card details by account ID
     private Optional<CardDetails> findCardDetails(Long accountId) {
         return cardDetailsRepository.findByAccountId(accountId);
     }
     
-    /**
-     * Find card details for an account
-     * 
-     * @param accountId ID of the account
-     * @return CardDetails object
-     * @throws ResourceNotFoundException if card details not found
-     */
+    // Finds card details for an account with PIN validation
     private CardDetails findCardDetailsWithPin(Long accountId) {
         return findCardDetails(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
     }
     
-    /**
-     * Remove any existing card details for an account
-     * 
-     * @param accountId ID of the account
-     */
+    // Removes any existing card details for an account
     private void removeExistingCardDetails(Long accountId) {
         cardDetailsRepository.deleteByAccountId(accountId);
     }
     
-    /**
-     * Extract PIN string from character array and clear the array
-     * 
-     * @param pinChars PIN character array
-     * @return PIN as string
-     */
+    // Extracts PIN string from character array and clears the array for security
     private String extractPinAndClear(char[] pinChars) {
         String pin = new String(pinChars);
         // Security: clear the character array to remove sensitive data from memory
@@ -191,12 +131,7 @@ public class PinService {
         return pin;
     }
     
-    /**
-     * Save new card details for an account
-     * 
-     * @param account Account to create card details for
-     * @param hashedPin Hashed PIN to store
-     */
+    // Saves new card details for an account with hashed PIN
     private void saveNewCardDetails(Account account, String hashedPin) {
         CardDetails cardDetails = new CardDetails(account, hashedPin);
         cardDetails.setPinCreated(true);
@@ -205,12 +140,7 @@ public class PinService {
     }
     
     
-    /**
-     * Update card details with new PIN
-     * 
-     * @param cardDetails CardDetails to update
-     * @param newPin New PIN to hash and store
-     */
+    // Updates existing card details with a new PIN hash
     private void updateCardDetails(CardDetails cardDetails, String newPin) {
         String newHashedPin = pinHashUtil.hashPin(newPin);
         cardDetails.setHashedPin(newHashedPin);

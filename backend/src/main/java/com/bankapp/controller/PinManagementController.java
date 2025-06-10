@@ -19,12 +19,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * REST Controller for PIN management operations
- * 
- * Handles PIN creation, verification, and changing for bank accounts.
- * All endpoints require user authentication and authorization.
- */
+// REST controller for PIN management operations including creation, verification, and changing
 @RestController
 @RequestMapping("/api/pin")
 public class PinManagementController {
@@ -37,13 +32,7 @@ public class PinManagementController {
     @Autowired
     private AccountRepository accountRepository;
 
-    /**
-     * Check if a PIN has been created for an account
-     * 
-     * @param accountId ID of the account to check
-     * @param auth Authentication object from Spring Security
-     * @return Response with PIN status
-     */
+    // Checks if a PIN has been created for an account
     @GetMapping("/check/{accountId}")
     public ResponseEntity<?> checkPinStatus(@PathVariable Long accountId, Authentication auth) {
         // Security check: verify user is authorized to access this account
@@ -58,13 +47,7 @@ public class PinManagementController {
         return createSuccessResponse("pinCreated", pinCreated);
     }
 
-    /**
-     * Create a new PIN for an account
-     * 
-     * @param request PIN creation request
-     * @param auth Authentication object from Spring Security
-     * @return Response indicating success or failure
-     */
+    // Creates a new PIN for an account
     @PostMapping("/create")
     public ResponseEntity<?> createPin(@RequestBody PinRequest request, Authentication auth) {
         // Security check: verify user is authorized to access this account
@@ -86,13 +69,7 @@ public class PinManagementController {
         }
     }
 
-    /**
-     * Verify if a PIN is correct for an account
-     * 
-     * @param request PIN verification request
-     * @param auth Authentication object from Spring Security
-     * @return Response indicating if PIN is valid
-     */
+    // Verifies if a PIN is correct for an account
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPin(@RequestBody PinRequest request, Authentication auth) {
         // Security check: verify user is authorized to access this account
@@ -114,13 +91,7 @@ public class PinManagementController {
         }
     }
 
-    /**
-     * Change the PIN for an account
-     * 
-     * @param request PIN change request
-     * @param auth Authentication object from Spring Security
-     * @return Response indicating success or failure
-     */
+    // Changes the PIN for an account
     @PostMapping("/change")
     public ResponseEntity<?> changePin(@RequestBody PinRequest request, Authentication auth) {
         // Check if user is authorized
@@ -145,13 +116,7 @@ public class PinManagementController {
         }
     }
     
-    /**
-     * Check if the authenticated user is authorized to access an account
-     * 
-     * @param accountId ID of the account to check
-     * @param auth Authentication object from Spring Security
-     * @return true if user is authorized, false otherwise
-     */
+    // Checks if the authenticated user is authorized to access an account
     private boolean isUserAuthorized(Long accountId, Authentication auth) {
         // Find the account
         Optional<Account> accountOpt = accountRepository.findById(accountId);
@@ -161,37 +126,21 @@ public class PinManagementController {
                accountOpt.get().getUser().getEmail().equals(auth.getName());
     }
     
-    /**
-     * Create a standard unauthorized response
-     * 
-     * @return 403 Forbidden response with message
-     */
+    // Creates a standard unauthorized response with 403 status
     private ResponseEntity<?> createUnauthorizedResponse() {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(Map.of("message", "You are not authorized to manage this account's PIN"));
     }
     
-    /**
-     * Create a response with a simple key-value pair
-     * 
-     * @param key Response key
-     * @param value Response value
-     * @return 200 OK response with data
-     */
+    // Creates a response with a simple key-value pair
     private ResponseEntity<?> createSuccessResponse(String key, Object value) {
         Map<String, Object> response = new HashMap<>();
         response.put(key, value);
         return ResponseEntity.ok(response);
     }
     
-    /**
-     * Create a response with a message and status
-     * 
-     * @param message Message to include
-     * @param status HTTP status
-     * @return Response with given status and message
-     */
+    // Creates a response with a message and specified HTTP status
     private ResponseEntity<?> createMessageResponse(String message, HttpStatus status) {
         return ResponseEntity
                 .status(status)

@@ -24,16 +24,17 @@ public class UserSearchService {
     @Autowired
     private AccountRepository accountRepository;
     
-    // For testing purposes - allows setter injection
+    // Sets the user repository for this service. Used for dependency injection in testing.
     public void setUserRepository(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
     
+    // Sets the account repository for this service. Used for dependency injection in testing.
     public void setAccountRepository(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
     }
 
-    // Search for customers by name and return their IBANs
+    // Searches for customers based on the provided criteria and returns matching customer information.
     public List<UserSearchResultDTO> searchUsers(String term, String name, String email, String iban, Authentication authentication) {
         // Check if user is authenticated
         if (authentication == null) {
@@ -64,7 +65,7 @@ public class UserSearchService {
         return results;
     }
 
-    // Find customers based on search criteria
+    // Finds customers matching the specified search criteria.
     private List<User> findMatchingCustomers(String term, String name, String email, String iban) {
         // If we have a general search term
         if (term != null && !term.trim().isEmpty()) {
@@ -90,7 +91,7 @@ public class UserSearchService {
             "customer");
     }
     
-    // Find customers by general search term
+    // Searches for customers using a general search term.
     private List<User> findCustomersByTerm(String term) {
         // Try to find users by name or email
         List<User> users = userRepository.findApprovedCustomersBySearchTerm(term);
@@ -103,13 +104,13 @@ public class UserSearchService {
         return users;
     }
     
-    // Find a customer by IBAN
+    // Finds customers by their account IBAN.
     private List<User> findCustomersByIban(String iban) {
         List<User> result = new ArrayList<>();
         
         // Check if IBAN is valid
         if (!IbanGenerator.validateIban(iban)) {
-            return result;
+            throw new IllegalArgumentException("Invalid IBAN format");
         }
         
         try {
@@ -134,13 +135,13 @@ public class UserSearchService {
                 }
             }
         } catch (IllegalArgumentException e) {
-            // Invalid IBAN format, ignore
+            throw new IllegalArgumentException("Invalid IBAN format: " + e.getMessage());
         }
         
         return result;
     }
     
-    // Create search result with customer info and IBANs
+    // Creates a search result DTO containing customer information and account IBANs.
     private UserSearchResultDTO createSearchResult(User customer) {
         // Get all accounts for this customer
         List<Account> accounts = accountRepository.findByUserId(customer.getId());
