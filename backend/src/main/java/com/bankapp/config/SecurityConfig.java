@@ -33,25 +33,25 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    new AntPathRequestMatcher("/api/auth/login"),
-                    new AntPathRequestMatcher("/api/auth/register"),
-                    new AntPathRequestMatcher("/h2-console/**"),
-                    new AntPathRequestMatcher("/v3/api-docs/**"),
-                    new AntPathRequestMatcher("/swagger-ui/**"),
-                    new AntPathRequestMatcher("/swagger-ui.html"))
-                .permitAll()
-                .requestMatchers(
-                    new AntPathRequestMatcher("/api/accounts/user/**"),
-                    new AntPathRequestMatcher("/api/pin/**"))
-                .authenticated()
-                .anyRequest().authenticated());
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/auth/login"),
+                                new AntPathRequestMatcher("/api/auth/register"),
+                                new AntPathRequestMatcher("/h2-console/**"),
+                                new AntPathRequestMatcher("/v3/api-docs/**"),
+                                new AntPathRequestMatcher("/swagger-ui/**"),
+                                new AntPathRequestMatcher("/swagger-ui.html"))
+                        .permitAll()
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/accounts/user/**"),
+                                new AntPathRequestMatcher("/api/pin/**"))
+                        .authenticated()
+                        .anyRequest().authenticated());
 
         http.headers(headers -> headers.frameOptions(frame -> frame.disable())); // for H2 console
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -73,18 +73,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Required if allowCredentials(true) is used
+        // Add all allowed origins
         config.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:5173",
-            "https://volodymyr716819.github.io",
-            "https://banking-app-716819.web.app",
-            "https://banking-app-716819.firebaseapp.com"
-        ));
+                "http://localhost:5173",
+                "https://volodymyr716819.github.io",
+                "https://banking-app-716819.web.app",
+                "https://banking-app-716819.firebaseapp.com"));
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setExposedHeaders(Arrays.asList("Authorization"));
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(true); // IMPORTANT: true for cookies, JWT, etc.
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
