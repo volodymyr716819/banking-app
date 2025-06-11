@@ -11,20 +11,6 @@
         </select>
       </div>
 
-      <div class="filter-section">
-        <label>Account:</label>
-        <select v-model="filterAccount">
-          <option value="">All Accounts</option>
-          <option
-            v-for="account in accounts"
-            :key="account.id"
-            :value="account.iban"
-          >
-            {{ account.type.charAt(0) + account.type.slice(1).toLowerCase() }} -
-            {{ formatIban(account.iban) }}
-          </option>
-        </select>
-      </div>
       
       <div class="filter-section">
         <label>Date Range:</label>
@@ -75,7 +61,7 @@
       </div>
 
       <button
-        v-if="selectedTransactionType || filterAccount || startDate || endDate || minAmount || maxAmount"
+        v-if="selectedTransactionType || startDate || endDate || minAmount || maxAmount"
         @click="clearFilters"
         class="clear-filters-button"
       >
@@ -148,8 +134,6 @@ export default {
     const transactions = ref([]);
     const selectedTransactionType = ref("");
     const message = ref("");
-    const accounts = ref([]);
-    const filterAccount = ref("");
     const startDate = ref("");
     const endDate = ref("");
     const minAmount = ref("");
@@ -222,25 +206,8 @@ export default {
       }
     };
 
-    const fetchUserAccounts = async () => {
-      try {
-        const response = await api.get(
-          `/accounts/user/${auth.user.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${auth.token}`,
-            },
-          }
-        );
-        accounts.value = response.data;
-      } catch (error) {
-        console.error("Failed to fetch accounts:", error);
-      }
-    };
-
     onMounted(() => {
       fetchTransactions();
-      fetchUserAccounts();
     });
     
     // Watch for changes in filter parameters and refetch data from server
@@ -250,7 +217,6 @@ export default {
 
     const clearFilters = () => {
       selectedTransactionType.value = "";
-      filterAccount.value = "";
       startDate.value = "";
       endDate.value = "";
       minAmount.value = "";
@@ -263,14 +229,6 @@ export default {
       // Filter by transaction type
       if (selectedTransactionType.value) {
         result = result.filter(tx => tx.transactionType === selectedTransactionType.value);
-      }
-
-      // Filter by account
-      if (filterAccount.value) {
-        result = result.filter(tx => 
-          tx.fromAccountIban === filterAccount.value || 
-          tx.toAccountIban === filterAccount.value
-        );
       }
       
       // Apply client-side date filters
@@ -348,8 +306,6 @@ export default {
       formatIban,
       formatTransactionType,
       getTransactionTypeClass,
-      accounts,
-      filterAccount,
       startDate,
       endDate,
       minAmount,

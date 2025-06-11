@@ -48,8 +48,23 @@ public class TransactionService {
     private TransactionHistoryDTO mapTransactionToDTO(Transaction t) {
         TransactionHistoryDTO dto = new TransactionHistoryDTO();
         dto.setTransactionId(t.getId());
-        dto.setSenderAccountId(t.getFromAccount() != null ? t.getFromAccount().getId() : null);
-        dto.setReceiverAccountId(t.getToAccount() != null ? t.getToAccount().getId() : null);
+        
+        // Set sender account information
+        if (t.getFromAccount() != null) {
+            Account sender = t.getFromAccount();
+            dto.setSenderAccountId(sender.getId());
+            dto.setFromAccountIban(sender.getIban());
+            dto.setFromAccountHolderName(sender.getUser() != null ? sender.getUser().getName() : "");
+        }
+        
+        // Set receiver account information
+        if (t.getToAccount() != null) {
+            Account receiver = t.getToAccount();
+            dto.setReceiverAccountId(receiver.getId());
+            dto.setToAccountIban(receiver.getIban());
+            dto.setToAccountHolderName(receiver.getUser() != null ? receiver.getUser().getName() : "");
+        }
+        
         dto.setAmount(t.getAmount());
         dto.setTimestamp(t.getTimestamp());
         dto.setDescription(t.getDescription());
@@ -61,6 +76,24 @@ public class TransactionService {
     private TransactionHistoryDTO mapAtmOperationToDTO(AtmOperation atm) {
         TransactionHistoryDTO dto = new TransactionHistoryDTO();
         dto.setTransactionId(atm.getId());
+        
+        // For ATM operations, the account is both the sender and receiver (for UI consistency)
+        if (atm.getAccount() != null) {
+            Account account = atm.getAccount();
+            
+            if (atm.getOperationType() == AtmOperation.OperationType.DEPOSIT) {
+                // For deposits, the account is the receiver
+                dto.setToAccountIban(account.getIban());
+                dto.setToAccountHolderName(account.getUser() != null ? account.getUser().getName() : "");
+                dto.setReceiverAccountId(account.getId());
+            } else if (atm.getOperationType() == AtmOperation.OperationType.WITHDRAW) {
+                // For withdrawals, the account is the sender
+                dto.setFromAccountIban(account.getIban());
+                dto.setFromAccountHolderName(account.getUser() != null ? account.getUser().getName() : "");
+                dto.setSenderAccountId(account.getId());
+            }
+        }
+        
         dto.setAmount(atm.getAmount());
         dto.setTimestamp(atm.getTimestamp());
         dto.setDescription("ATM " + atm.getOperationType());

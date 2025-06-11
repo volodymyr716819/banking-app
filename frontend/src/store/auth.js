@@ -5,7 +5,6 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: JSON.parse(localStorage.getItem("user")) || null,
     token: localStorage.getItem("token") || null,
-    lastLogin: localStorage.getItem("lastLogin") || null,
     isLoading: false,
     error: null,
   }),
@@ -18,10 +17,6 @@ export const useAuthStore = defineStore("auth", {
     userName: (state) => state.user?.name || "Guest",
     userEmail: (state) => state.user?.email || "",
     userId: (state) => state.user?.id || null,
-    formattedLastLogin: (state) => {
-      if (!state.lastLogin) return "Not available";
-      return new Date(state.lastLogin).toLocaleString();
-    },
   },
 
   actions: {
@@ -43,7 +38,6 @@ export const useAuthStore = defineStore("auth", {
         };
 
         this.token = res.data.token;
-        this.lastLogin = new Date().toISOString();
 
         this.persistAuthState();
 
@@ -65,7 +59,6 @@ export const useAuthStore = defineStore("auth", {
 
       localStorage.removeItem("user");
       localStorage.removeItem("token");
-      localStorage.removeItem("lastLogin");
 
       delete api.defaults.headers.common["Authorization"];
     },
@@ -73,7 +66,6 @@ export const useAuthStore = defineStore("auth", {
     persistAuthState() {
       localStorage.setItem("user", JSON.stringify(this.user));
       localStorage.setItem("token", this.token);
-      localStorage.setItem("lastLogin", this.lastLogin);
     },
 
     updateUserInfo(userData) {
@@ -93,11 +85,6 @@ export const useAuthStore = defineStore("auth", {
         });
 
         if (res.data && res.data.valid) {
-          if (!this.lastLogin) {
-            this.lastLogin = new Date().toISOString();
-            this.persistAuthState();
-          }
-
           if (res.data.id || res.data.name || res.data.email || res.data.role) {
             this.updateUserInfo({
               id: res.data.id || this.user.id,
