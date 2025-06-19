@@ -36,87 +36,47 @@ public class TransactionService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    // ---------------- Transfer Logic ----------------
+    //  Transfer Logic ----------------
 
     // Validates and processes a transfer via IBANs
     @Transactional
     public void processTransfer(TransferRequest request) {
         validateTransferRequest(request);
-        executeTransfer(request);
+        Account sender = getAccountByIban(request.getSenderIban());
+        Account receiver = getAccountByIban(request.getReceiverIban());
+        validateAccountsForTransfer(sender, receiver, request.getAmount());
+        updateBalances(sender, receiver, request.getAmount());
+        saveTransaction(sender, receiver, request.getAmount(), request.getDescription(), TransactionType.TRANSFER);
     }
 
     // Verifies transfer request structure and amount
     private void validateTransferRequest(TransferRequest request) {
-        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-           throw new IllegalArgumentException("Amount must be greater than zero");
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
         }
-
         if (request.getSenderIban() == null || request.getReceiverIban() == null) {
             throw new IllegalArgumentException("Both sender and receiver IBANs are required");
         }
     }
     
-    // Executes transfer after validation
-    private void executeTransfer(TransferRequest req) {
-        Account sender = getAccountByIban(req.getSenderIban());
-        Account receiver = getAccountByIban(req.getReceiverIban());
-        transferMoney(req.getSenderIban(), req.getReceiverIban(), req.getAmount(), req.getDescription());
+    // Validates account before transfer 
+    private void validateAccountsForTransfer(Account sender, Account receiver, BigDecimal amount) {
+        if (!sender.isApproved() || !receiver.isApproved()) {
+            throw new IllegalArgumentException("Both accounts must be approved");
+        }
+        if (sender.isClosed() || receiver.isClosed()) {
+            throw new IllegalArgumentException("Cannot transfer with closed accounts");
+        }
+        if (sender.getBalance().compareTo(amount) < 0) {
+            throw new IllegalArgumentException("Insufficient balance");
+        }
     }
 
-    //  Handles the fund transfer logic and saves transaction
-    @Transactional
-    public void transferMoney(String senderIban, String receiverIban, BigDecimal amount, String description) {
-        Account sender = getAccountByIban(senderIban);     
-        Account receiver = getAccountByIban(receiverIban);
-        
-        if (!sender.isApproved() || !receiver.isApproved())
-            throw new IllegalArgumentException("Accounts must be approved");
-
-        if (sender.isClosed() || receiver.isClosed())
-            throw new IllegalArgumentException("Cannot use closed accounts");
-
-        if (sender.getBalance().compareTo(amount) < 0)
-            throw new IllegalArgumentException("Insufficient balance");
-
+    // Updates the new balance of sender and receiver
+    private void updateBalances(Account sender, Account receiver, BigDecimal amount) {
         sender.setBalance(sender.getBalance().subtract(amount));
         receiver.setBalance(receiver.getBalance().add(amount));
-
-        accountRepository.save(sender);
-        accountRepository.save(receiver);
-
-        // Save transaction with sender and receiver
-        saveTransaction(sender, receiver, amount, description, TransactionType.TRANSFER);
-    }
-
-    // ---------------- Deposit Logic ----------------
-
-    // Deposits money into an account if it's approved and not closed + checks if the daily transaction limit is exceeded.
-    @Transactional
-    public void depositMoney(Long accountId, BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-           throw new IllegalArgumentException("Amount must be positive");
-        }
-
-        // Check account
-        Account account = getAccountById(accountId);
-        if (!account.isApproved()) {
-           throw new UnapprovedAccountException("Cannot deposit to an unapproved account");
-        }
-        if (account.isClosed()) {
-            throw new IllegalArgumentException("Cannot deposit to a closed account");
-        }
-
-        // Check daily limit
-        BigDecimal todayTotal = transactionRepository.sumDepositsForToday(account.getId());
-        if (todayTotal.add(amount).compareTo(account.getDailyLimit()) > 0) {
-            throw new IllegalArgumentException("Daily deposit limit exceeded");
-        }
-
-        account.setBalance(account.getBalance().add(amount));
-        accountRepository.save(account);
-
-        // Save deposit transaction
-        saveTransaction(null, account, amount, "Deposit", TransactionType.DEPOSIT);
+        accountRepository.saveAll(List.of(sender, receiver));
     }
 
     // Centralized method for saving transactions
@@ -130,7 +90,7 @@ public class TransactionService {
         transactionRepository.save(tx);
     }
 
-     // ---------------- History Retrieval ----------------
+    // History Retrieval ----------------
 
     // Get user transaction history without filters
     public List<TransactionHistoryDTO> getUserTransactionHistory(Long userId) {
@@ -171,7 +131,7 @@ public class TransactionService {
         return getUserTransactionHistory(userId, start, end, min, max);
     }
 
-    // ---------------- Helpers ----------------
+    // Helpers ----------------
 
     private Account getAccountById(Long id) {
         return accountRepository.findById(id)

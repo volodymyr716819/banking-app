@@ -1,113 +1,82 @@
 package com.bankapp.controller;
 
 import com.bankapp.dto.AtmRequest;
+import com.bankapp.model.User;
+import com.bankapp.model.AtmOperation.OperationType;
 import com.bankapp.service.AtmService;
-import com.bankapp.model.Account;
-import com.bankapp.model.AtmOperation;
-import com.bankapp.model.CardDetails;
-import com.bankapp.repository.AccountRepository;
-import com.bankapp.repository.AtmOperationRepository;
-import com.bankapp.repository.CardDetailsRepository;
-import com.bankapp.util.PinHashUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
+import com.bankapp.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/atm")
-@Tag(name = "ATM", description = "Endpoints for ATM operations: deposit, withdraw, balance, PIN status")
+@Tag(name = "ATM", description = "ATM operations: deposit, withdraw, balance, PIN status")
 public class AtmOperationController {
 
-    @Autowired
-    private AccountRepository accountRepository;
+    @Autowired private AtmService atmService;
+    @Autowired private UserService userService;
 
-    @Autowired
-    private AtmOperationRepository atmOperationRepository;
-    
-    @Autowired
-    private CardDetailsRepository cardDetailsRepository;
-
-    @Autowired
-    private AtmService atmService;
-
-
-    @Autowired
-    private PinHashUtil pinHashUtil;
-
-    /**
-     * Endpoint to deposit money into an account via ATM.
-     * @param atmRequest contains account ID, amount to deposit, and PIN
-    */ 
-   @Operation(summary = "Deposit money into an account via ATM")
-   @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "Deposit successful"),
-       @ApiResponse(responseCode = "400", description = "Invalid request or PIN"),
-       @ApiResponse(responseCode = "404", description = "Account not found")
-    })
+    // Handles deposit request
     @PostMapping("/deposit")
-    public ResponseEntity<?> deposit(@RequestBody AtmRequest atmRequest) {
-        atmService.processDeposit(
-        atmRequest.getAccountId(),
-        atmRequest.getAmount(),
-        atmRequest.getPin()
-    );
-    return ResponseEntity.ok("Deposit successful");
+    @Operation(summary = "Deposit into account via ATM")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Deposit successful"),
+        @ApiResponse(responseCode = "400", description = "Invalid request"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
+    })
+    public ResponseEntity<?> deposit(@RequestBody AtmRequest request, Authentication auth) {
+        userService.validateAuthentication(auth).orElseThrow(() ->
+            new RuntimeException("Authentication failed"));
+
+        atmService.performAtmOperation(request.getAccountId(), request.getAmount(), request.getPin(), OperationType.DEPOSIT);
+        return ResponseEntity.ok("Deposit successful");
     }
 
-    /**
-     * Endpoint to withdraw money from an account via ATM.
-     * @param atmRequest contains account ID, amount to withdraw, and PIN
-    */
-   @Operation(summary = "Withdraw money from an account via ATM")
-   @ApiResponses({
-   @ApiResponse(responseCode = "200", description = "Withdrawal successful"),
-       @ApiResponse(responseCode = "400", description = "Insufficient balance or invalid PIN"),
-       @ApiResponse(responseCode = "404", description = "Account not found")
-    })
+    // Handles withdraw request
     @PostMapping("/withdraw")
-    public ResponseEntity<?> withdraw(@RequestBody AtmRequest atmRequest) {
-        atmService.processWithdrawal(
-           atmRequest.getAccountId(),
-           atmRequest.getAmount(),
-           atmRequest.getPin()
-        );
+    @Operation(summary = "Withdraw from account via ATM")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Withdrawal successful"),
+        @ApiResponse(responseCode = "400", description = "Invalid request"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
+    })
+    public ResponseEntity<?> withdraw(@RequestBody AtmRequest request, Authentication auth) {
+        userService.validateAuthentication(auth).orElseThrow(() ->
+            new RuntimeException("Authentication failed"));
+        
+        atmService.performAtmOperation(request.getAccountId(), request.getAmount(), request.getPin(), OperationType.WITHDRAW);
         return ResponseEntity.ok("Withdrawal successful");
     }
 
-    /**
-     * Checks the balance of an account by account ID.
-     * @param accountId the ID of the account
-    */
-   @Operation(summary = "Get account balance")
-   @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "Balance returned successfully"),
-       @ApiResponse(responseCode = "404", description = "Account not found")
-    })
+    // Returns account balance
     @GetMapping("/balance")
-    public ResponseEntity<?> getBalance(@RequestParam Long accountId) {
+    @Operation(summary = "Get account balance")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Balance returned"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
+    })
+    public ResponseEntity<?> getBalance(@RequestParam Long accountId, Authentication auth) {
+        userService.validateAuthentication(auth).orElseThrow(() ->
+            new RuntimeException("Authentication failed"));
         return atmService.getBalance(accountId);
     }
 
-    /**
-     * Checks whether a PIN has been created for an account.
-     * @param accountId the ID of the account
-    */
-    @Operation(summary = "Check if PIN is set for account")
-    @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "PIN status returned"),
-       @ApiResponse(responseCode = "404", description = "Account not found")
-    })
+    // Returns PIN set status
     @GetMapping("/pinStatus")
-    public ResponseEntity<?> getPinStatus(@RequestParam Long accountId) {
+    @Operation(summary = "Check PIN status")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "PIN status returned"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
+    })
+    public ResponseEntity<?> getPinStatus(@RequestParam Long accountId, Authentication auth) {
+        userService.validateAuthentication(auth).orElseThrow(() ->
+            new RuntimeException("Authentication failed"));
         return atmService.getPinStatus(accountId);
     }
 }

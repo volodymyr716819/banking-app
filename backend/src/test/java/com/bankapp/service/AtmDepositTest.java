@@ -19,6 +19,7 @@ import com.bankapp.exception.InvalidPinException;
 import com.bankapp.exception.ResourceNotFoundException;
 import com.bankapp.model.Account;
 import com.bankapp.model.AtmOperation;
+import com.bankapp.model.AtmOperation.OperationType;
 import com.bankapp.model.CardDetails;
 import com.bankapp.model.User;
 import com.bankapp.repository.AccountRepository;
@@ -83,7 +84,7 @@ class AtmDepositTest {
         when(atmOperationRepository.save(any(AtmOperation.class))).thenAnswer(i -> i.getArgument(0));
         
         // When
-        AtmOperation result = atmService.processDeposit(1L, depositAmount, pin);
+       AtmOperation result = atmService.performAtmOperation(1L, depositAmount, pin, OperationType.DEPOSIT);
         
         // Then
         assertNotNull(result);
@@ -102,7 +103,7 @@ class AtmDepositTest {
         
         // When & Then
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            atmService.processDeposit(99L, new BigDecimal("500.00"), "1234");
+            atmService.performAtmOperation(99L, new BigDecimal("500.00"), "1234", OperationType.DEPOSIT);
         });
         
         assertEquals("Account not found with id : '99'", exception.getMessage());
@@ -122,7 +123,7 @@ class AtmDepositTest {
         
         // When & Then
         InvalidPinException exception = assertThrows(InvalidPinException.class, () -> {
-            atmService.processDeposit(1L, new BigDecimal("500.00"), incorrectPin);
+            atmService.performAtmOperation(1L, new BigDecimal("500.00"), incorrectPin, OperationType.DEPOSIT);
         });
         
         assertEquals("Invalid PIN provided", exception.getMessage());

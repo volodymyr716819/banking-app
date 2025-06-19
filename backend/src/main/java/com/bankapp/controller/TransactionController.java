@@ -18,17 +18,17 @@ import com.bankapp.dto.TransactionHistoryDTO;
 import com.bankapp.dto.TransferRequest;
 import com.bankapp.model.User;
 import com.bankapp.service.TransactionService;
+import com.bankapp.service.UserService;
 
 @RestController
 @RequestMapping("/api/transactions")
 @Tag(name = "Transaction", description = "Endpoints for transferring money and retrieving transaction history")
 public class TransactionController {
 
-    @Autowired
-    private TransactionService transactionService;
+    @Autowired private TransactionService transactionService;
+    @Autowired private UserService userService;
 
-    // ------------------------ Transfer Endpoint ------------------------
-
+    // Transfer money between IBANs
     @PostMapping("/transfer")
     @Operation(summary = "Transfer money between accounts using IBANs")
     @ApiResponses({
@@ -48,8 +48,7 @@ public class TransactionController {
         }
     }
 
-    // ------------------------ Public Transaction History by IBAN ------------------------
-
+    // Public access: transactions for account by IBAN
     @GetMapping("/account/{iban}")
     @Operation(summary = "Get transactions for an account (by IBAN)")
     @ApiResponses({
@@ -72,8 +71,7 @@ public class TransactionController {
         }
     }
 
-    // ------------------------ Authenticated Transaction History by IBAN ------------------------
-
+    // Authenticated user: transaction history by IBAN
     @GetMapping("/account")
     @Operation(summary = "Get account transactions by IBAN (authorized access)")
     @ApiResponses({
@@ -102,8 +100,7 @@ public class TransactionController {
         }
     }
 
-    // ------------------------ Authenticated Transaction History by User ------------------------
-
+    // Authenticated user: transaction history by user ID
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get user transactions (authorized access)")
     @ApiResponses({
@@ -132,13 +129,9 @@ public class TransactionController {
         }
     }
 
-    // ------------------------ Helper ------------------------
-
+    // Helper method to centralize authentication
     private User getAuthenticatedUser(Authentication authentication) {
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof User user) {
-            return user;
-        }
-        throw new IllegalStateException("Authentication principal is not a User instance");
+        return userService.validateAuthentication(authentication)
+                .orElseThrow(() -> new RuntimeException("Authentication failed"));
     }
 }
