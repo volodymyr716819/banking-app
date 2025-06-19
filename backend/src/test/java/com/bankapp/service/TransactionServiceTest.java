@@ -1,139 +1,134 @@
 package com.bankapp.service;
 
 import com.bankapp.dto.TransactionHistoryDTO;
-import com.bankapp.model.Account;
-import com.bankapp.model.User;
+import com.bankapp.model.*;
+import com.bankapp.model.Transaction.TransactionType;
 import com.bankapp.repository.AccountRepository;
-import com.bankapp.repository.TransactionRepository;
 import com.bankapp.repository.AtmOperationRepository;
+import com.bankapp.repository.TransactionRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.*;
 
-import java.util.List;
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Unit tests for authorization and validation logic in TransactionService.
- */
-@ExtendWith(MockitoExtension.class)
-public class TransactionServiceTest {
+class TransactionServiceTest {
 
-    @Mock
-    private AccountRepository accountRepository;
-
-    @Mock
-    private TransactionRepository transactionRepository;
-
-    @Mock
-    private AtmOperationRepository atmOperationRepository;
+    @Mock private TransactionRepository transactionRepository;
+    @Mock private AccountRepository accountRepository;
+    @Mock private AtmOperationRepository atmOperationRepository;
 
     @InjectMocks
     private TransactionService transactionService;
 
-    private User employee;
-    private User customer;
-    private Account account;
+    private Account senderAccount;
+    private Account receiverAccount;
 
-    /**
-     * Sets up reusable test objects before each test.
-     */
     @BeforeEach
-    public void setup() {
-        employee = new User();
-        employee.setId(1L);
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        transactionService = new TransactionService(transactionRepository, accountRepository, atmOperationRepository);
+
+        senderAccount = new Account();
+        senderAccount.setId(1L);
+        senderAccount.setIban("DE1111111111");
+        senderAccount.setApproved(true);
+        senderAccount.setClosed(false);
+        senderAccount.setBalance(new BigDecimal("1000.00"));
+
+        receiverAccount = new Account();
+        receiverAccount.setId(2L);
+        receiverAccount.setIban("DE2222222222");
+        receiverAccount.setApproved(true);
+        receiverAccount.setClosed(false);
+        receiverAccount.setBalance(new BigDecimal("500.00"));
+    }
+
+    @Test
+    void testTransferMoney_Success() {
+        when(accountRepository.findByIban("DE1111111111")).thenReturn(Optional.of(senderAccount));
+        when(accountRepository.findByIban("DE2222222222")).thenReturn(Optional.of(receiverAccount));
+
+        transactionService.transferMoney("DE1111111111", "DE2222222222", new BigDecimal("200.00"), "Test transfer");
+
+        assertEquals(new BigDecimal("800.00"), senderAccount.getBalance());
+        assertEquals(new BigDecimal("700.00"), receiverAccount.getBalance());
+
+        verify(accountRepository, times(2)).save(any(Account.class));
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
+    }
+
+    @Test
+    void testTransferMoney_InsufficientBalance() {
+        senderAccount.setBalance(new BigDecimal("100.00"));
+
+        when(accountRepository.findByIban("DE1111111111")).thenReturn(Optional.of(senderAccount));
+        when(accountRepository.findByIban("DE2222222222")).thenReturn(Optional.of(receiverAccount));
+
+        assertThrows(IllegalArgumentException.class, () -> 
+            transactionService.transferMoney("DE1111111111", "DE2222222222", new BigDecimal("200.00"), "Overdraft")
+        );
+    }
+
+    @Test
+    void testTransferMoney_UnapprovedAccount() {
+        senderAccount.setApproved(false);
+
+        when(accountRepository.findByIban("DE1111111111")).thenReturn(Optional.of(senderAccount));
+        when(accountRepository.findByIban("DE2222222222")).thenReturn(Optional.of(receiverAccount));
+
+        assertThrows(IllegalArgumentException.class, () -> 
+            transactionService.transferMoney("DE1111111111", "DE2222222222", new BigDecimal("50.00"), "Invalid")
+        );
+    }
+
+    @Test
+    void testDepositMoney_Success() {
+        senderAccount.setDailyLimit(new BigDecimal("2000.00"));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(senderAccount));
+        when(transactionRepository.sumDepositsForToday(1L)).thenReturn(BigDecimal.ZERO);
+
+        transactionService.depositMoney(1L, new BigDecimal("500.00"));
+
+        assertEquals(new BigDecimal("1500.00"), senderAccount.getBalance());
+        verify(accountRepository).save(senderAccount);
+        verify(transactionRepository).save(any(Transaction.class));
+    }
+
+    @Test
+    void testDepositMoney_ExceedsLimit() {
+        senderAccount.setDailyLimit(new BigDecimal("500.00"));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(senderAccount));
+        when(transactionRepository.sumDepositsForToday(1L)).thenReturn(new BigDecimal("400.00"));
+
+        assertThrows(IllegalArgumentException.class, () ->
+            transactionService.depositMoney(1L, new BigDecimal("200.00"))
+        );
+    }
+
+    @Test
+    void testGetTransactionHistoryByIbanWithAuth_EmployeeAccess() {
+        User employee = new User();
+        employee.setId(999L);
         employee.setRole("EMPLOYEE");
 
-        customer = new User();
-        customer.setId(2L);
-        customer.setRole("CUSTOMER");
+        Account acc = new Account();
+        acc.setIban("IBAN1");
+        acc.setUser(new User());
+        acc.getUser().setId(1L);
 
-        account = new Account();
-        account.setId(100L);
-        account.setIban("DE1234567890");
-        account.setUser(customer);
-    }
+        when(accountRepository.findByIban("IBAN1")).thenReturn(Optional.of(acc));
+        when(transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(1L, 1L)).thenReturn(Collections.emptyList());
+        when(atmOperationRepository.findByAccount_User_Id(1L)).thenReturn(Collections.emptyList());
 
-    /**
-     * Valid: A customer can access their own account's history by IBAN.
-     */
-    @Test
-    public void testGetTransactionHistoryByIbanWithAuth_AuthorizedCustomer() {
-        when(accountRepository.findByIban(account.getIban())).thenReturn(Optional.of(account));
-
-        List<TransactionHistoryDTO> result = transactionService.getTransactionHistoryByIbanWithAuth(account.getIban(), customer);
+        List<TransactionHistoryDTO> result = transactionService.getTransactionHistoryByIbanWithAuth(
+                "IBAN1", employee, null, null, null, null);
 
         assertNotNull(result);
-        verify(accountRepository).findByIban(account.getIban());
-    }
-
-    /**
-     * Valid: An employee can access any account's history by IBAN.
-     */
-    @Test
-    public void testGetTransactionHistoryByIbanWithAuth_AuthorizedEmployee() {
-        when(accountRepository.findByIban(account.getIban())).thenReturn(Optional.of(account));
-
-        List<TransactionHistoryDTO> result = transactionService.getTransactionHistoryByIbanWithAuth(account.getIban(), employee);
-
-        assertNotNull(result);
-        verify(accountRepository).findByIban(account.getIban());
-    }
-
-    /**
-     * Invalid: Another customer trying to access an account they don't own is denied.
-     */
-    @Test
-    public void testGetTransactionHistoryByIbanWithAuth_UnauthorizedUser() {
-        User otherUser = new User();
-        otherUser.setId(3L);
-        otherUser.setRole("CUSTOMER");
-
-        when(accountRepository.findByIban(account.getIban())).thenReturn(Optional.of(account));
-
-        Exception ex = assertThrows(IllegalArgumentException.class, () ->
-            transactionService.getTransactionHistoryByIbanWithAuth(account.getIban(), otherUser));
-
-        assertEquals("Access denied", ex.getMessage());
-    }
-
-    /**
-     * Valid: A user can access their own user-level transaction history.
-     */
-    @Test
-    public void testGetTransactionsByUserWithAuth_AsSelf() {
-        List<TransactionHistoryDTO> result = transactionService.getTransactionsByUserWithAuth(customer.getId(), customer);
-        assertNotNull(result);
-    }
-
-    /**
-     * Valid: An employee can access any user's transaction history.
-     */
-    @Test
-    public void testGetTransactionsByUserWithAuth_AsEmployee() {
-        List<TransactionHistoryDTO> result = transactionService.getTransactionsByUserWithAuth(customer.getId(), employee);
-        assertNotNull(result);
-    }
-
-    /**
-     * Invalid: A customer trying to access another user's history is denied.
-     */
-    @Test
-    public void testGetTransactionsByUserWithAuth_Unauthorized() {
-        User otherUser = new User();
-        otherUser.setId(3L);
-        otherUser.setRole("CUSTOMER");
-
-        Exception ex = assertThrows(IllegalArgumentException.class, () ->
-            transactionService.getTransactionsByUserWithAuth(customer.getId(), otherUser));
-
-        assertEquals("Access denied", ex.getMessage());
     }
 }

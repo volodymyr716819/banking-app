@@ -2,8 +2,8 @@
     FROM eclipse-temurin:21-jdk AS builder
     WORKDIR /workspace
     
-    COPY backend/mvnw mvnw
-    COPY backend/.mvn .mvn
+    COPY mvnw mvnw
+    COPY .mvn .mvn
     COPY . .
     
     # make wrapper executable and build only the backend POM
