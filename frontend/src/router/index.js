@@ -13,6 +13,7 @@ import EmployeeAccountsView from "../views/EmployeeAccountsView.vue";
 import TransactionHistoryView from "../views/TransactionHistoryView.vue";
 import SearchCustomerView from "../views/SearchCustomerView.vue";
 import PinSettingsView from "../views/PinSettingsView.vue";
+import AwaitingApproval from "../views/AwaitingApproval.vue";
 
 import { useAuthStore } from "../store/auth";
 
@@ -27,6 +28,11 @@ const routes = [
     component: RegisterView,
     meta: { requiresGuest: true }
   },
+  {
+    path: '/awaiting-approval',
+    name: 'AwaitingApproval',
+    component: AwaitingApproval
+  },  
   {
     path: "/dashboard",
     component: DashboardLayout,
