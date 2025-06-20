@@ -35,6 +35,7 @@ export const useAuthStore = defineStore("auth", {
           email: res.data.email,
           name: res.data.name,
           role: res.data.role,
+          registrationStatus: res.data.registrationStatus,
         };
 
         this.token = res.data.token;
@@ -44,7 +45,7 @@ export const useAuthStore = defineStore("auth", {
         api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
 
         this.isLoading = false;
-        return true;
+        return res.data;
       } catch (err) {
         this.isLoading = false;
         this.error = err.response?.data?.message || err.message;
