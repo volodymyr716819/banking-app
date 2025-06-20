@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.AuthenticationException;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,41 +49,49 @@ public class AuthController {
     // Handles login requests by authenticating credentials and returning JWT
     @Operation(summary = "Authenticate user and return JWT token")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "Login successful, JWT returned"),
-       @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "200", description = "Login successful, JWT returned"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials")
     })
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User request) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-                
-                Optional<User> userOpt = userService.validateLogin(request);
-                if (userOpt.isEmpty()) {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
-                }
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-                User user = userOpt.get();
-                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-                String jwt = jwtUtil.generateToken(userDetails);
-                
+            // 1) credentials are valid
+            User user = userService.validateLogin(request)
+                    .orElseThrow(() -> new BadCredentialsException("Invalid"));
+
+            // 2) build the token
+            UserDetails ud = (UserDetails) auth.getPrincipal();
+            String jwt = jwtUtil.generateToken(ud);
+
+            // 3) respond differently based on status
+            if (user.getRegistrationStatus() == RegistrationStatus.PENDING) {
                 return ResponseEntity.ok(Map.of(
+                        "token", jwt,
+                        "status", "PENDING",
+                        "message", "Your account is pending approval"));
+            }
+
+            // normal approved flow
+            return ResponseEntity.ok(Map.of(
                     "token", jwt,
                     "id", user.getId(),
                     "email", user.getEmail(),
                     "name", user.getName(),
                     "role", user.getRole()));
-
-        } catch (Exception e) {
-           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password."));
+        } catch (AuthenticationException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid email or password."));
         }
     }
 
     // Registers a new user if email is not already taken
     @Operation(summary = "Register a new user")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "Registration successful, pending approval"),
-       @ApiResponse(responseCode = "400", description = "Validation error or email already exists")
+            @ApiResponse(responseCode = "200", description = "Registration successful, pending approval"),
+            @ApiResponse(responseCode = "400", description = "Validation error or email already exists")
     })
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
@@ -96,16 +106,17 @@ public class AuthController {
     // Validates the token and user status for authenticated sessions
     @Operation(summary = "Validate JWT token and return user info")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Token is valid and user is authenticated"),
-        @ApiResponse(responseCode = "401", description = "Invalid or expired token"),
-        @ApiResponse(responseCode = "403", description = "Access forbidden")
+            @ApiResponse(responseCode = "200", description = "Token is valid and user is authenticated"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired token"),
+            @ApiResponse(responseCode = "403", description = "Access forbidden")
     })
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken(Authentication authentication) {
         try {
             Optional<User> userOpt = userService.validateAuthentication(authentication);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("valid", false, "message", "Invalid or expired token"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("valid", false, "message", "Invalid or expired token"));
             }
 
             User user = userOpt.get();
