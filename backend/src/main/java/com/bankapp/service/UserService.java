@@ -27,7 +27,7 @@ public class UserService {
     // Used to decline users pending approval
     public void declineUser(Long id) {
         User user = repo.findById(id)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getRegistrationStatus() != RegistrationStatus.PENDING) {
             throw new RuntimeException("User is not pending");
@@ -36,7 +36,7 @@ public class UserService {
         user.setRegistrationStatus(RegistrationStatus.DECLINED);
     }
 
-     // Validates login input and user approval status
+    // Validates login input and user approval status
     public Optional<User> validateLogin(User request) {
         Optional<User> found = repo.findByEmail(request.getEmail());
 
@@ -45,8 +45,8 @@ public class UserService {
         }
 
         User user = found.get();
-        if (!user.isApproved() || user.getRegistrationStatus() != RegistrationStatus.PENDING) {
-            throw new UnapprovedAccountException("Account must be approved before login.");
+        if (user.getRegistrationStatus() == RegistrationStatus.DECLINED) {
+            throw new UnapprovedAccountException("Your registration was declined.");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -73,10 +73,12 @@ public class UserService {
         if (authentication != null && authentication.isAuthenticated()) {
             Optional<User> userOpt = repo.findByEmail(authentication.getName());
 
-            if (userOpt.isEmpty()) return Optional.empty();
+            if (userOpt.isEmpty())
+                return Optional.empty();
 
             User user = userOpt.get();
-            if (!user.isApproved()) throw new UnapprovedAccountException("Account is pending approval.");
+            if (!user.isApproved())
+                throw new UnapprovedAccountException("Account is pending approval.");
 
             return Optional.of(user);
         }

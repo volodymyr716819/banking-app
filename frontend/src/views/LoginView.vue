@@ -117,23 +117,23 @@ async function handleLogin() {
   }
 
   try {
-    // perform login, store JWT in authStore.token
-    await authStore.login(email.value, password.value)
+    // perform login and get full response body
+    const res = await authStore.login(email.value, password.value)
+    // res should include { token, id, email, name, role, registrationStatus }
 
-    // decode the token payload
-    const token = authStore.token
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    const status = payload.regStatus || payload.roles?.includes('ROLE_PENDING') && 'PENDING'
+    // store token if not already done
+    authStore.setToken(res.token)
 
-    // redirect based on status
-    if (status === 'PENDING') {
+    // redirect based on registrationStatus
+    if (res.registrationStatus === 'PENDING') {
       router.replace({ name: 'AwaitingApproval' })
     } else {
       router.replace({ path: '/dashboard' })
     }
   } catch (err) {
-    // show error for invalid creds or pending (fallback)
-    if (err.message.toLowerCase().includes('pending approval')) {
+    // handle rejected or invalid login
+    const msg = err?.response?.data?.message || err.message || ''
+    if (msg.toLowerCase().includes('pending')) {
       errorMessage.value = 'Your account is pending approval. Please wait for an employee to approve you.'
     } else {
       errorMessage.value = 'Login failed: Invalid email or password.'

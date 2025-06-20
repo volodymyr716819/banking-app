@@ -1,5 +1,6 @@
 package com.bankapp.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -47,41 +48,43 @@ public class AuthController {
     // Handles login requests by authenticating credentials and returning JWT
     @Operation(summary = "Authenticate user and return JWT token")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "Login successful, JWT returned"),
-       @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "200", description = "Login successful, JWT returned"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials")
     })
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-                
-                Optional<User> userOpt = userService.validateLogin(request);
-                if (userOpt.isEmpty()) {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
-                }
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-                User user = userOpt.get();
-                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-                String jwt = jwtUtil.generateToken(userDetails);
-                
-                return ResponseEntity.ok(Map.of(
-                    "token", jwt,
-                    "id", user.getId(),
-                    "email", user.getEmail(),
-                    "name", user.getName(),
-                    "role", user.getRole()));
+            Optional<User> userOpt = userService.validateLogin(request);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials."));
+            }
+
+            User user = userOpt.get();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String jwt = jwtUtil.generateToken(userDetails);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("token", jwt);
+            body.put("id", user.getId());
+            body.put("email", user.getEmail());
+            body.put("name", user.getName());
+            body.put("role", user.getRole());
+            body.put("registrationStatus", user.getRegistrationStatus().name());
+            return ResponseEntity.ok(body);
 
         } catch (Exception e) {
-           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password."));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password."));
         }
     }
 
     // Registers a new user if email is not already taken
     @Operation(summary = "Register a new user")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "Registration successful, pending approval"),
-       @ApiResponse(responseCode = "400", description = "Validation error or email already exists")
+            @ApiResponse(responseCode = "200", description = "Registration successful, pending approval"),
+            @ApiResponse(responseCode = "400", description = "Validation error or email already exists")
     })
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
@@ -96,16 +99,17 @@ public class AuthController {
     // Validates the token and user status for authenticated sessions
     @Operation(summary = "Validate JWT token and return user info")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Token is valid and user is authenticated"),
-        @ApiResponse(responseCode = "401", description = "Invalid or expired token"),
-        @ApiResponse(responseCode = "403", description = "Access forbidden")
+            @ApiResponse(responseCode = "200", description = "Token is valid and user is authenticated"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired token"),
+            @ApiResponse(responseCode = "403", description = "Access forbidden")
     })
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken(Authentication authentication) {
         try {
             Optional<User> userOpt = userService.validateAuthentication(authentication);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("valid", false, "message", "Invalid or expired token"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("valid", false, "message", "Invalid or expired token"));
             }
 
             User user = userOpt.get();
