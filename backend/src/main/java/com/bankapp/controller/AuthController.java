@@ -1,5 +1,6 @@
 package com.bankapp.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -55,32 +56,29 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User request) {
         try {
+            // 1) authenticate credentials
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-            // 1) credentials are valid
+            // 2) load the User (now credentials-only)
             User user = userService.validateLogin(request)
                     .orElseThrow(() -> new BadCredentialsException("Invalid"));
 
-            // 2) build the token
+            // 3) generate the JWT
             UserDetails ud = (UserDetails) auth.getPrincipal();
             String jwt = jwtUtil.generateToken(ud);
 
-            // 3) respond differently based on status
-            if (user.getRegistrationStatus() == RegistrationStatus.PENDING) {
-                return ResponseEntity.ok(Map.of(
-                        "token", jwt,
-                        "status", "PENDING",
-                        "message", "Your account is pending approval"));
-            }
+            // 4) build response map, including status
+            Map<String, Object> body = new HashMap<>();
+            body.put("token", jwt);
+            body.put("id", user.getId());
+            body.put("email", user.getEmail());
+            body.put("name", user.getName());
+            body.put("role", user.getRole());
+            body.put("registrationStatus", user.getRegistrationStatus().name()); // ← key line
 
-            // normal approved flow
-            return ResponseEntity.ok(Map.of(
-                    "token", jwt,
-                    "id", user.getId(),
-                    "email", user.getEmail(),
-                    "name", user.getName(),
-                    "role", user.getRole()));
+            return ResponseEntity.ok(body);
+
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid email or password."));
