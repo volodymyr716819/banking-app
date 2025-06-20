@@ -45,7 +45,7 @@ public class UserService {
         }
 
         User user = found.get();
-        if (!user.isApproved()) {
+        if (!user.isApproved() || user.getRegistrationStatus() != RegistrationStatus.PENDING) {
             throw new UnapprovedAccountException("Account must be approved before login.");
         }
 
