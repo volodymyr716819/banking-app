@@ -80,23 +80,31 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const isAuthenticated = !!authStore.token;
-  
-  // Redirect authenticated users away from login/register pages
+
+  // 1) If still pending, always redirect to AwaitingApproval (unless you’re already there)
+  if (isAuthenticated 
+      && authStore.user?.registrationStatus === 'PENDING' 
+      && to.name !== 'AwaitingApproval'
+  ) {
+    return next({ name: 'AwaitingApproval' });
+  }
+
+  // 2) Redirect authenticated users away from login/register
   if (to.meta.requiresGuest && isAuthenticated) {
-    return next("/dashboard");
+    return next('/dashboard');
   }
 
-  // Redirect unauthenticated users to login
+  // 3) Redirect unauthenticated users to login
   if (to.meta.requiresAuth && !isAuthenticated) {
-    return next("/login");
+    return next('/login');
   }
 
-  // Check role-based access
+  // 4) Role-based access for employees
   if (
     to.meta.requiresRole &&
     (!authStore.user?.role || authStore.user.role.toLowerCase() !== to.meta.requiresRole)
   ) {
-    return next("/dashboard");
+    return next('/dashboard');
   }
 
   next();
