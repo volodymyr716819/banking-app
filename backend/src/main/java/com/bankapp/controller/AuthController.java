@@ -75,7 +75,7 @@ public class AuthController {
             body.put("email", user.getEmail());
             body.put("name", user.getName());
             body.put("role", user.getRole());
-            body.put("registrationStatus", user.getRegistrationStatus().name()); // ← key line
+            body.put("registrationStatus", user.getRegistrationStatus().name());
 
             return ResponseEntity.ok(body);
 
