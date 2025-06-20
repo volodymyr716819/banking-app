@@ -1,3 +1,4 @@
+@history
 Feature: View Transaction History
   As a bank customer
   I want to view my transaction history

@@ -1,3 +1,4 @@
+@transfers
 Feature: Transfer Between Accounts
   As a bank customer
   I want to transfer money between accounts
