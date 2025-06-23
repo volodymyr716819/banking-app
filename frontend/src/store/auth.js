@@ -14,13 +14,11 @@ export const useAuthStore = defineStore("auth", {
     isEmployee: (state) => {
       if (!state.user || !state.user.role) return false;
       const role = state.user.role.toLowerCase();
-      console.log("Role check - Current role:", role);
       return role.includes("employee");
     },
     isCustomer: (state) => {
       if (!state.user || !state.user.role) return false;
       const role = state.user.role.toLowerCase();
-      console.log("Role check - Current role:", role);
       return role.includes("customer");
     },
     userRole: (state) => {
@@ -39,7 +37,6 @@ export const useAuthStore = defineStore("auth", {
     async login(email, password) {
       this.isLoading = true;
       this.error = null;
-      console.log("Starting login process for:", email);
 
       try {
         // Try both login endpoints to ensure one works
@@ -50,15 +47,12 @@ export const useAuthStore = defineStore("auth", {
             password,
           });
         } catch (primaryErr) {
-          console.error("Primary login endpoint failed:", primaryErr);
-          console.log("Trying alternate login endpoint...");
           res = await api.post(`/api/auth/login`, {
             email,
             password,
           });
         }
 
-        console.log("Login successful, response data:", res.data);
         
         this.user = {
           id: res.data.id,
@@ -68,7 +62,6 @@ export const useAuthStore = defineStore("auth", {
           registrationStatus: res.data.registrationStatus,
         };
         
-        console.log("User object after login:", this.user);
 
         this.token = res.data.token;
 
@@ -77,7 +70,6 @@ export const useAuthStore = defineStore("auth", {
         // Set the Authorization header for all future requests
         api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
         
-        console.log("Auth token set:", this.token);
 
         this.isLoading = false;
         return true;
@@ -98,7 +90,6 @@ export const useAuthStore = defineStore("auth", {
 
       // Make sure to clear the Authorization header
       delete api.defaults.headers.common["Authorization"];
-      console.log("Auth token cleared");
     },
 
     persistAuthState() {
@@ -116,7 +107,6 @@ export const useAuthStore = defineStore("auth", {
       if (!this.token) return false;
 
       try {
-        console.log("Validating token...");
         // Try adding /api prefix if the request fails
         let res;
         try {
@@ -126,7 +116,6 @@ export const useAuthStore = defineStore("auth", {
             },
           });
         } catch (primaryErr) {
-          console.log("Primary validation endpoint failed, trying alternate...");
           res = await api.get(`/api/auth/validate`, {
             headers: {
               Authorization: `Bearer ${this.token}`,
@@ -160,22 +149,18 @@ export const useAuthStore = defineStore("auth", {
       if (this.token) {
         // Set the auth header for subsequent requests
         api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
-        console.log("Init auth with token:", this.token);
         
         // Validate the token and update user info
         this.validateToken()
           .then(valid => {
             if (!valid) {
-              console.warn("Token validation failed, logging out");
               this.logout();
             }
           })
           .catch(err => {
-            console.error("Token validation error:", err);
             this.logout();
           });
       } else {
-        console.log("No token found during initAuth");
       }
     },
   },

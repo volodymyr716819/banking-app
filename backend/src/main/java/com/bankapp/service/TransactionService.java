@@ -44,13 +44,7 @@ public class TransactionService {
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    /**
-     * Main method to get transaction history based on filters and current user
-     * 
-     * @param filters Request containing all optional filter parameters
-     * @param currentUser The authenticated user making the request
-     * @return Filtered and sorted list of transactions
-     */
+    /** Get transaction history */
     public List<TransactionHistoryDTO> getTransactionHistory(TransactionFilterRequest filters, User currentUser) {
         List<TransactionHistoryDTO> results = new ArrayList<>();
         

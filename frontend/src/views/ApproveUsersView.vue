@@ -47,14 +47,24 @@ const message = ref('');
 
 const formatDate = (dateString) => {
     if (!dateString) return 'Unknown';
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-GB', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(date);
+    
+    try {
+        const date = new Date(dateString);
+        
+        if (isNaN(date.getTime())) {
+            return 'Invalid date';
+        }
+        
+        return new Intl.DateTimeFormat('en-GB', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(date);
+    } catch (error) {
+        return 'Date error';
+    }
 };
 
 const fetchPendingUsers = async () => {
@@ -64,7 +74,15 @@ const fetchPendingUsers = async () => {
                 Authorization: `Bearer ${auth.token}`
             }
         });
-        users.value = res.data;
+        
+        const processedUsers = res.data.map(user => {
+            if (!user.registrationDate) {
+                user.registrationDate = new Date().toISOString();
+            }
+            return user;
+        });
+        
+        users.value = processedUsers;
     } catch (err) {
         message.value = 'Failed to fetch pending users.';
     }

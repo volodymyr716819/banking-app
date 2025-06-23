@@ -86,11 +86,8 @@ export default {
     const fetchAccounts = async () => {
       try {
         if (!auth.isAuthenticated) {
-          console.error("User not authenticated");
           return;
         }
-        
-        console.log("Fetching accounts for user:", auth.userId);
         
         const response = await api.get(
           `/accounts/user/${auth.userId}`,
@@ -101,14 +98,8 @@ export default {
           }
         );
         
-        console.log("Accounts fetched:", response.data);
         accounts.value = response.data || [];
-        
-        if (accounts.value.length === 0) {
-          console.log("No accounts found for user");
-        }
       } catch (err) {
-        console.error("Failed to fetch accounts:", err);
         accounts.value = [];
       }
     };
@@ -116,11 +107,8 @@ export default {
     const createAccount = async () => {
       try {
         if (!auth.isAuthenticated) {
-          console.error("User not authenticated");
           return;
         }
-        
-        console.log("Creating account with type:", newAccountType.value);
         
         await api.post(
           `/accounts/create?userId=${auth.userId}&type=${newAccountType.value}`,
@@ -132,14 +120,11 @@ export default {
           }
         );
         
-        console.log("Account created successfully");
         showForm.value = false;
         newAccountType.value = "CHECKING";
         
-        // Refresh accounts list
         await fetchAccounts();
       } catch (err) {
-        console.error("Failed to create account", err);
         alert("Could not create account. Make sure your account is approved.");
       }
     };
@@ -159,8 +144,8 @@ export default {
             copiedIban.value = "";
           }, 2000);
         })
-        .catch(err => {
-          console.error("Failed to copy IBAN", err);
+        .catch(() => {
+          // Silently handle error
         });
     };
     

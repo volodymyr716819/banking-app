@@ -174,7 +174,6 @@ export default {
             customerList.value = response.data;
           }
         } catch (error) {
-          console.error("Error fetching customer list:", error);
         }
       }
     };
@@ -208,7 +207,6 @@ export default {
         const queryString = params.toString() ? `?${params.toString()}` : '';
         
         // Use the new unified endpoint
-        console.log(`Fetching transactions with query: ${queryString}`);
         const response = await api.get(
           `/transactions/history${queryString}`,
           {
@@ -227,7 +225,6 @@ export default {
           transactions.value = [];
         }
       } catch (error) {
-        console.error("Transaction fetch error:", error);
 
         if (error.response) {
           // Server returned error code
@@ -238,7 +235,6 @@ export default {
             message.value = "Authentication error. Please try logging in again.";
           } else {
             message.value = "Error loading transactions. Please try again later.";
-            console.log("Server error:", error.response.data);
           }
         } else if (error.request) {
           // Request made but no response
@@ -288,15 +284,14 @@ export default {
     };
 
     const formatDate = (timestamp) => {
+      if (!timestamp) return 'Unknown';
       const date = new Date(timestamp);
-      
-      return new Intl.DateTimeFormat("en-GB", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(date);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = date.toLocaleString('en-US', { month: 'short' });
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${day} ${month} ${year} at ${hours}:${minutes}`;
     };
 
     const formatIban = (iban) => {

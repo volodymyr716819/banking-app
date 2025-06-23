@@ -39,7 +39,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.extractUsername(jwt);
             } catch (Exception e) {
-                System.out.println("Invalid JWT token: " + e.getMessage());
             }
         }
 
@@ -50,10 +49,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                System.out.println("🔑 JWT Filter triggered");
-                System.out.println("Header: " + authHeader);
-                System.out.println("Extracted username: " + username);
-                System.out.println("UserDetails: " + userDetails.getUsername());
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
