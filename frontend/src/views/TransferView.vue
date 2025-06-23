@@ -74,7 +74,13 @@ const submitDisabled = computed(() => {
 
 const fetchAccounts = async () => {
   try {
-    const response = await api.get(`/accounts/user/${auth.user.id}`, {
+    if (!auth.isAuthenticated || !auth.userId) {
+      message.value = 'Please log in to access your accounts.';
+      messageType.value = 'error';
+      return;
+    }
+    
+    const response = await api.get(`/accounts/user/${auth.userId}`, {
       headers: {
         Authorization: `Bearer ${auth.token}`
       }
@@ -90,6 +96,12 @@ const fetchAccounts = async () => {
 const submitTransfer = async () => {
   // Clear previous messages
   message.value = '';
+  
+  if (!auth.isAuthenticated) {
+    message.value = 'Please log in to make transfers.';
+    messageType.value = 'error';
+    return;
+  }
   
   // Additional frontend validation
   if (selectedAccountIsNotApproved.value) {

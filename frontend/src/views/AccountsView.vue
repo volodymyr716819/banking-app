@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="accounts-page">
-      <div v-if="auth.user && auth.user.role !== 'EMPLOYEE'" class="create-account-container">
+      <div v-if="!auth.isEmployee" class="create-account-container">
         <button @click="showForm = !showForm" class="create-account-button">
           {{ showForm ? "Cancel" : "+ Create Account" }}
         </button>
@@ -85,15 +85,15 @@ export default {
 
     const fetchAccounts = async () => {
       try {
-        if (!auth.user || !auth.token) {
+        if (!auth.isAuthenticated || !auth.token || !auth.userId) {
           console.error("No authenticated user found");
           return;
         }
         
-        console.log("Fetching accounts for user:", auth.user.id);
+        console.log("Fetching accounts for user:", auth.userId);
         
         const response = await api.get(
-          `/api/accounts/user/${auth.user.id}`,
+          `/accounts/user/${auth.userId}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,
@@ -115,13 +115,13 @@ export default {
 
     const createAccount = async () => {
       try {
-        if (!auth.user?.id || !auth.token) {
+        if (!auth.isAuthenticated || !auth.userId || !auth.token) {
           console.error("User not authenticated");
           return;
         }
         
         await api.post(
-          `/api/accounts/create?userId=${auth.user.id}&type=${newAccountType.value}`,
+          `/accounts/create?userId=${auth.userId}&type=${newAccountType.value}`,
           {},
           {
             headers: {

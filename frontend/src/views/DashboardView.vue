@@ -2,7 +2,7 @@
   <div class="dashboard-welcome">
     <div class="welcome-card">
       <div class="welcome-header">
-        <h1 class="welcome-title">Welcome, {{ auth.user?.name || 'Guest' }}</h1>
+        <h1 class="welcome-title">Welcome, {{ auth.userName }}</h1>
         <p class="welcome-subtitle">
           You are now logged into your personal banking dashboard.
         </p>
@@ -38,7 +38,7 @@
           </div>
           <div class="profile-row">
             <span class="profile-label">Role:</span>
-            <span class="profile-value">{{ formatRole(auth.user?.role) }}</span>
+            <span class="profile-value">{{ formatRole(auth.userRole) }}</span>
           </div>
           <div class="profile-row">
             <span class="profile-label">User ID:</span>
@@ -132,9 +132,9 @@ const formatRole = (role) => {
 
 // Get user initials for avatar
 const getUserInitials = () => {
-  if (!auth.user?.name) return 'U';
+  if (!auth.userName || auth.userName === 'Guest') return 'U';
   
-  const nameParts = auth.user.name.split(' ');
+  const nameParts = auth.userName.split(' ');
   if (nameParts.length === 1) {
     return nameParts[0].charAt(0).toUpperCase();
   }
@@ -147,9 +147,9 @@ const getUserInitials = () => {
 
 // Fetch user accounts for the welcome stats
 onMounted(async () => {
-  if (auth.user && auth.user.id) {
+  if (auth.isAuthenticated && auth.userId) {
     try {
-      const response = await api.get(`/accounts/user/${auth.user.id}`, {
+      const response = await api.get(`/accounts/user/${auth.userId}`, {
         headers: {
           Authorization: `Bearer ${auth.token}`
         }
@@ -225,7 +225,7 @@ defineExpose({ __pageTitle });
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23FFFFFF' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url('@/assets/pattern-small.svg');
   opacity: 0.7;
 }
 

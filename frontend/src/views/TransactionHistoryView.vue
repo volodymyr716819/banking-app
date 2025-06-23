@@ -2,7 +2,7 @@
   <div class="transaction-history">
     <div class="filters-container">
       <!-- Employee-only customer selection -->
-      <div v-if="auth.user && auth.user.role === 'EMPLOYEE'" class="filter-section">
+      <div v-if="auth.isEmployee" class="filter-section">
         <label>Customer:</label>
         <select v-model="selectedUserId">
           <option value="">All Customers</option>
@@ -162,7 +162,7 @@ export default {
 
     // Fetch customer list for employees only
     const fetchCustomerList = async () => {
-      if (auth.user && auth.user.role === 'EMPLOYEE') {
+      if (auth.isEmployee) {
         try {
           const response = await api.get('/users/approved', {
             headers: {
@@ -180,7 +180,7 @@ export default {
     };
 
     const fetchTransactions = async () => {
-      if (!auth.user) {
+      if (!auth.isAuthenticated) {
         message.value = "User information not available. Please log in again.";
         return;
       }
@@ -210,7 +210,7 @@ export default {
         // Use the new unified endpoint
         console.log(`Fetching transactions with query: ${queryString}`);
         const response = await api.get(
-          `/api/transactions/history${queryString}`,
+          `/transactions/history${queryString}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,
