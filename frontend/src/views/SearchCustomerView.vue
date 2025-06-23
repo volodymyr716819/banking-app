@@ -18,7 +18,7 @@
               id="searchTerm" 
               v-model="searchTerm" 
               class="search-input"
-              placeholder="Enter customer name" 
+              placeholder="Enter name, email, or IBAN" 
               required
             />
             <button 
@@ -32,7 +32,7 @@
           </div>
           <p class="field-info">
             <span class="material-icons info-icon">info</span>
-            Search by customer name
+            Search by customer name, email, or complete IBAN (e.g. NL BANK 0000000001)
           </p>
         </div>
 
@@ -163,7 +163,7 @@ const searchCustomers = async () => {
   
   try {
     const response = await api.get('/users/search', {
-      params: { name: searchTerm.value },
+      params: { term: searchTerm.value },
       headers: {
         Authorization: `Bearer ${auth.token}`
       }

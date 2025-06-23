@@ -138,15 +138,19 @@ public class UserController {
         return userRepository.findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus.APPROVED, "CUSTOMER");
     }
 
-    @Operation(summary = "Search users by name")
+    // Legacy search endpoints - kept for backward compatibility
+    @Operation(summary = "Search users by name (legacy)")
     @ApiResponse(responseCode = "200", description = "Search results")
     @GetMapping("/find-by-name")
     public ResponseEntity<?> searchUsersByName(@RequestParam String name, Authentication authentication) {
-        try {
-            return ResponseEntity.ok(userSearchService.searchUsersByName(name, authentication));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(ex.getMessage());
-        }
+        return searchUsers(name, null, null, null, authentication);
+    }
+
+    @Operation(summary = "Search users by email (legacy)")
+    @ApiResponse(responseCode = "200", description = "Search results")
+    @GetMapping("/find-by-email")
+    public ResponseEntity<?> searchUsersByEmail(@RequestParam String email, Authentication authentication) {
+        return searchUsers(null, null, email, null, authentication);
     }
 
     @PreAuthorize("hasRole('EMPLOYEE')")
@@ -165,18 +169,22 @@ public class UserController {
         }
     }
 
-    @Operation(summary = "Search users by name")
+    //  search endpoint with 1 search term: name, email, or IBAN
+    @Operation(summary = "user search by term, name, email, or IBAN")
     @ApiResponses({
        @ApiResponse(responseCode = "200", description = "Search results"),
        @ApiResponse(responseCode = "400", description = "Invalid search input")
     })
     @GetMapping("/search")
     public ResponseEntity<?> searchUsers(
-        @RequestParam(required = true) String name,
+        @RequestParam(required = false) String term,
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) String email,
+        @RequestParam(required = false) String iban,
         Authentication authentication) {
         
         try {
-           return ResponseEntity.ok(userSearchService.searchUsersByName(name, authentication));
+           return ResponseEntity.ok(userSearchService.searchUsers(term, name, email, iban, authentication));
         } catch (IllegalArgumentException ex) {
            return ResponseEntity.badRequest().body(ex.getMessage());
         }
