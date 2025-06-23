@@ -14,12 +14,14 @@ export const useAuthStore = defineStore("auth", {
     isEmployee: (state) => {
       if (!state.user || !state.user.role) return false;
       const role = state.user.role.toLowerCase();
-      return role === "employee" || role === "role_employee";
+      console.log("Role check - Current role:", role);
+      return role.includes("employee");
     },
     isCustomer: (state) => {
       if (!state.user || !state.user.role) return false;
       const role = state.user.role.toLowerCase();
-      return role === "customer" || role === "role_customer";
+      console.log("Role check - Current role:", role);
+      return role.includes("customer");
     },
     userRole: (state) => {
       if (!state.user || !state.user.role) return null;
@@ -37,6 +39,7 @@ export const useAuthStore = defineStore("auth", {
     async login(email, password) {
       this.isLoading = true;
       this.error = null;
+      console.log("Starting login process for:", email);
 
       try {
         // Try both login endpoints to ensure one works
@@ -55,6 +58,8 @@ export const useAuthStore = defineStore("auth", {
           });
         }
 
+        console.log("Login successful, response data:", res.data);
+        
         this.user = {
           id: res.data.id,
           email: res.data.email,
@@ -62,6 +67,8 @@ export const useAuthStore = defineStore("auth", {
           role: res.data.role,
           registrationStatus: res.data.registrationStatus,
         };
+        
+        console.log("User object after login:", this.user);
 
         this.token = res.data.token;
 

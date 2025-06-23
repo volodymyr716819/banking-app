@@ -13,7 +13,7 @@
           <span class="material-icons nav-icon">dashboard</span>
           <span>Dashboard</span>
         </router-link>
-        <router-link :to="{path: '/dashboard/accounts'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/accounts') }">
+        <router-link v-if="auth.user && auth.user.role !== 'EMPLOYEE'" :to="{path: '/dashboard/accounts'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/accounts') }">
           <span class="material-icons nav-icon">account_balance</span>
           <span>Accounts</span>
         </router-link>
@@ -32,6 +32,10 @@
         <router-link v-if="auth.user && auth.user.role !== 'EMPLOYEE'" :to="{path: '/dashboard/pin-settings'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/pin-settings') }">
           <span class="material-icons nav-icon">pin</span>
           <span>PIN Management</span>
+        </router-link>
+        <router-link :to="{path: '/dashboard/search-customer'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/search-customer') }">
+          <span class="material-icons nav-icon">person_search</span>
+          <span>Find Customer</span>
         </router-link>
 
         <!-- Employee-only links -->
@@ -56,10 +60,6 @@
           <router-link :to="{path: '/dashboard/history'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/history') }">
             <span class="material-icons nav-icon">history</span>
             <span>Transaction History</span>
-          </router-link>
-          <router-link :to="{path: '/dashboard/search-customer'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/search-customer') }">
-            <span class="material-icons nav-icon">person_search</span>
-            <span>Find Customer</span>
           </router-link>
         </div>
 

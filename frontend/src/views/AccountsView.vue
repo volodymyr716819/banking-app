@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="accounts-page">
-      <div v-if="auth && auth.isAuthenticated && !auth.isEmployee" class="create-account-container">
+      <div v-if="auth.isApproved" class="create-account-container">
         <button @click="showForm = !showForm" class="create-account-button">
           {{ showForm ? "Cancel" : "+ Create Account" }}
         </button>
@@ -85,59 +85,21 @@ export default {
 
     const fetchAccounts = async () => {
       try {
-        if (!auth.isAuthenticated || !auth.token || !auth.userId) {
-          console.error("No authenticated user found");
+        if (!auth.isAuthenticated) {
+          console.error("User not authenticated");
           return;
         }
         
         console.log("Fetching accounts for user:", auth.userId);
-        console.log("Authentication state:", {
-          isAuthenticated: auth.isAuthenticated,
-          userId: auth.userId,
-          userRole: auth.userRole,
-          isEmployee: auth.isEmployee,
-          isCustomer: auth.isCustomer
-        });
         
-        let response;
-        try {
-          response = await api.get(
-            `/accounts/user/${auth.userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${auth.token}`,
-              },
-            }
-          );
-        } catch (primaryErr) {
-          console.error("Primary endpoint failed:", primaryErr);
-          console.log("Trying alternate endpoint...");
-          
-          // Try alternate endpoint
-          try {
-            response = await api.get(
-              `/accounts?userId=${auth.userId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${auth.token}`,
-                },
-              }
-            );
-          } catch (secondErr) {
-            console.error("Second attempt failed:", secondErr);
-            console.log("Trying third endpoint with /api prefix...");
-            
-            // Try with /api prefix
-            response = await api.get(
-              `/api/accounts/user/${auth.userId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${auth.token}`,
-                },
-              }
-            );
+        const response = await api.get(
+          `/accounts/user/${auth.userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
           }
-        }
+        );
         
         console.log("Accounts fetched:", response.data);
         accounts.value = response.data || [];
@@ -153,59 +115,22 @@ export default {
 
     const createAccount = async () => {
       try {
-        if (!auth.isAuthenticated || !auth.userId || !auth.token) {
+        if (!auth.isAuthenticated) {
           console.error("User not authenticated");
           return;
         }
         
-        console.log("Creating account with userId:", auth.userId, "type:", newAccountType.value);
-        console.log("Authorization token:", auth.token);
+        console.log("Creating account with type:", newAccountType.value);
         
-        // Try both endpoints to ensure one works
-        try {
-          await api.post(
-            `/accounts/create?userId=${auth.userId}&type=${newAccountType.value}`,
-            {},
-            {
-              headers: {
-                Authorization: `Bearer ${auth.token}`,
-              },
-            }
-          );
-        } catch (innerErr) {
-          console.error("First attempt failed:", innerErr);
-          console.log("Trying alternate endpoint...");
-          
-          // Try alternate endpoint format
-          try {
-            await api.post(
-              `/accounts`,
-              {
-                userId: auth.userId,
-                type: newAccountType.value
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${auth.token}`,
-                },
-              }
-            );
-          } catch (secondErr) {
-            console.error("Second attempt failed:", secondErr);
-            console.log("Trying third endpoint with /api prefix...");
-            
-            // Try with /api prefix
-            await api.post(
-              `/api/accounts/create?userId=${auth.userId}&type=${newAccountType.value}`,
-              {},
-              {
-                headers: {
-                  Authorization: `Bearer ${auth.token}`,
-                },
-              }
-            );
+        await api.post(
+          `/accounts/create?userId=${auth.userId}&type=${newAccountType.value}`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
           }
-        }
+        );
         
         console.log("Account created successfully");
         showForm.value = false;
