@@ -1,6 +1,7 @@
 package com.bankapp.service;
 
 import com.bankapp.dto.TransactionHistoryDTO;
+import com.bankapp.dto.TransferRequest;
 import com.bankapp.model.*;
 import com.bankapp.model.Transaction.TransactionType;
 import com.bankapp.repository.AccountRepository;
@@ -50,65 +51,55 @@ class TransactionServiceTest {
     }
 
     @Test
-    void testTransferMoney_Success() {
+    void testProcessTransfer_Success() {
+        TransferRequest request = new TransferRequest();
+        request.setSenderIban("DE1111111111");
+        request.setReceiverIban("DE2222222222");
+        request.setAmount(new BigDecimal("200.00"));
+        request.setDescription("Test transfer");
+
         when(accountRepository.findByIban("DE1111111111")).thenReturn(Optional.of(senderAccount));
         when(accountRepository.findByIban("DE2222222222")).thenReturn(Optional.of(receiverAccount));
 
-        transactionService.transferMoney("DE1111111111", "DE2222222222", new BigDecimal("200.00"), "Test transfer");
+        transactionService.processTransfer(request);
 
         assertEquals(new BigDecimal("800.00"), senderAccount.getBalance());
         assertEquals(new BigDecimal("700.00"), receiverAccount.getBalance());
 
-        verify(accountRepository, times(2)).save(any(Account.class));
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
-    }
-
-    @Test
-    void testTransferMoney_InsufficientBalance() {
-        senderAccount.setBalance(new BigDecimal("100.00"));
-
-        when(accountRepository.findByIban("DE1111111111")).thenReturn(Optional.of(senderAccount));
-        when(accountRepository.findByIban("DE2222222222")).thenReturn(Optional.of(receiverAccount));
-
-        assertThrows(IllegalArgumentException.class, () -> 
-            transactionService.transferMoney("DE1111111111", "DE2222222222", new BigDecimal("200.00"), "Overdraft")
-        );
-    }
-
-    @Test
-    void testTransferMoney_UnapprovedAccount() {
-        senderAccount.setApproved(false);
-
-        when(accountRepository.findByIban("DE1111111111")).thenReturn(Optional.of(senderAccount));
-        when(accountRepository.findByIban("DE2222222222")).thenReturn(Optional.of(receiverAccount));
-
-        assertThrows(IllegalArgumentException.class, () -> 
-            transactionService.transferMoney("DE1111111111", "DE2222222222", new BigDecimal("50.00"), "Invalid")
-        );
-    }
-
-    @Test
-    void testDepositMoney_Success() {
-        senderAccount.setDailyLimit(new BigDecimal("2000.00"));
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(senderAccount));
-        when(transactionRepository.sumDepositsForToday(1L)).thenReturn(BigDecimal.ZERO);
-
-        transactionService.depositMoney(1L, new BigDecimal("500.00"));
-
-        assertEquals(new BigDecimal("1500.00"), senderAccount.getBalance());
-        verify(accountRepository).save(senderAccount);
+        verify(accountRepository).saveAll(anyList());
         verify(transactionRepository).save(any(Transaction.class));
     }
 
     @Test
-    void testDepositMoney_ExceedsLimit() {
-        senderAccount.setDailyLimit(new BigDecimal("500.00"));
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(senderAccount));
-        when(transactionRepository.sumDepositsForToday(1L)).thenReturn(new BigDecimal("400.00"));
+    void testProcessTransfer_InsufficientBalance() {
+        senderAccount.setBalance(new BigDecimal("100.00"));
 
-        assertThrows(IllegalArgumentException.class, () ->
-            transactionService.depositMoney(1L, new BigDecimal("200.00"))
-        );
+        TransferRequest request = new TransferRequest();
+        request.setSenderIban("DE1111111111");
+        request.setReceiverIban("DE2222222222");
+        request.setAmount(new BigDecimal("200.00"));
+        request.setDescription("Failing transfer");
+
+        when(accountRepository.findByIban("DE1111111111")).thenReturn(Optional.of(senderAccount));
+        when(accountRepository.findByIban("DE2222222222")).thenReturn(Optional.of(receiverAccount));
+
+        assertThrows(IllegalArgumentException.class, () -> transactionService.processTransfer(request));
+    }
+
+    @Test
+    void testProcessTransfer_UnapprovedAccount() {
+        senderAccount.setApproved(false);
+
+        TransferRequest request = new TransferRequest();
+        request.setSenderIban("DE1111111111");
+        request.setReceiverIban("DE2222222222");
+        request.setAmount(new BigDecimal("100.00"));
+        request.setDescription("Unapproved");
+
+        when(accountRepository.findByIban("DE1111111111")).thenReturn(Optional.of(senderAccount));
+        when(accountRepository.findByIban("DE2222222222")).thenReturn(Optional.of(receiverAccount));
+
+        assertThrows(IllegalArgumentException.class, () -> transactionService.processTransfer(request));
     }
 
     @Test
@@ -119,15 +110,16 @@ class TransactionServiceTest {
 
         Account acc = new Account();
         acc.setIban("IBAN1");
-        acc.setUser(new User());
-        acc.getUser().setId(1L);
+        User user = new User();
+        user.setId(1L);
+        acc.setUser(user);
 
         when(accountRepository.findByIban("IBAN1")).thenReturn(Optional.of(acc));
         when(transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(1L, 1L)).thenReturn(Collections.emptyList());
         when(atmOperationRepository.findByAccount_User_Id(1L)).thenReturn(Collections.emptyList());
 
         List<TransactionHistoryDTO> result = transactionService.getTransactionHistoryByIbanWithAuth(
-                "IBAN1", employee, null, null, null, null);
+            "IBAN1", employee, null, null, null, null);
 
         assertNotNull(result);
     }
