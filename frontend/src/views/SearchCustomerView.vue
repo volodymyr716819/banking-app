@@ -115,12 +115,6 @@
             </div>
           </div>
           
-          <div class="card-actions">
-            <button class="btn btn-outline">
-              <span class="material-icons action-icon">visibility</span>
-              View Details
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -139,7 +133,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import api from '../lib/api';
+import { api } from '../api';
 import { useAuthStore } from '../store/auth';
 
 const auth = useAuthStore();
@@ -168,9 +162,7 @@ const searchCustomers = async () => {
   searchPerformed.value = true;
   
   try {
-    let searchEndpoint = import.meta.env.VITE_API_URL || 'http://localhost:8080/api' + '/users/search';
-    
-    const response = await api.get(searchEndpoint, {
+    const response = await api.get('/users/search', {
       params: { term: searchTerm.value },
       headers: {
         Authorization: `Bearer ${auth.token}`

@@ -1,3 +1,4 @@
+@approval
 Feature: Customer Approval
   As a bank employee
   I want to approve new customer registrations

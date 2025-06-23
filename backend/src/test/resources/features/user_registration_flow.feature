@@ -1,3 +1,4 @@
+@registration
 Feature: Customer Registration Flow
   As a potential bank customer
   I want to register for a new account

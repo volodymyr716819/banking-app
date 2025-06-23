@@ -169,8 +169,8 @@ public class UserController {
         }
     }
 
-    // Simplified search endpoint with 1 search term: name, email, or IBAN
-    @Operation(summary = "Advanced user search by term, name, email, or IBAN")
+    //  search endpoint with 1 search term: name, email, or IBAN
+    @Operation(summary = "user search by term, name, email, or IBAN")
     @ApiResponses({
        @ApiResponse(responseCode = "200", description = "Search results"),
        @ApiResponse(responseCode = "400", description = "Invalid search input")

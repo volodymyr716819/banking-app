@@ -95,42 +95,52 @@ const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
 const showPassword = ref(false)
-const rememberMe = ref(false)
 const isLoading = ref(false)
 
 const authStore = useAuthStore()
 const router = useRouter()
 
 async function handleLogin() {
-    errorMessage.value = ''
-    isLoading.value = true
+  errorMessage.value = ''
+  isLoading.value = true
 
-    if (!email.value || !password.value) {
-        errorMessage.value = 'Please fill in all fields'
-        isLoading.value = false
-        return
-    }
+  // basic validation
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Please fill in all fields'
+    isLoading.value = false
+    return
+  }
+  if (!email.value.includes('@')) {
+    errorMessage.value = 'Please enter a valid email address'
+    isLoading.value = false
+    return
+  }
 
-    if (!email.value.includes('@')) {
-        errorMessage.value = 'Please enter a valid email address'
-        isLoading.value = false
-        return
-    }
+  try {
+    // perform login, store JWT in authStore.token
+    await authStore.login(email.value, password.value)
 
-    try {
-        await authStore.login(email.value, password.value)
-        
-       
-        
-        router.push('/dashboard')
-    } catch (err) {
-        if (err.message.includes('pending approval')) {
-            errorMessage.value = 'Your account is pending employee approval.'
-        } else {
-            errorMessage.value = 'Login failed: Invalid email or password.'
-        }
-        isLoading.value = false
+    // decode the token payload
+    const token = authStore.token
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const status = payload.regStatus || payload.roles?.includes('ROLE_PENDING') && 'PENDING'
+
+    // redirect based on status
+    if (status === 'PENDING') {
+      router.replace({ name: 'AwaitingApproval' })
+    } else {
+      router.replace({ path: '/dashboard' })
     }
+  } catch (err) {
+    // show error for invalid creds or pending (fallback)
+    if (err.message.toLowerCase().includes('pending approval')) {
+      errorMessage.value = 'Your account is pending approval. Please wait for an employee to approve you.'
+    } else {
+      errorMessage.value = 'Login failed: Invalid email or password.'
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 

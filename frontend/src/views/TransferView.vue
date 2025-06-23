@@ -10,7 +10,7 @@
         <select v-model="fromIban" required>
           <option disabled value="">Select an account</option>
           <option v-for="acc in accounts" :key="acc.id" :value="acc.iban">
-            {{ acc.type }} - {{ acc.iban }} - €{{ acc.balance.toFixed(2) }}
+            {{ acc.type }} - {{ acc.formattedIban || acc.iban }} - €{{ acc.balance.toFixed(2) }}
             {{ !acc.approved ? '- Not Approved' : '' }}
           </option>
         </select>
@@ -21,14 +21,8 @@
 
       <!-- Receiver IBAN -->
       <div class="form-group">
-        <label for="to">To Account (IBAN):</label>
-        <select v-model="toIban" required>
-          <option disabled value="">Select a destination account</option>
-          <option v-for="acc in accounts" :key="acc.id" :value="acc.iban">
-            {{ acc.type }} - {{ acc.formattedIban || acc.iban || 'IBAN Missing' }} - €{{ acc.balance.toFixed(2) }}
-            {{ !acc.approved ? ' (Not Approved)' : '' }}
-          </option>
-        </select>
+        <label for="to">To IBAN:</label>
+        <input type="text" v-model="toIban" placeholder="Enter receiver's IBAN" required />
       </div>
       
       <!-- Amount -->
@@ -68,25 +62,25 @@ import { useAuthStore } from '../store/auth';
 import api from '../lib/api';
 
 const auth = useAuthStore();
-
-const accounts = ref([]);    // All user accounts
-const fromIban = ref('');    // Sender IBAN
-const toIban = ref('');      // Receiver IBAN
-const amount = ref('');      // Transfer amount
-const description = ref(''); // Optional message
+const accounts = ref([]);
+const fromAccount = ref('');
+const toIban = ref('');
+const amount = ref('');
+const description = ref('');
 const message = ref('');
 const messageType = ref(''); // success | error
 
 // Check if selected account is approved
 const selectedAccountIsNotApproved = computed(() => {
-  const acc = accounts.value.find(acc => acc.iban === fromIban.value);
-  return acc && !acc.approved;
+  if (!fromAccount.value) return false;
+  const selectedAccount = accounts.value.find(acc => acc.iban === fromAccount.value);
+  return selectedAccount && !selectedAccount.approved;
 });
 
-// Disable submit if data is invalid
-const submitDisabled = computed(() =>
-  !fromIban.value || !toIban.value || !amount.value || selectedAccountIsNotApproved.value
-);
+// Computed property to disable submit button when needed
+const submitDisabled = computed(() => {
+  return selectedAccountIsNotApproved.value || !fromAccount.value || !toIban.value || !amount.value;
+});
 
 // Load user accounts
 const fetchAccounts = async () => {
@@ -115,8 +109,8 @@ const submitTransfer = async () => {
   }
 
   try {
-    await axios.post('http://localhost:8080/api/transactions/transfer', {
-      senderIban: fromIban.value,
+    const response = await api.post('/transactions/transfer', {
+      senderIban: fromAccount.value,
       receiverIban: toIban.value,
       amount: parseFloat(amount.value),
       description: description.value
@@ -126,8 +120,11 @@ const submitTransfer = async () => {
 
     message.value = 'Transfer successful!';
     messageType.value = 'success';
-    fromIban.value = toIban.value = amount.value = description.value = '';
-    await fetchAccounts();
+    fromAccount.value = '';
+    toIban.value = '';
+    amount.value = '';
+    description.value = '';
+    await fetchAccounts(); // Refresh accounts to show updated balances
   } catch (err) {
     messageType.value = 'error';
     message.value = err.response?.data?.message || 'Transfer failed.';
