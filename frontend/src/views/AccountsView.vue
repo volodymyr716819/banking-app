@@ -180,6 +180,7 @@ export default {
     });
 
     return {
+      auth,
       accounts,
       showForm,
       newAccountType,
