@@ -8,16 +8,26 @@
         <thead>
           <tr>
             <th>Account ID</th>
+            <th>IBAN</th>
             <th>Type</th>
-            <th>User ID</th>
+            <th>User Info</th>
+            <th>Balance</th>
+            <th>Created Date</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="account in accounts" :key="account.id">
             <td>{{ account.id }}</td>
+            <td class="iban-cell">{{ formatIban(account.iban) }}</td>
             <td>{{ account.type }}</td>
-            <td>{{ account.userId }}</td>
+            <td class="user-info-cell">
+              <div><strong>ID:</strong> {{ account.userId }}</div>
+              <div v-if="account.userName"><strong>Name:</strong> {{ account.userName }}</div>
+              <div v-if="account.userEmail"><strong>Email:</strong> {{ account.userEmail }}</div>
+            </td>
+            <td>€{{ account.balance ? account.balance.toFixed(2) : '0.00' }}</td>
+            <td>{{ formatDate(account.createdAt) }}</td>
             <td>
               <button @click="approveAccount(account.id)" class="approve-button">Approve</button>
             </td>
@@ -37,6 +47,23 @@
   const auth = useAuthStore();
   const accounts = ref([]);
   const message = ref('');
+  
+  const formatIban = (iban) => {
+    if (!iban) return '';
+    return iban.replace(/(.{4})/g, "$1 ").trim();
+  };
+  
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
   
   const fetchPendingAccounts = async () => {
     try {
@@ -115,5 +142,19 @@
   .no-data {
     color: #777;
     font-style: italic;
+  }
+  
+  .iban-cell {
+    font-family: monospace;
+    letter-spacing: 0.05em;
+  }
+  
+  .user-info-cell {
+    font-size: 0.9em;
+    line-height: 1.4;
+  }
+  
+  .user-info-cell div {
+    margin-bottom: 3px;
   }
   </style>  

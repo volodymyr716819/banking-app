@@ -2,30 +2,16 @@ package com.bankapp.dto;
 
 import java.math.BigDecimal;
 
-/**
- * DTO for filtering transaction history
- * Used to simplify and standardize transaction filter parameters
- */
 public class TransactionFilterRequest {
-    private Long accountId;   // Filter by specific account
-    private Long userId;      // For employee use only - filter by user
-    private String iban;      // Filter by account IBAN
-    private String startDate; // Filter by start date (format: yyyy-MM-dd)
-    private String endDate;   // Filter by end date (format: yyyy-MM-dd)
-    private BigDecimal minAmount; // Filter by minimum amount
-    private BigDecimal maxAmount; // Filter by maximum amount
+    private Long userId;      // For employee use only
+    private String startDate; // Format: yyyy-MM-dd
+    private String endDate;   // Format: yyyy-MM-dd
+    private BigDecimal minAmount;
+    private BigDecimal maxAmount;
+    private String iban;
+    private Long accountId;
 
-    // Default constructor
     public TransactionFilterRequest() {
-    }
-
-    // Getters and setters
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
     }
 
     public Long getUserId() {
@@ -34,14 +20,6 @@ public class TransactionFilterRequest {
 
     public void setUserId(Long userId) {
         this.userId = userId;
-    }
-
-    public String getIban() {
-        return iban;
-    }
-
-    public void setIban(String iban) {
-        this.iban = iban;
     }
 
     public String getStartDate() {
@@ -75,4 +53,20 @@ public class TransactionFilterRequest {
     public void setMaxAmount(BigDecimal maxAmount) {
         this.maxAmount = maxAmount;
     }
-}// test for merge
+
+    public String getIban() {
+        return iban;
+    }
+
+    public void setIban(String iban) {
+        this.iban = iban;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+}

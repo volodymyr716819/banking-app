@@ -31,7 +31,8 @@ const routes = [
   {
     path: '/awaiting-approval',
     name: 'AwaitingApproval',
-    component: AwaitingApproval
+    component: AwaitingApproval,
+    meta: { requiresAuth: true, allowPending: true }
   },  
   {
     path: "/dashboard",
@@ -89,6 +90,25 @@ router.beforeEach((to, from, next) => {
   // Redirect unauthenticated users to login
   if (to.meta.requiresAuth && !isAuthenticated) {
     return next("/login");
+  }
+  
+  // Check if user is pending approval and route accordingly
+  if (
+    isAuthenticated && 
+    authStore.user?.registrationStatus === 'PENDING' && 
+    to.path !== '/awaiting-approval' && 
+    !to.meta.allowPending
+  ) {
+    return next('/awaiting-approval');
+  }
+  
+  // If user is approved but tries to access the waiting page, redirect to dashboard
+  if (
+    isAuthenticated && 
+    authStore.user?.registrationStatus === 'APPROVED' && 
+    to.path === '/awaiting-approval'
+  ) {
+    return next('/dashboard');
   }
 
   // Check role-based access

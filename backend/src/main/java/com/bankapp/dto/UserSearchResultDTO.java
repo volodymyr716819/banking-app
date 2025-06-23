@@ -41,4 +41,3 @@ public class UserSearchResultDTO {
         this.ibans = ibans;
     }
 }
-// test for merge

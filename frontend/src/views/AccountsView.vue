@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="accounts-page">
-      <div class="create-account-container">
+      <div v-if="!auth.isEmployee" class="create-account-container">
         <button @click="showForm = !showForm" class="create-account-button">
           {{ showForm ? "Cancel" : "+ Create Account" }}
         </button>

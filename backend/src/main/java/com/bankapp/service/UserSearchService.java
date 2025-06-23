@@ -10,9 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,24 +28,23 @@ public class UserSearchService {
             throw new IllegalArgumentException("User not authenticated");
         }
         
-        // Validate input
+        // validate input
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Name search parameter is required");
         }
         
-        // Find users by name
+        // find users by name
         List<User> allUsers = userRepository.findByNameContainingIgnoreCase(name.trim());
         
-        // Filter users in service layer
+        // filter approved customers
         List<User> filteredUsers = allUsers.stream()
             .filter(user -> user.getRegistrationStatus() == RegistrationStatus.APPROVED)
             .filter(user -> "CUSTOMER".equalsIgnoreCase(user.getRole()))
             .collect(Collectors.toList());
         
-        // Convert to DTOs with active accounts
+        // convert to DTOs with active accounts
         return filteredUsers.stream()
             .map(user -> {
-                // Find all active accounts for this user
                 List<String> ibans = accountRepository.findByUserId(user.getId()).stream()
                     .filter(Account::isApproved)
                     .filter(account -> !account.isClosed())
@@ -59,4 +56,3 @@ public class UserSearchService {
             .collect(Collectors.toList());
     }
 }
-//test for merge ? 

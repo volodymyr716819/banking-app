@@ -11,7 +11,6 @@
           </option>
         </select>
       </div>
-      // test for merge
       <div class="filter-section">
         <label>Transaction Type:</label>
         <select v-model="selectedTransactionType">
@@ -165,7 +164,7 @@ export default {
     const fetchCustomerList = async () => {
       if (auth.user.role === 'EMPLOYEE') {
         try {
-          const response = await api.get('/users/approved', {
+          const response = await api.get('/api/users/approved', {
             headers: {
               Authorization: `Bearer ${auth.token}`,
             },
@@ -210,7 +209,7 @@ export default {
         
         // Use the new unified endpoint
         const response = await api.get(
-          `/transactions/history${queryString}`,
+          `/api/transactions/history${queryString}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,

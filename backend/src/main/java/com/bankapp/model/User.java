@@ -36,6 +36,9 @@ public class User {
 
     private String name;
 
+    @Column(unique = true)
+    private String bsn;
+
     private String role = "customer"; // default role
 
      @Enumerated(EnumType.STRING)
@@ -45,10 +48,11 @@ public class User {
     public User() {
     }
 
-    public User(String name, String email, String password, RegistrationStatus registrationStatus) {
+    public User(String name, String email, String password, String bsn, RegistrationStatus registrationStatus) {
         this.name = name;
         this.email = email;
         this.password = password;
+        this.bsn = bsn;
         this.registrationStatus = RegistrationStatus.PENDING;
     }
 
@@ -67,6 +71,10 @@ public class User {
 
     public String getName() {
         return name;
+    }
+    
+    public String getBsn() {
+        return bsn;
     }
 
     public String getRole() {
@@ -102,6 +110,10 @@ public class User {
     public void setName(String name) {
         this.name = name;
     }
+    
+    public void setBsn(String bsn) {
+        this.bsn = bsn;
+    }
 
     public void setRole(String role) {
         this.role = role;
@@ -123,4 +135,3 @@ public class User {
         this.registrationStatus = RegistrationStatus.DECLINED;
     }
 }
-// test for merge

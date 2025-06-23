@@ -255,4 +255,3 @@ public class AccountController {
         return ResponseEntity.ok("Account successfully closed");
     }
 }
-// test for merge

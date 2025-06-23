@@ -182,23 +182,19 @@ public class TransactionService {
         return filteredResults;
     }
     
-    /**
-     * Check if the current user has permission to access the requested data
-     */
+    // Check if user has permission to access requested data
     private void checkPermissions(TransactionFilterRequest filters, User currentUser, boolean isEmployee) {
         // Employees can see everything
         if (isEmployee) {
             return;
         }
         
-        // For customers, check specific permissions
-        
-        // User ID filter - customer can only see their own data
+        // Customers can only see their own data
         if (filters.getUserId() != null && !filters.getUserId().equals(currentUser.getId())) {
             throw new IllegalArgumentException("Access denied: You can only view your own transactions");
         }
         
-        // Account ID filter - customer can only see their own accounts
+        // Customers can only see their own accounts
         if (filters.getAccountId() != null) {
             Optional<Account> accountOpt = accountRepository.findById(filters.getAccountId());
             if (accountOpt.isEmpty() || !accountOpt.get().getUser().getId().equals(currentUser.getId())) {
@@ -206,7 +202,7 @@ public class TransactionService {
             }
         }
         
-        // IBAN filter - customer can only see their own accounts
+        // Customers can only see their own IBANs
         if (filters.getIban() != null && !filters.getIban().isEmpty()) {
             Optional<Account> accountOpt = accountRepository.findByIban(filters.getIban());
             if (accountOpt.isEmpty() || !accountOpt.get().getUser().getId().equals(currentUser.getId())) {
@@ -215,70 +211,63 @@ public class TransactionService {
         }
     }
 
-    /**
-     * Convert a Transaction entity to DTO
-     */
-    private TransactionHistoryDTO convertToDto(Transaction t) {
+    // Convert any transaction to DTO
+    private TransactionHistoryDTO convertToDto(Object obj) {
         TransactionHistoryDTO dto = new TransactionHistoryDTO();
-        dto.setTransactionId(t.getId());
         
-        // Set sender account information
-        if (t.getFromAccount() != null) {
-            Account sender = t.getFromAccount();
-            dto.setSenderAccountId(sender.getId());
-            dto.setFromAccountIban(sender.getIban());
-            dto.setFromAccountHolderName(sender.getUser() != null ? sender.getUser().getName() : "");
-        }
-        
-        // Set receiver account information
-        if (t.getToAccount() != null) {
-            Account receiver = t.getToAccount();
-            dto.setReceiverAccountId(receiver.getId());
-            dto.setToAccountIban(receiver.getIban());
-            dto.setToAccountHolderName(receiver.getUser() != null ? receiver.getUser().getName() : "");
-        }
-        
-        dto.setAmount(t.getAmount());
-        dto.setTimestamp(t.getTimestamp());
-        dto.setDescription(t.getDescription());
-        dto.setTransactionType(t.getTransactionType() != null ? t.getTransactionType().toString() : "UNKNOWN");
-        return dto;
-    }
-
-    /**
-     * Convert an ATM operation to DTO
-     */
-    private TransactionHistoryDTO convertToDto(AtmOperation atm) {
-        TransactionHistoryDTO dto = new TransactionHistoryDTO();
-        dto.setTransactionId(atm.getId());
-        
-        // For ATM operations, the account is both the sender and receiver (for UI consistency)
-        if (atm.getAccount() != null) {
-            Account account = atm.getAccount();
+        if (obj instanceof Transaction) {
+            Transaction t = (Transaction) obj;
+            dto.setTransactionId(t.getId());
             
-            if (atm.getOperationType() == AtmOperation.OperationType.DEPOSIT) {
-                // For deposits, the account is the receiver
-                dto.setToAccountIban(account.getIban());
-                dto.setToAccountHolderName(account.getUser() != null ? account.getUser().getName() : "");
-                dto.setReceiverAccountId(account.getId());
-            } else if (atm.getOperationType() == AtmOperation.OperationType.WITHDRAW) {
-                // For withdrawals, the account is the sender
-                dto.setFromAccountIban(account.getIban());
-                dto.setFromAccountHolderName(account.getUser() != null ? account.getUser().getName() : "");
-                dto.setSenderAccountId(account.getId());
+            // Set sender account information
+            if (t.getFromAccount() != null) {
+                Account sender = t.getFromAccount();
+                dto.setSenderAccountId(sender.getId());
+                dto.setFromAccountIban(sender.getIban());
+                dto.setFromAccountHolderName(sender.getUser() != null ? sender.getUser().getName() : "");
             }
+            
+            // Set receiver account information
+            if (t.getToAccount() != null) {
+                Account receiver = t.getToAccount();
+                dto.setReceiverAccountId(receiver.getId());
+                dto.setToAccountIban(receiver.getIban());
+                dto.setToAccountHolderName(receiver.getUser() != null ? receiver.getUser().getName() : "");
+            }
+            
+            dto.setAmount(t.getAmount());
+            dto.setTimestamp(t.getTimestamp());
+            dto.setDescription(t.getDescription());
+            dto.setTransactionType(t.getTransactionType() != null ? t.getTransactionType().toString() : "UNKNOWN");
+        }
+        else if (obj instanceof AtmOperation) {
+            AtmOperation atm = (AtmOperation) obj;
+            dto.setTransactionId(atm.getId());
+            
+            if (atm.getAccount() != null) {
+                Account account = atm.getAccount();
+                
+                if (atm.getOperationType() == AtmOperation.OperationType.DEPOSIT) {
+                    dto.setToAccountIban(account.getIban());
+                    dto.setToAccountHolderName(account.getUser() != null ? account.getUser().getName() : "");
+                    dto.setReceiverAccountId(account.getId());
+                } else if (atm.getOperationType() == AtmOperation.OperationType.WITHDRAW) {
+                    dto.setFromAccountIban(account.getIban());
+                    dto.setFromAccountHolderName(account.getUser() != null ? account.getUser().getName() : "");
+                    dto.setSenderAccountId(account.getId());
+                }
+            }
+            
+            dto.setAmount(atm.getAmount());
+            dto.setTimestamp(atm.getTimestamp());
+            dto.setDescription("ATM " + atm.getOperationType());
+            dto.setTransactionType(atm.getOperationType().toString());
         }
         
-        dto.setAmount(atm.getAmount());
-        dto.setTimestamp(atm.getTimestamp());
-        dto.setDescription("ATM " + atm.getOperationType());
-        dto.setTransactionType(atm.getOperationType().toString());
         return dto;
     }
     
-    /**
-     * Apply date and amount filters to a list of transactions
-     */
+    // Apply date and amount filters to transactions
     private List<TransactionHistoryDTO> applyFilters(
             List<TransactionHistoryDTO> transactions,
             String startDateStr,
@@ -286,14 +275,14 @@ public class TransactionService {
             BigDecimal minAmount,
             BigDecimal maxAmount) {
         
-        // Convert date strings to actual date objects
+        // Parse dates
         LocalDateTime startDate = null;
         LocalDateTime endDate = null;
         
         if (startDateStr != null && !startDateStr.isEmpty()) {
             try {
                 LocalDate date = LocalDate.parse(startDateStr, DATE_FORMATTER);
-                startDate = date.atStartOfDay(); // Use beginning of day for start date
+                startDate = date.atStartOfDay();
             } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Invalid start date format. Use yyyy-MM-dd");
             }
@@ -302,39 +291,23 @@ public class TransactionService {
         if (endDateStr != null && !endDateStr.isEmpty()) {
             try {
                 LocalDate date = LocalDate.parse(endDateStr, DATE_FORMATTER);
-                endDate = date.atTime(LocalTime.MAX); // Use end of day for end date
+                endDate = date.atTime(LocalTime.MAX);
             } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Invalid end date format. Use yyyy-MM-dd");
             }
         }
         
-        // Create final copies for lambda use
+        // Create final variables for lambda
         final LocalDateTime finalStartDate = startDate;
         final LocalDateTime finalEndDate = endDate;
-        final BigDecimal finalMinAmount = minAmount;
-        final BigDecimal finalMaxAmount = maxAmount;
         
-        // Apply all filters (date and amount)
+        // Apply filters
         return transactions.stream()
             .filter(tx -> {
-                // Skip transactions before start date
-                if (finalStartDate != null && tx.getTimestamp().isBefore(finalStartDate)) {
-                    return false;
-                }
-                // Skip transactions after end date
-                if (finalEndDate != null && tx.getTimestamp().isAfter(finalEndDate)) {
-                    return false;
-                }
-                
-                // Skip transactions less than minimum amount
-                if (finalMinAmount != null && tx.getAmount().compareTo(finalMinAmount) < 0) {
-                    return false;
-                }
-                // Skip transactions more than maximum amount
-                if (finalMaxAmount != null && tx.getAmount().compareTo(finalMaxAmount) > 0) {
-                    return false;
-                }
-                
+                if (finalStartDate != null && tx.getTimestamp().isBefore(finalStartDate)) return false;
+                if (finalEndDate != null && tx.getTimestamp().isAfter(finalEndDate)) return false;
+                if (minAmount != null && tx.getAmount().compareTo(minAmount) < 0) return false;
+                if (maxAmount != null && tx.getAmount().compareTo(maxAmount) > 0) return false;
                 return true;
             })
             .collect(Collectors.toList());
@@ -467,5 +440,3 @@ public class TransactionService {
         transactionRepository.save(tx);
     }
 }
-
-//test for merge ?

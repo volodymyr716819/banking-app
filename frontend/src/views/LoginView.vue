@@ -120,16 +120,11 @@ async function handleLogin() {
     // perform login, store JWT in authStore.token
     await authStore.login(email.value, password.value)
 
-    // decode the token payload
-    const token = authStore.token
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    const status = payload.regStatus || payload.roles?.includes('ROLE_PENDING') && 'PENDING'
-
-    // redirect based on status
-    if (status === 'PENDING') {
-      router.replace({ name: 'AwaitingApproval' })
+    // Use the registration status from the user object
+    if (authStore.user.registrationStatus === 'PENDING') {
+      router.replace('/awaiting-approval')
     } else {
-      router.replace({ path: '/dashboard' })
+      router.replace('/dashboard')
     }
   } catch (err) {
     // show error for invalid creds or pending (fallback)

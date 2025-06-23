@@ -108,9 +108,10 @@ public class UserController {
 
     @PreAuthorize("hasRole('EMPLOYEE')")
     @Operation(summary = "Get users pending approval (EMPLOYEE only)")
-    @ApiResponse(responseCode = "200", description = "Returns list of pending users")
+    @ApiResponse(responseCode = "200", description = "Returns list of pending users with full details")
     @GetMapping("/pending")
     public List<User> getPendingUsers() {
+        // Return full user information for pending users
         return userRepository.findByRegistrationStatus(RegistrationStatus.PENDING);
     }
 
@@ -138,19 +139,14 @@ public class UserController {
         return userRepository.findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus.APPROVED, "CUSTOMER");
     }
 
-    // Legacy search endpoints - kept for backward compatibility
-    @Operation(summary = "Search users by name (legacy)")
-    @ApiResponse(responseCode = "200", description = "Search results")
     @GetMapping("/find-by-name")
     public ResponseEntity<?> searchUsersByName(@RequestParam String name, Authentication authentication) {
-        return searchUsers(name, null, null, null, authentication);
+        return searchCustomersByName(name, authentication);
     }
 
-    @Operation(summary = "Search users by email (legacy)")
-    @ApiResponse(responseCode = "200", description = "Search results")
     @GetMapping("/find-by-email")
     public ResponseEntity<?> searchUsersByEmail(@RequestParam String email, Authentication authentication) {
-        return searchUsers(null, null, email, null, authentication);
+        return ResponseEntity.badRequest().body("Email search is no longer supported. Please use name search instead.");
     }
 
     @PreAuthorize("hasRole('EMPLOYEE')")
@@ -169,25 +165,16 @@ public class UserController {
         }
     }
 
-    //  search endpoint with 1 search term: name, email, or IBAN
-    @Operation(summary = "user search by term, name, email, or IBAN")
-    @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "Search results"),
-       @ApiResponse(responseCode = "400", description = "Invalid search input")
-    })
-    @GetMapping("/search")
-    public ResponseEntity<?> searchUsers(
-        @RequestParam(required = false) String term,
-        @RequestParam(required = false) String name,
-        @RequestParam(required = false) String email,
-        @RequestParam(required = false) String iban,
+        @GetMapping("/search")
+    public ResponseEntity<?> searchCustomersByName(
+        @RequestParam String name,
         Authentication authentication) {
         
         try {
-           return ResponseEntity.ok(userSearchService.searchUsers(term, name, email, iban, authentication));
+            List<UserSearchResultDTO> results = userSearchService.searchUsersByName(name, authentication);
+            return ResponseEntity.ok(results);
         } catch (IllegalArgumentException ex) {
-           return ResponseEntity.badRequest().body(ex.getMessage());
+            return ResponseEntity.badRequest().body(ex.getMessage());
         }
     }
 }
-// test for merge

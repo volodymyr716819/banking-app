@@ -10,7 +10,9 @@
                     <th>User ID</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>BSN</th>
                     <th>Role</th>
+                    <th>Registration Date</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -19,10 +21,12 @@
                     <td>{{ user.id }}</td>
                     <td>{{ user.name }}</td>
                     <td>{{ user.email }}</td>
+                    <td>{{ user.bsn || 'Not provided' }}</td>
                     <td>{{ user.role }}</td>
+                    <td>{{ formatDate(user.registrationDate) }}</td>
                     <td>
                         <button @click="approveUser(user.id)" class="approve-button">Approve</button>
-                        <button class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded" @click="declineUser(user.id)">Decline</button>
+                        <button class="decline-button" @click="declineUser(user.id)">Decline</button>
                     </td>
                 </tr>
             </tbody>
@@ -41,9 +45,21 @@ const auth = useAuthStore();
 const users = ref([]);
 const message = ref('');
 
+const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-GB', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(date);
+};
+
 const fetchPendingUsers = async () => {
     try {
-        const res = await api.get('/users/pending', { // move to .env
+        const res = await api.get('/users/pending', {
             headers: {
                 Authorization: `Bearer ${auth.token}`
             }
@@ -131,6 +147,20 @@ onMounted(fetchPendingUsers);
 
 .approve-button:hover {
     background-color: #45a049;
+}
+
+.decline-button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 8px;
+}
+
+.decline-button:hover {
+    background-color: #d32f2f;
 }
 
 .no-data {

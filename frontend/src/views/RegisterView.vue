@@ -59,6 +59,34 @@
           </div>
         </div>
         
+        <!-- BSN Field -->
+        <div class="form-group">
+          <label for="bsn">BSN (Burgerservicenummer)</label>
+          <div class="input-wrapper">
+            <span class="material-icons input-icon">badge</span>
+            <input 
+              id="bsn"
+              v-model="bsn" 
+              type="text" 
+              placeholder="Enter your BSN number" 
+              required 
+              pattern="[0-9]+"
+              maxlength="9"
+              @input="validateBsn"
+            />
+          </div>
+          <div class="input-hint" v-if="bsn">
+            <span v-if="isBsnValid" class="valid-hint">
+              <span class="material-icons hint-icon">check_circle</span>
+              Valid BSN format
+            </span>
+            <span v-else class="error-hint">
+              <span class="material-icons hint-icon">error_outline</span>
+              BSN must be 8-9 digits
+            </span>
+          </div>
+        </div>
+        
         <!-- Password Field -->
         <div class="form-group">
           <label for="password">Password</label>
@@ -171,6 +199,8 @@ import api from '../lib/api';
 const name = ref('');
 const email = ref('');
 const password = ref('');
+const bsn = ref('');
+const isBsnValid = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 const showPassword = ref(false);
@@ -212,12 +242,22 @@ const strengthText = computed(() => {
   return 'Strong';
 });
 
+// BSN validation
+function validateBsn() {
+  // Remove any non-numeric characters
+  bsn.value = bsn.value.replace(/\D/g, '');
+  
+  // Check if BSN is a valid format (8-9 digits)
+  isBsnValid.value = /^\d{8,9}$/.test(bsn.value);
+}
+
 // Check if form is valid for submission
 const isFormValid = computed(() => {
   return (
     name.value.trim() !== '' &&
     email.value.includes('@') &&
-    password.value.length >= 8
+    password.value.length >= 8 &&
+    isBsnValid.value
   );
 });
 
@@ -246,13 +286,20 @@ async function handleRegister() {
     isLoading.value = false;
     return;
   }
-
+  
+  // BSN validation
+  if (!isBsnValid.value) {
+    errorMessage.value = 'Please enter a valid BSN (8-9 digits)';
+    isLoading.value = false;
+    return;
+  }
 
   try {
     const res = await api.post('/auth/register', {
       name: name.value,
       email: email.value,
-      password: password.value
+      password: password.value,
+      bsn: bsn.value
     });
 
     successMessage.value = res.data.message || "Registration successful. Please wait for approval.";
@@ -592,6 +639,31 @@ async function handleRegister() {
 
 .requirement.fulfilled .requirement-icon {
     color: var(--success-color);
+}
+
+/* Input hints for BSN */
+.input-hint {
+    display: flex;
+    margin-top: var(--spacing-1);
+    font-size: var(--font-size-xs);
+}
+
+.valid-hint {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    color: var(--success-color);
+}
+
+.error-hint {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    color: var(--error-color);
+}
+
+.hint-icon {
+    font-size: 14px;
 }
 
 /* Terms and conditions */
