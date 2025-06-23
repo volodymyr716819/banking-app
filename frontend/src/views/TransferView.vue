@@ -116,6 +116,27 @@ const submitTransfer = async () => {
     return;
   }
   
+  // Check account limits
+  const selectedAccount = accounts.value.find(acc => acc.iban === fromAccount.value);
+  if (selectedAccount) {
+    // Check daily limit
+    if (selectedAccount.dailyLimit && selectedAccount.dailyLimit > 0) {
+      if (parseFloat(amount.value) > selectedAccount.dailyLimit) {
+        message.value = `Transfer amount exceeds your daily limit of €${selectedAccount.dailyLimit}.`;
+        messageType.value = 'error';
+        return;
+      }
+    }
+    
+    // Check absolute limit (overdraft limit)
+    const newBalance = selectedAccount.balance - parseFloat(amount.value);
+    if (selectedAccount.absoluteLimit && newBalance < selectedAccount.absoluteLimit) {
+      message.value = `This transfer would exceed your account's overdraft limit. Maximum available: €${(selectedAccount.balance - selectedAccount.absoluteLimit).toFixed(2)}`;
+      messageType.value = 'error';
+      return;
+    }
+  }
+  
   try {
     const response = await api.post('/transactions/transfer', {
       senderIban: fromAccount.value,
