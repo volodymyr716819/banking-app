@@ -3,6 +3,7 @@ package com.bankapp.controller;
 import java.util.Map;
 import java.util.Optional;
 
+import org.hibernate.hql.internal.ast.util.ASTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +37,7 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private ASTUtil jwtUtil;
 
     @Autowired
     private UserService userService;
