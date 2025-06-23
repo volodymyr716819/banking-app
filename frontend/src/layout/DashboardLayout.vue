@@ -61,6 +61,10 @@
             <span class="material-icons nav-icon">history</span>
             <span>Transaction History</span>
           </router-link>
+          <router-link :to="{path: '/dashboard/employee-transfer'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/employee-transfer') }">
+            <span class="material-icons nav-icon">swap_horiz</span>
+            <span>Transfer Between Accounts</span>
+          </router-link>
         </div>
 
         <button @click="logout" class="logout-button">

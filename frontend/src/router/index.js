@@ -10,6 +10,7 @@ import ApproveAccountsView from "../views/ApproveAccountsView.vue";
 import ApproveUsersView from "../views/ApproveUsersView.vue";
 import EmployeeUsersView from "../views/EmployeeUsersView.vue";
 import EmployeeAccountsView from "../views/EmployeeAccountsView.vue";
+import EmployeeTransferView from "../views/EmployeeTransferView.vue";
 import TransactionHistoryView from "../views/TransactionHistoryView.vue";
 import SearchCustomerView from "../views/SearchCustomerView.vue";
 import PinSettingsView from "../views/PinSettingsView.vue";
@@ -64,6 +65,11 @@ const routes = [
       {
         path: "employee-accounts",
         component: EmployeeAccountsView,
+        meta: { requiresRole: "employee" },
+      },
+      {
+        path: "employee-transfer",
+        component: EmployeeTransferView,
         meta: { requiresRole: "employee" },
       },
     ],
