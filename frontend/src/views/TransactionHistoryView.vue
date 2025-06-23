@@ -2,7 +2,7 @@
   <div class="transaction-history">
     <div class="filters-container">
       <!-- Employee-only customer selection -->
-      <div v-if="auth.isEmployee" class="filter-section">
+      <div v-if="auth && auth.isAuthenticated && auth.isEmployee" class="filter-section">
         <label>Customer:</label>
         <select v-model="selectedUserId">
           <option value="">All Customers</option>
@@ -162,7 +162,7 @@ export default {
 
     // Fetch customer list for employees only
     const fetchCustomerList = async () => {
-      if (auth.isEmployee) {
+      if (auth && auth.isAuthenticated && auth.isEmployee) {
         try {
           const response = await api.get('/users/approved', {
             headers: {

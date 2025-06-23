@@ -88,7 +88,7 @@
     </div>
 
     <!-- Employee-only Quick Access Card -->
-    <div v-if="auth.isEmployee" class="dashboard-card employee-tools">
+    <div v-if="auth && auth.isAuthenticated && auth.isEmployee" class="dashboard-card employee-tools">
       <div class="card-header">
         <h2 class="card-title">Employee Tools</h2>
       </div>
@@ -225,7 +225,8 @@ defineExpose({ __pageTitle });
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('@/assets/pattern-small.svg');
+  background-color: var(--primary-light);
+  /* Remove background image to avoid 404 errors */
   opacity: 0.7;
 }
 

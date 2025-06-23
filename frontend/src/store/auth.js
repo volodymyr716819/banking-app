@@ -11,9 +11,20 @@ export const useAuthStore = defineStore("auth", {
 
   getters: {
     isAuthenticated: (state) => !!state.token,
-    isEmployee: (state) => state.user?.role?.toLowerCase() === "employee",
-    isCustomer: (state) => state.user?.role?.toLowerCase() === "customer",
-    userRole: (state) => state.user?.role?.toLowerCase() || null,
+    isEmployee: (state) => {
+      if (!state.user || !state.user.role) return false;
+      const role = state.user.role.toLowerCase();
+      return role === "employee" || role === "role_employee";
+    },
+    isCustomer: (state) => {
+      if (!state.user || !state.user.role) return false;
+      const role = state.user.role.toLowerCase();
+      return role === "customer" || role === "role_customer";
+    },
+    userRole: (state) => {
+      if (!state.user || !state.user.role) return null;
+      return state.user.role.toLowerCase();
+    },
     userName: (state) => state.user?.name || "Guest",
     userEmail: (state) => state.user?.email || "",
     userId: (state) => state.user?.id || null,
@@ -28,10 +39,21 @@ export const useAuthStore = defineStore("auth", {
       this.error = null;
 
       try {
-        const res = await api.post(`/auth/login`, {
-          email,
-          password,
-        });
+        // Try both login endpoints to ensure one works
+        let res;
+        try {
+          res = await api.post(`/auth/login`, {
+            email,
+            password,
+          });
+        } catch (primaryErr) {
+          console.error("Primary login endpoint failed:", primaryErr);
+          console.log("Trying alternate login endpoint...");
+          res = await api.post(`/api/auth/login`, {
+            email,
+            password,
+          });
+        }
 
         this.user = {
           id: res.data.id,
@@ -87,11 +109,23 @@ export const useAuthStore = defineStore("auth", {
       if (!this.token) return false;
 
       try {
-        const res = await api.get(`/auth/validate`, {
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-          },
-        });
+        console.log("Validating token...");
+        // Try adding /api prefix if the request fails
+        let res;
+        try {
+          res = await api.get(`/auth/validate`, {
+            headers: {
+              Authorization: `Bearer ${this.token}`,
+            },
+          });
+        } catch (primaryErr) {
+          console.log("Primary validation endpoint failed, trying alternate...");
+          res = await api.get(`/api/auth/validate`, {
+            headers: {
+              Authorization: `Bearer ${this.token}`,
+            },
+          });
+        }
 
         if (res.data && res.data.valid) {
           if (res.data.id || res.data.name || res.data.email || res.data.role || res.data.registrationStatus) {
