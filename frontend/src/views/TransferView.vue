@@ -7,8 +7,8 @@
         <label for="from">From Account:</label>
         <select v-model="fromAccount" required>
           <option disabled value="">Select an account</option>
-          <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
-            {{ acc.type }} (ID: {{ acc.id }}) - €{{ acc.balance.toFixed(2) }}
+          <option v-for="acc in accounts" :key="acc.id" :value="acc.iban">
+            {{ acc.type }} - {{ acc.formattedIban || acc.iban }} - €{{ acc.balance.toFixed(2) }}
             {{ !acc.approved ? '- Not Approved' : '' }}
           </option>
         </select>
@@ -18,8 +18,8 @@
       </div>
 
       <div class="form-group">
-        <label for="to">To Account ID:</label>
-        <input type="number" v-model="toAccountId" placeholder="Enter receiver's account ID" required />
+        <label for="to">To IBAN:</label>
+        <input type="text" v-model="toIban" placeholder="Enter receiver's IBAN" required />
       </div>
 
       <div class="form-group">
@@ -54,7 +54,7 @@ import { useAuthStore } from '../store/auth';
 const auth = useAuthStore();
 const accounts = ref([]);
 const fromAccount = ref('');
-const toAccountId = ref('');
+const toIban = ref('');
 const amount = ref('');
 const description = ref('');
 const message = ref('');
@@ -63,13 +63,13 @@ const messageType = ref(''); // 'success' or 'error'
 // Computed property to check if selected account is not approved
 const selectedAccountIsNotApproved = computed(() => {
   if (!fromAccount.value) return false;
-  const selectedAccount = accounts.value.find(acc => acc.id === fromAccount.value);
+  const selectedAccount = accounts.value.find(acc => acc.iban === fromAccount.value);
   return selectedAccount && !selectedAccount.approved;
 });
 
 // Computed property to disable submit button when needed
 const submitDisabled = computed(() => {
-  return selectedAccountIsNotApproved.value || !fromAccount.value || !toAccountId.value || !amount.value;
+  return selectedAccountIsNotApproved.value || !fromAccount.value || !toIban.value || !amount.value;
 });
 
 const fetchAccounts = async () => {
@@ -106,8 +106,8 @@ const submitTransfer = async () => {
   
   try {
     const response = await api.post('/transactions/transfer', {
-      senderAccountId: fromAccount.value,
-      receiverAccountId: toAccountId.value,
+      senderIban: fromAccount.value,
+      receiverIban: toIban.value,
       amount: parseFloat(amount.value),
       description: description.value
     }, {
@@ -120,7 +120,7 @@ const submitTransfer = async () => {
     message.value = 'Transfer successful!';
     messageType.value = 'success';
     fromAccount.value = '';
-    toAccountId.value = '';
+    toIban.value = '';
     amount.value = '';
     description.value = '';
     await fetchAccounts(); // Refresh accounts to show updated balances
