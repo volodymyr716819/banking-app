@@ -57,91 +57,114 @@ public class TransactionService {
         // Check if employee - they can see all transactions
         boolean isEmployee = currentUser.getRole().equalsIgnoreCase("EMPLOYEE");
         
-        // Validate filter has at least one main criteria for customers
-        if (!isEmployee && filters.getUserId() == null && filters.getAccountId() == null && 
+        // For employees with no filters, return all transactions
+        if (isEmployee && filters.getUserId() == null && filters.getAccountId() == null &&
             (filters.getIban() == null || filters.getIban().isEmpty())) {
-            // For customers, always filter by their own user ID if no filter is provided
-            filters.setUserId(currentUser.getId());
-        }
-        
-        // Permission check - customers can only see their own data
-        checkPermissions(filters, currentUser, isEmployee);
-        
-        // Process filter by user ID
-        if (filters.getUserId() != null) {
-            // Get all transactions and ATM operations for this user
-            List<Transaction> transactions = transactionRepository
-                .findByFromAccount_User_IdOrToAccount_User_Id(filters.getUserId(), filters.getUserId());
             
-            List<AtmOperation> atmOperations = atmOperationRepository
-                .findByAccount_User_Id(filters.getUserId());
+            // Get all transactions and ATM operations in the system
+            List<Transaction> allTransactions = transactionRepository.findAll();
+            List<AtmOperation> allAtmOperations = atmOperationRepository.findAll();
             
             // Convert to DTOs
-            List<TransactionHistoryDTO> transactionDtos = transactions.stream()
+            List<TransactionHistoryDTO> transactionDtos = allTransactions.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
             
-            List<TransactionHistoryDTO> atmDtos = atmOperations.stream()
+            List<TransactionHistoryDTO> atmDtos = allAtmOperations.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
             
             // Combine results
             results.addAll(transactionDtos);
             results.addAll(atmDtos);
-        }
-        
-        // Process filter by account ID
-        else if (filters.getAccountId() != null) {
-            // Get all transactions and ATM operations for this account
-            List<Transaction> transactions = transactionRepository
-                .findByFromAccount_IdOrToAccount_Id(filters.getAccountId(), filters.getAccountId());
             
-            List<AtmOperation> atmOperations = atmOperationRepository
-                .findByAccount_Id(filters.getAccountId());
-            
-            // Convert to DTOs
-            List<TransactionHistoryDTO> transactionDtos = transactions.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-            
-            List<TransactionHistoryDTO> atmDtos = atmOperations.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-            
-            // Combine results
-            results.addAll(transactionDtos);
-            results.addAll(atmDtos);
-        }
-        
-        // Process filter by IBAN
-        else if (filters.getIban() != null && !filters.getIban().isEmpty()) {
-            Optional<Account> accountOpt = accountRepository.findByIban(filters.getIban());
-            
-            if (accountOpt.isEmpty()) {
-                throw new IllegalArgumentException("Account not found for IBAN: " + filters.getIban());
+        } else {
+            // Validate filter has at least one main criteria for customers
+            if (!isEmployee && filters.getUserId() == null && filters.getAccountId() == null && 
+                (filters.getIban() == null || filters.getIban().isEmpty())) {
+                // For customers, always filter by their own user ID if no filter is provided
+                filters.setUserId(currentUser.getId());
             }
             
-            Account account = accountOpt.get();
+            // Permission check - customers can only see their own data
+            checkPermissions(filters, currentUser, isEmployee);
             
-            // Get all transactions and ATM operations for this account
-            List<Transaction> transactions = transactionRepository
-                .findByFromAccount_IdOrToAccount_Id(account.getId(), account.getId());
+            // Process filter by user ID
+            if (filters.getUserId() != null) {
+                // Get all transactions and ATM operations for this user
+                List<Transaction> transactions = transactionRepository
+                    .findByFromAccount_User_IdOrToAccount_User_Id(filters.getUserId(), filters.getUserId());
+                
+                List<AtmOperation> atmOperations = atmOperationRepository
+                    .findByAccount_User_Id(filters.getUserId());
+                
+                // Convert to DTOs
+                List<TransactionHistoryDTO> transactionDtos = transactions.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+                
+                List<TransactionHistoryDTO> atmDtos = atmOperations.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+                
+                // Combine results
+                results.addAll(transactionDtos);
+                results.addAll(atmDtos);
+            }
             
-            List<AtmOperation> atmOperations = atmOperationRepository
-                .findByAccount_Id(account.getId());
+            // Process filter by account ID
+            else if (filters.getAccountId() != null) {
+                // Get all transactions and ATM operations for this account
+                List<Transaction> transactions = transactionRepository
+                    .findByFromAccount_IdOrToAccount_Id(filters.getAccountId(), filters.getAccountId());
+                
+                List<AtmOperation> atmOperations = atmOperationRepository
+                    .findByAccount_Id(filters.getAccountId());
+                
+                // Convert to DTOs
+                List<TransactionHistoryDTO> transactionDtos = transactions.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+                
+                List<TransactionHistoryDTO> atmDtos = atmOperations.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+                
+                // Combine results
+                results.addAll(transactionDtos);
+                results.addAll(atmDtos);
+            }
             
-            // Convert to DTOs
-            List<TransactionHistoryDTO> transactionDtos = transactions.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-            
-            List<TransactionHistoryDTO> atmDtos = atmOperations.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-            
-            // Combine results
-            results.addAll(transactionDtos);
-            results.addAll(atmDtos);
+            // Process filter by IBAN
+            else if (filters.getIban() != null && !filters.getIban().isEmpty()) {
+                Optional<Account> accountOpt = accountRepository.findByIban(filters.getIban());
+                
+                if (accountOpt.isEmpty()) {
+                    throw new IllegalArgumentException("Account not found for IBAN: " + filters.getIban());
+                }
+                
+                Account account = accountOpt.get();
+                
+                // Get all transactions and ATM operations for this account
+                List<Transaction> transactions = transactionRepository
+                    .findByFromAccount_IdOrToAccount_Id(account.getId(), account.getId());
+                
+                List<AtmOperation> atmOperations = atmOperationRepository
+                    .findByAccount_Id(account.getId());
+                
+                // Convert to DTOs
+                List<TransactionHistoryDTO> transactionDtos = transactions.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+                
+                List<TransactionHistoryDTO> atmDtos = atmOperations.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+                
+                // Combine results
+                results.addAll(transactionDtos);
+                results.addAll(atmDtos);
+            }
         }
         
         // Apply date and amount filters
