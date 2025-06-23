@@ -75,4 +75,4 @@ public class TransactionFilterRequest {
     public void setMaxAmount(BigDecimal maxAmount) {
         this.maxAmount = maxAmount;
     }
-}
+}// test for merge

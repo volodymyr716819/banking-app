@@ -24,4 +24,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     List<User> findByRegistrationStatus(RegistrationStatus registrationStatus);
     List<User> findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus registrationStatus, String role);
-}
+}// test for merge

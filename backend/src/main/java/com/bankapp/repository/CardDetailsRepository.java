@@ -24,4 +24,4 @@ public interface CardDetailsRepository extends JpaRepository<CardDetails, Long> 
     @Transactional
     @Query(value = "DELETE FROM card_details WHERE account_id = :accountId", nativeQuery = true)
     void deleteByAccountIdNative(Long accountId);
-}
+}// test for merge
