@@ -63,15 +63,14 @@ public class AuthController {
 
                 User user = userOpt.get();
                 UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-                String jwt = jwtUtil.generateToken(userDetails, user.getRegistrationStatus().toString());
+                String jwt = jwtUtil.generateToken(userDetails);
                 
                 return ResponseEntity.ok(Map.of(
                     "token", jwt,
                     "id", user.getId(),
                     "email", user.getEmail(),
                     "name", user.getName(),
-                    "role", user.getRole(),
-                    "registrationStatus", user.getRegistrationStatus().toString()));
+                    "role", user.getRole()));
 
         } catch (Exception e) {
            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password."));
@@ -115,8 +114,7 @@ public class AuthController {
                     "id", user.getId(),
                     "email", user.getEmail(),
                     "name", user.getName(),
-                    "role", user.getRole(),
-                    "registrationStatus", user.getRegistrationStatus().toString()));
+                    "role", user.getRole()));
         } catch (RuntimeException ex) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("valid", false, "message", ex.getMessage()));
         }

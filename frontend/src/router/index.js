@@ -31,8 +31,7 @@ const routes = [
   {
     path: '/awaiting-approval',
     name: 'AwaitingApproval',
-    component: AwaitingApproval,
-    meta: { allowPending: true, requiresAuth: true }
+    component: AwaitingApproval
   },  
   {
     path: "/dashboard",
@@ -81,25 +80,15 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const isAuthenticated = !!authStore.token;
-  const isPending = authStore.isPending;
   
   // Redirect authenticated users away from login/register pages
   if (to.meta.requiresGuest && isAuthenticated) {
-    // If user is pending and trying to access a guest route, redirect to awaiting approval
-    if (isPending) {
-      return next("/awaiting-approval");
-    }
     return next("/dashboard");
   }
 
   // Redirect unauthenticated users to login
   if (to.meta.requiresAuth && !isAuthenticated) {
     return next("/login");
-  }
-  
-  // Redirect pending users to awaiting approval page unless the route allows pending users
-  if (isAuthenticated && isPending && !to.meta.allowPending) {
-    return next("/awaiting-approval");
   }
 
   // Check role-based access

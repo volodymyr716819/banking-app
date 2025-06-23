@@ -59,21 +59,6 @@
           </div>
         </div>
         
-        <!-- BSN Field -->
-        <div class="form-group">
-          <label for="bsn">BSN (Burgerservicenummer)</label>
-          <div class="input-wrapper">
-            <span class="material-icons input-icon">badge</span>
-            <input 
-              id="bsn"
-              v-model="bsn" 
-              type="text"
-              placeholder="Enter your BSN number" 
-              required 
-            />
-          </div>
-        </div>
-        
         <!-- Password Field -->
         <div class="form-group">
           <label for="password">Password</label>
@@ -185,7 +170,6 @@ import api from '../lib/api';
 
 const name = ref('');
 const email = ref('');
-const bsn = ref('');
 const password = ref('');
 const errorMessage = ref('');
 const successMessage = ref('');
@@ -233,7 +217,6 @@ const isFormValid = computed(() => {
   return (
     name.value.trim() !== '' &&
     email.value.includes('@') &&
-    bsn.value.trim() !== '' &&
     password.value.length >= 8
   );
 });
@@ -263,20 +246,12 @@ async function handleRegister() {
     isLoading.value = false;
     return;
   }
-  
-  // BSN validation
-  if (bsn.value.trim().length < 8) {
-    errorMessage.value = 'Please enter a valid BSN number';
-    isLoading.value = false;
-    return;
-  }
 
 
   try {
     const res = await api.post('/auth/register', {
       name: name.value,
       email: email.value,
-      bsn: bsn.value,
       password: password.value
     });
 
