@@ -50,6 +50,9 @@ public class AccountController {
         dto.setClosed(account.isClosed());
         dto.setDailyLimit(account.getDailyLimit());
         dto.setAbsoluteLimit(account.getAbsoluteLimit());
+        dto.setIban(account.getIban());
+        dto.setFormattedIban(account.getFormattedIban());
+        dto.setOwnerName(account.getUser().getName());
         return dto;
     }
 

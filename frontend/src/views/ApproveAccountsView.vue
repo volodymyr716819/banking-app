@@ -17,7 +17,7 @@
           <tr v-for="account in accounts" :key="account.id">
             <td>{{ account.id }}</td>
             <td>{{ account.type }}</td>
-            <td>{{ account.user?.id }}</td>
+            <td>{{ account.userId }}</td>
             <td>
               <button @click="approveAccount(account.id)" class="approve-button">Approve</button>
             </td>
