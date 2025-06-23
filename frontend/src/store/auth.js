@@ -45,7 +45,10 @@ export const useAuthStore = defineStore("auth", {
 
         this.persistAuthState();
 
+        // Set the Authorization header for all future requests
         api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
+        
+        console.log("Auth token set:", this.token);
 
         this.isLoading = false;
         return true;
@@ -64,7 +67,9 @@ export const useAuthStore = defineStore("auth", {
       localStorage.removeItem("user");
       localStorage.removeItem("token");
 
+      // Make sure to clear the Authorization header
       delete api.defaults.headers.common["Authorization"];
+      console.log("Auth token cleared");
     },
 
     persistAuthState() {
@@ -112,8 +117,24 @@ export const useAuthStore = defineStore("auth", {
 
     initAuth() {
       if (this.token) {
+        // Set the auth header for subsequent requests
         api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
-        this.validateToken().catch(() => {});
+        console.log("Init auth with token:", this.token);
+        
+        // Validate the token and update user info
+        this.validateToken()
+          .then(valid => {
+            if (!valid) {
+              console.warn("Token validation failed, logging out");
+              this.logout();
+            }
+          })
+          .catch(err => {
+            console.error("Token validation error:", err);
+            this.logout();
+          });
+      } else {
+        console.log("No token found during initAuth");
       }
     },
   },

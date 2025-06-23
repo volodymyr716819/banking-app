@@ -48,8 +48,8 @@
       </div>
     </div>
 
-    <!-- Quick Actions Card -->
-    <div class="dashboard-card quick-actions">
+    <!-- Quick Actions Card - Only for Customers -->
+    <div v-if="auth.user && auth.user.role !== 'EMPLOYEE'" class="dashboard-card quick-actions">
       <div class="card-header">
         <h2 class="card-title">Quick Actions</h2>
       </div>

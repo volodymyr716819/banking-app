@@ -2,7 +2,7 @@
   <div class="transaction-history">
     <div class="filters-container">
       <!-- Employee-only customer selection -->
-      <div v-if="auth.user.role === 'EMPLOYEE'" class="filter-section">
+      <div v-if="auth.user && auth.user.role === 'EMPLOYEE'" class="filter-section">
         <label>Customer:</label>
         <select v-model="selectedUserId">
           <option value="">All Customers</option>
@@ -162,9 +162,9 @@ export default {
 
     // Fetch customer list for employees only
     const fetchCustomerList = async () => {
-      if (auth.user.role === 'EMPLOYEE') {
+      if (auth.user && auth.user.role === 'EMPLOYEE') {
         try {
-          const response = await api.get('/api/users/approved', {
+          const response = await api.get('/users/approved', {
             headers: {
               Authorization: `Bearer ${auth.token}`,
             },
@@ -208,6 +208,7 @@ export default {
         const queryString = params.toString() ? `?${params.toString()}` : '';
         
         // Use the new unified endpoint
+        console.log(`Fetching transactions with query: ${queryString}`);
         const response = await api.get(
           `/api/transactions/history${queryString}`,
           {
@@ -233,10 +234,11 @@ export default {
           if (error.response.status === 403) {
             message.value =
               "Access denied. You may not have permission to view these transactions.";
+          } else if (error.response.status === 401) {
+            message.value = "Authentication error. Please try logging in again.";
           } else {
-            message.value = `Error: ${
-              error.response.data || "Failed to load transactions"
-            }`;
+            message.value = "Error loading transactions. Please try again later.";
+            console.log("Server error:", error.response.data);
           }
         } else if (error.request) {
           // Request made but no response

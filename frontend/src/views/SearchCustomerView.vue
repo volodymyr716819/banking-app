@@ -8,7 +8,7 @@
         </h3>
         <p class="card-subtitle">Find customer details and account information</p>
       </div>
-      // test for merge
+   
       <form class="search-form" @submit.prevent="searchCustomers">
         <div class="search-input-container">
           <div class="input-icon-wrapper">
@@ -163,7 +163,7 @@ const searchCustomers = async () => {
   
   try {
     const response = await api.get('/users/search', {
-      params: { term: searchTerm.value },
+      params: { name: searchTerm.value },
       headers: {
         Authorization: `Bearer ${auth.token}`
       }

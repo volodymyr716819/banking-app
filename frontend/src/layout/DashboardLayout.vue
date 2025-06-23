@@ -17,29 +17,25 @@
           <span class="material-icons nav-icon">account_balance</span>
           <span>Accounts</span>
         </router-link>
-        <router-link v-if="!auth.isEmployee" :to="{path: '/dashboard/transfer'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/transfer') }">
+        <router-link v-if="auth.user && auth.user.role !== 'EMPLOYEE'" :to="{path: '/dashboard/transfer'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/transfer') }">
           <span class="material-icons nav-icon">swap_horiz</span>
           <span>Transfer Money</span>
         </router-link>
-        <router-link :to="{path: '/dashboard/history'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/history') }">
+        <router-link v-if="auth.user && auth.user.role !== 'EMPLOYEE'" :to="{path: '/dashboard/history'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/history') }">
           <span class="material-icons nav-icon">history</span>
           <span>Transaction History</span>
         </router-link>
-        <router-link v-if="!auth.isEmployee" :to="{path: '/dashboard/atm'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/atm') }">
+        <router-link v-if="auth.user && auth.user.role !== 'EMPLOYEE'" :to="{path: '/dashboard/atm'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/atm') }">
           <span class="material-icons nav-icon">atm</span>
           <span>ATM Operations</span>
         </router-link>
-        <router-link :to="{path: '/dashboard/pin-settings'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/pin-settings') }">
+        <router-link v-if="auth.user && auth.user.role !== 'EMPLOYEE'" :to="{path: '/dashboard/pin-settings'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/pin-settings') }">
           <span class="material-icons nav-icon">pin</span>
           <span>PIN Management</span>
         </router-link>
-        <router-link :to="{path: '/dashboard/search-customer'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/search-customer') }">
-          <span class="material-icons nav-icon">person_search</span>
-          <span>Find Customer</span>
-        </router-link>
 
         <!-- Employee-only links -->
-        <div v-if="auth.isEmployee" class="nav-section">
+        <div v-if="auth.user && auth.user.role === 'EMPLOYEE'" class="nav-section">
           <div class="section-title">Employee Tools</div>
           <router-link :to="{path: '/dashboard/approve'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/approve') && !$route.path.includes('/dashboard/approve-users') }">
             <span class="material-icons nav-icon">check_circle</span>
@@ -56,6 +52,14 @@
           <router-link :to="{path: '/dashboard/employee-accounts'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/employee-accounts') }">
             <span class="material-icons nav-icon">account_balance_wallet</span>
             <span>Accounts List</span>
+          </router-link>
+          <router-link :to="{path: '/dashboard/history'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/history') }">
+            <span class="material-icons nav-icon">history</span>
+            <span>Transaction History</span>
+          </router-link>
+          <router-link :to="{path: '/dashboard/search-customer'}" class="nav-link" :class="{ 'router-link-active': $route.path.includes('/dashboard/search-customer') }">
+            <span class="material-icons nav-icon">person_search</span>
+            <span>Find Customer</span>
           </router-link>
         </div>
 

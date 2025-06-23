@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="accounts-page">
-      <div v-if="!auth.isEmployee" class="create-account-container">
+      <div v-if="auth.user && auth.user.role !== 'EMPLOYEE'" class="create-account-container">
         <button @click="showForm = !showForm" class="create-account-button">
           {{ showForm ? "Cancel" : "+ Create Account" }}
         </button>
@@ -16,7 +16,12 @@
         </div>
       </div>
 
-      <div class="accounts-grid">
+      <div v-if="accounts.length === 0" class="no-accounts-message">
+        <span class="material-icons">account_balance</span>
+        <p>No accounts found. Click "Create Account" to get started.</p>
+      </div>
+      
+      <div v-else class="accounts-grid">
         <div 
           v-for="account in accounts" 
           :key="account.id" 
@@ -80,25 +85,43 @@ export default {
 
     const fetchAccounts = async () => {
       try {
+        if (!auth.user || !auth.token) {
+          console.error("No authenticated user found");
+          return;
+        }
+        
+        console.log("Fetching accounts for user:", auth.user.id);
+        
         const response = await api.get(
-          `/accounts/user/${auth.user.id}`,
+          `/api/accounts/user/${auth.user.id}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,
             },
           }
         );
-        accounts.value = response.data;
+        
+        console.log("Accounts fetched:", response.data);
+        accounts.value = response.data || [];
+        
+        if (accounts.value.length === 0) {
+          console.log("No accounts found for user");
+        }
       } catch (err) {
         console.error("Failed to fetch accounts:", err);
-        alert("Failed to load accounts. Please make sure you are logged in.");
+        accounts.value = [];
       }
     };
 
     const createAccount = async () => {
       try {
+        if (!auth.user?.id || !auth.token) {
+          console.error("User not authenticated");
+          return;
+        }
+        
         await api.post(
-          `/accounts/create?userId=${auth.user.id}&type=${newAccountType.value}`,
+          `/api/accounts/create?userId=${auth.user.id}&type=${newAccountType.value}`,
           {},
           {
             headers: {
@@ -106,12 +129,16 @@ export default {
             },
           }
         );
+        
+        console.log("Account created successfully");
         showForm.value = false;
         newAccountType.value = "CHECKING";
+        
+        // Refresh accounts list
         await fetchAccounts();
       } catch (err) {
         console.error("Failed to create account", err);
-        alert("Could not create account. Make sure you're approved and logged in.");
+        alert("Could not create account. Make sure your account is approved.");
       }
     };
     
@@ -360,5 +387,25 @@ export default {
   padding: var(--spacing-1) var(--spacing-2);
   border-radius: var(--border-radius-full);
   border: 1px solid rgba(255, 152, 0, 0.2);
+}
+
+.no-accounts-message {
+  text-align: center;
+  padding: var(--spacing-8);
+  background-color: var(--gray-50);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-top: var(--spacing-4);
+}
+
+.no-accounts-message .material-icons {
+  font-size: 48px;
+  color: var(--gray-400);
+  margin-bottom: var(--spacing-4);
+}
+
+.no-accounts-message p {
+  color: var(--gray-600);
+  font-size: var(--font-size-base);
 }
 </style>

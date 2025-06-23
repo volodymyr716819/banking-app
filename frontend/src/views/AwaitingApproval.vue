@@ -11,7 +11,9 @@
           <span class="material-icons">hourglass_top</span>
         </div>
         
-        <h2 class="approval-title">Account Pending Approval</h2>
+        <h2 class="approval-title">Welcome, {{ authStore.user?.name || 'User' }}!</h2>
+        
+        <h3 class="approval-subtitle">Account Pending Approval</h3>
         
         <div class="approval-message">
           <p>Thank you for registering with BankApp!</p>
@@ -132,7 +134,14 @@ function logout() {
 .approval-title {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-semibold);
-  color: var(--gray-900);
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-2);
+}
+
+.approval-subtitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-700);
   margin-bottom: var(--spacing-4);
 }
 

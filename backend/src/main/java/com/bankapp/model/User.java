@@ -44,6 +44,9 @@ public class User {
      @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RegistrationStatus registrationStatus = RegistrationStatus.PENDING;
+    
+    @Column(name = "registration_date")
+    private java.util.Date registrationDate = new java.util.Date();
 
     public User() {
     }
@@ -54,6 +57,7 @@ public class User {
         this.password = password;
         this.bsn = bsn;
         this.registrationStatus = RegistrationStatus.PENDING;
+        this.registrationDate = new java.util.Date();
     }
 
     // Getters
@@ -83,6 +87,10 @@ public class User {
 
     public RegistrationStatus getRegistrationStatus() {
         return registrationStatus;
+    }
+    
+    public java.util.Date getRegistrationDate() {
+        return registrationDate;
     }
 
     public boolean isApproved(){
@@ -121,6 +129,10 @@ public class User {
 
     public void setRegistrationStatus(RegistrationStatus status) {
         this.registrationStatus = status;
+    }
+    
+    public void setRegistrationDate(java.util.Date registrationDate) {
+        this.registrationDate = registrationDate;
     }
 
     public void setApproved(boolean approved) {
