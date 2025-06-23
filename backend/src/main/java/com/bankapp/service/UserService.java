@@ -36,7 +36,7 @@ public class UserService {
         user.setRegistrationStatus(RegistrationStatus.DECLINED);
     }
 
-     // Validates login input and user approval status
+     // Validates login input - allows login for all users regardless of approval status
     public Optional<User> validateLogin(User request) {
         Optional<User> found = repo.findByEmail(request.getEmail());
 
@@ -45,10 +45,9 @@ public class UserService {
         }
 
         User user = found.get();
-        if (!user.isApproved()) {
-            throw new UnapprovedAccountException("Account must be approved before login.");
-        }
-
+        
+        // No longer checking approval status here - all users can login
+        
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return Optional.empty();
         }
@@ -61,6 +60,16 @@ public class UserService {
         if (repo.findByEmail(user.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already registered.");
         }
+        
+        // Validate that BSN is provided
+        if (user.getBsn() == null || user.getBsn().trim().isEmpty()) {
+            throw new RuntimeException("BSN is required.");
+        }
+        
+        // Check for duplicate BSN
+        if (repo.findByBsn(user.getBsn()).isPresent()) {
+            throw new RuntimeException("BSN is already registered.");
+        }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole("customer");
@@ -68,7 +77,7 @@ public class UserService {
         return repo.save(user);
     }
 
-    // Validates authentication object and user's approval state
+    // Validates authentication object - allows all authenticated users regardless of approval status
     public Optional<User> validateAuthentication(Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             Optional<User> userOpt = repo.findByEmail(authentication.getName());
@@ -76,8 +85,8 @@ public class UserService {
             if (userOpt.isEmpty()) return Optional.empty();
 
             User user = userOpt.get();
-            if (!user.isApproved()) throw new UnapprovedAccountException("Account is pending approval.");
-
+            // No longer throwing exception for unapproved users
+            
             return Optional.of(user);
         }
 

@@ -17,6 +17,10 @@ export const useAuthStore = defineStore("auth", {
     userName: (state) => state.user?.name || "Guest",
     userEmail: (state) => state.user?.email || "",
     userId: (state) => state.user?.id || null,
+    registrationStatus: (state) => state.user?.registrationStatus || null,
+    isApproved: (state) => state.user?.registrationStatus === "APPROVED",
+    isPending: (state) => state.user?.registrationStatus === "PENDING",
+    isDeclined: (state) => state.user?.registrationStatus === "DECLINED",
   },
 
   actions: {
@@ -35,6 +39,7 @@ export const useAuthStore = defineStore("auth", {
           email: res.data.email,
           name: res.data.name,
           role: res.data.role,
+          registrationStatus: res.data.registrationStatus
         };
 
         this.token = res.data.token;
@@ -85,12 +90,13 @@ export const useAuthStore = defineStore("auth", {
         });
 
         if (res.data && res.data.valid) {
-          if (res.data.id || res.data.name || res.data.email || res.data.role) {
+          if (res.data.id || res.data.name || res.data.email || res.data.role || res.data.registrationStatus) {
             this.updateUserInfo({
               id: res.data.id || this.user.id,
               name: res.data.name || this.user.name,
               email: res.data.email || this.user.email,
               role: res.data.role || this.user.role,
+              registrationStatus: res.data.registrationStatus || this.user.registrationStatus
             });
           }
           return true;
