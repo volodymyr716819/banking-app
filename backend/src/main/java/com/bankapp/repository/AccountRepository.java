@@ -12,3 +12,4 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     List<Account> findByApprovedTrueAndClosedFalse();
     Optional<Account> findByIban(String iban);
 }
+// test for merge

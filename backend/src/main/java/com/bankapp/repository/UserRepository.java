@@ -14,43 +14,14 @@ import com.bankapp.model.enums.RegistrationStatus;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    /* unchanged  */
+    /* user lookup */
     Optional<User> findByEmail(String email);
-
-    /* ---------- status-based look-ups ---------- */
+    
+    Optional<User> findByBsn(String bsn);
+    
+    @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    List<User> findByNameContainingIgnoreCase(@Param("name") String name);
+    
     List<User> findByRegistrationStatus(RegistrationStatus registrationStatus);
-
-    List<User> findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus registrationStatus,
-                                                         String role);
-
-    List<User> findByNameContainingIgnoreCaseAndRegistrationStatusAndRoleIgnoreCase(
-            String name,
-            RegistrationStatus registrationStatus,
-            String role);
-
-    List<User> findByEmailContainingIgnoreCaseAndRegistrationStatusAndRoleIgnoreCase(
-            String email,
-            RegistrationStatus registrationStatus,
-            String role);
-
-    /* ---------- search helpers for approved customers ---------- */
-    @Query("""
-           SELECT u FROM User u
-           WHERE (LOWER(u.name)  LIKE LOWER(CONCAT('%', :term, '%'))
-               OR LOWER(u.email) LIKE LOWER(CONCAT('%', :term, '%')))
-             AND u.registrationStatus = com.bankapp.model.enums.RegistrationStatus.APPROVED
-             AND LOWER(u.role) = LOWER('customer')
-           """)
-    List<User> findApprovedCustomersBySearchTerm(@Param("term") String term);
-
-    @Query("""
-           SELECT u FROM User u
-           WHERE (:name  IS NULL OR LOWER(u.name)  LIKE LOWER(CONCAT('%', :name,  '%')))
-             AND (:email IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%')))
-             AND u.registrationStatus = com.bankapp.model.enums.RegistrationStatus.APPROVED
-             AND LOWER(u.role) = LOWER(:role)
-           """)
-    List<User> searchApprovedByNameEmailAndRole(@Param("name")  String name,
-                                                @Param("email") String email,
-                                                @Param("role")  String role);
-}
+    List<User> findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus registrationStatus, String role);
+}// test for merge

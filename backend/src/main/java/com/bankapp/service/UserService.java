@@ -93,4 +93,4 @@ public class UserService {
         }
         user.setRegistrationStatus(RegistrationStatus.APPROVED);
     }
-}
+}// test for merge ?

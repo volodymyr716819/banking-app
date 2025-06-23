@@ -1,6 +1,17 @@
 <template>
   <div class="transaction-history">
     <div class="filters-container">
+      <!-- Employee-only customer selection -->
+      <div v-if="auth.user.role === 'EMPLOYEE'" class="filter-section">
+        <label>Customer:</label>
+        <select v-model="selectedUserId">
+          <option value="">All Customers</option>
+          <option v-for="user in customerList" :key="user.id" :value="user.id">
+            {{ user.name }} ({{ user.email }})
+          </option>
+        </select>
+      </div>
+      // test for merge
       <div class="filter-section">
         <label>Transaction Type:</label>
         <select v-model="selectedTransactionType">
@@ -11,7 +22,6 @@
         </select>
       </div>
 
-      
       <div class="filter-section">
         <label>Date Range:</label>
         <div class="date-range-inputs">
@@ -61,7 +71,7 @@
       </div>
 
       <button
-        v-if="selectedTransactionType || startDate || endDate || minAmount || maxAmount"
+        v-if="isAnyFilterActive"
         @click="clearFilters"
         class="clear-filters-button"
       >
@@ -124,7 +134,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import api from '../lib/api';
 import { useAuthStore } from "../store/auth";
 
@@ -138,9 +148,40 @@ export default {
     const endDate = ref("");
     const minAmount = ref("");
     const maxAmount = ref("");
+    const selectedUserId = ref("");
+    const customerList = ref([]);
+
+    // check if any filter is active
+    const isAnyFilterActive = computed(() => {
+      return selectedTransactionType.value || 
+             startDate.value || 
+             endDate.value || 
+             minAmount.value || 
+             maxAmount.value || 
+             selectedUserId.value;
+    });
+
+    // Fetch customer list for employees only
+    const fetchCustomerList = async () => {
+      if (auth.user.role === 'EMPLOYEE') {
+        try {
+          const response = await api.get('/users/approved', {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
+          });
+          
+          if (response.data && Array.isArray(response.data)) {
+            customerList.value = response.data;
+          }
+        } catch (error) {
+          console.error("Error fetching customer list:", error);
+        }
+      }
+    };
 
     const fetchTransactions = async () => {
-      if (!auth.user || !auth.user.id) {
+      if (!auth.user) {
         message.value = "User information not available. Please log in again.";
         return;
       }
@@ -148,23 +189,28 @@ export default {
       message.value = "Loading transactions...";
 
       try {
-        // Create filter parameters
+        // Create filter parameters using the new format
         const params = new URLSearchParams();
         
-        // Add date filters if provided
+        // User ID filter (employee only)
+        if (selectedUserId.value) {
+          params.append('userId', selectedUserId.value);
+        }
+        
+        // Date filters
         if (startDate.value) params.append('startDate', startDate.value);
         if (endDate.value) params.append('endDate', endDate.value);
         
-        // Add amount filters if provided
+        // Amount filters
         if (minAmount.value && !isNaN(minAmount.value)) params.append('minAmount', minAmount.value);
         if (maxAmount.value && !isNaN(maxAmount.value)) params.append('maxAmount', maxAmount.value);
         
         // Build query string
         const queryString = params.toString() ? `?${params.toString()}` : '';
         
-        // Fetch transactions with filters
+        // Use the new unified endpoint
         const response = await api.get(
-          `/transactions/user/${auth.user.id}${queryString}`,
+          `/transactions/history${queryString}`,
           {
             headers: {
               Authorization: `Bearer ${auth.token}`,
@@ -207,11 +253,12 @@ export default {
     };
 
     onMounted(() => {
+      fetchCustomerList();
       fetchTransactions();
     });
     
     // Watch for changes in filter parameters and refetch data from server
-    watch([startDate, endDate, minAmount, maxAmount], () => {
+    watch([startDate, endDate, minAmount, maxAmount, selectedUserId], () => {
       fetchTransactions();
     });
 
@@ -221,40 +268,17 @@ export default {
       endDate.value = "";
       minAmount.value = "";
       maxAmount.value = "";
+      selectedUserId.value = "";
     };
 
     const getFilteredTransactions = () => {
       let result = transactions.value;
 
-      // Filter by transaction type
+      // Only apply client-side transaction type filtering
       if (selectedTransactionType.value) {
         result = result.filter(tx => tx.transactionType === selectedTransactionType.value);
       }
       
-      // Apply client-side date filters
-      if (startDate.value) {
-        const startDateObj = new Date(startDate.value);
-        startDateObj.setHours(0, 0, 0, 0); // Beginning of day
-        result = result.filter(tx => new Date(tx.timestamp) >= startDateObj);
-      }
-      
-      if (endDate.value) {
-        const endDateObj = new Date(endDate.value);
-        endDateObj.setHours(23, 59, 59, 999); // End of day
-        result = result.filter(tx => new Date(tx.timestamp) <= endDateObj);
-      }
-      
-      // Apply client-side amount filters
-      if (minAmount.value && !isNaN(minAmount.value)) {
-        const minVal = parseFloat(minAmount.value);
-        result = result.filter(tx => parseFloat(tx.amount) >= minVal);
-      }
-      
-      if (maxAmount.value && !isNaN(maxAmount.value)) {
-        const maxVal = parseFloat(maxAmount.value);
-        result = result.filter(tx => parseFloat(tx.amount) <= maxVal);
-      }
-
       return result;
     };
 
@@ -264,7 +288,7 @@ export default {
 
     const formatDate = (timestamp) => {
       const date = new Date(timestamp);
-      // Format: 'Jan 01, 2025 14:30'
+      
       return new Intl.DateTimeFormat("en-GB", {
         year: "numeric",
         month: "short",
@@ -297,6 +321,7 @@ export default {
     };
 
     return {
+      auth,
       selectedTransactionType,
       transactions,
       message,
@@ -311,6 +336,9 @@ export default {
       minAmount,
       maxAmount,
       clearFilters,
+      selectedUserId,
+      customerList,
+      isAnyFilterActive,
     };
   },
 };

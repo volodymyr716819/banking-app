@@ -43,4 +43,4 @@ public class AtmOperation {
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-}
+}// test for merge

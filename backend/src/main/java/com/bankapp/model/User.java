@@ -123,3 +123,4 @@ public class User {
         this.registrationStatus = RegistrationStatus.DECLINED;
     }
 }
+// test for merge

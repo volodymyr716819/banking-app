@@ -110,4 +110,4 @@ public class AtmOperationController {
     public ResponseEntity<?> getPinStatus(@RequestParam Long accountId) {
         return atmService.getPinStatus(accountId);
     }
-}
+}// test for merge
