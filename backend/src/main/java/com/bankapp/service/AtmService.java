@@ -1,4 +1,5 @@
 package com.bankapp.service;
+import java.util.Map;
 
 import com.bankapp.exception.InvalidPinException;
 import com.bankapp.exception.ResourceNotFoundException;
@@ -50,8 +51,8 @@ public class AtmService {
         CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
             .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
 
-        if (!pinHashUtil.verifyPin(new String(pin), cardDetails.getHashedPin())) {
-           throw new InvalidPinException("Invalid PIN provided");
+        if (!pinHashUtil.verifyPin(pin, cardDetails.getHashedPin())) {
+            throw new InvalidPinException("Invalid PIN provided");
         }
 
         if (!account.isApproved()) {
@@ -100,9 +101,15 @@ public class AtmService {
 
     // indicates whether a PIN has been created for the account
     public ResponseEntity<?> getPinStatus(Long accountId) {
-        boolean pinCreated = cardDetailsRepository.findByAccountId(accountId)
-                .map(CardDetails::isPinCreated)
-                .orElse(false);
-        return ResponseEntity.ok().body(java.util.Map.of("pinCreated", pinCreated));
+    if (accountId == null) {
+        return ResponseEntity.badRequest().body("Missing accountId");
     }
+
+    boolean pinCreated = cardDetailsRepository.findByAccountId(accountId)
+            .map(CardDetails::isPinCreated)
+            .orElse(false);
+
+    return ResponseEntity.ok().body(Map.of("pinCreated", pinCreated));
+}
+
 }

@@ -423,8 +423,8 @@ public class BankingStepDefinitions {
         Account toAccount = accountRepository.findById((long) toAccountId).orElseThrow();
 
         TransferRequest transferRequest = new TransferRequest();
-        transferRequest.setSenderIban(fromAccount.getIban());
-        transferRequest.setReceiverIban(toAccount.getIban());
+        transferRequest.setSenderIban(fromAccount.getIban().toCharArray());   
+        transferRequest.setReceiverIban(toAccount.getIban().toCharArray()); 
         transferRequest.setAmount(new BigDecimal(String.valueOf(amount)));
         transferRequest.setDescription(description);
 

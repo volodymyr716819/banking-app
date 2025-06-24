@@ -531,8 +531,7 @@ async function selectAccount() {
 
   try {
     // First check PIN status
-    const pinStatusRes = await api.get(
-      `/atm/pinStatus?accountId=${selectedAccountId.value}`,
+    const pinStatusRes = await api.get(`/pin/check/${selectedAccountId.value}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

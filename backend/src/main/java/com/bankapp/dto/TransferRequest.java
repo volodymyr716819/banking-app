@@ -1,29 +1,30 @@
+// File: com.bankapp.dto.TransferRequest.java
+
 package com.bankapp.dto;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 public class TransferRequest {
 
-    private String senderIban;
-    private String receiverIban;
+    private char[] senderIban;
+    private char[] receiverIban;
     private BigDecimal amount;
     private String description;
 
-    // Getters and Setters
-    
-    public String getSenderIban() {
+    public char[] getSenderIban() {
         return senderIban;
     }
-    
-    public void setSenderIban(String senderIban) {
+
+    public void setSenderIban(char[] senderIban) {
         this.senderIban = senderIban;
     }
-    
-    public String getReceiverIban() {
+
+    public char[] getReceiverIban() {
         return receiverIban;
     }
-    
-    public void setReceiverIban(String receiverIban) {
+
+    public void setReceiverIban(char[] receiverIban) {
         this.receiverIban = receiverIban;
     }
 
@@ -42,5 +43,10 @@ public class TransferRequest {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    // Clear sensitive data after use
+    public void clearIban() {
+        if (senderIban != null) Arrays.fill(senderIban, '0');
+        if (receiverIban != null) Arrays.fill(receiverIban, '0');
+    }
 }
-// test for merge

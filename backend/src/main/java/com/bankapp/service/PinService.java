@@ -38,10 +38,7 @@ public class PinService {
 
         cardDetailsRepository.deleteByAccountId(account.getId());
 
-        String pin = new String(pinChars);
-        Arrays.fill(pinChars, '0');
-
-        String hashedPin = pinHashUtil.hashPin(pin);
+        String hashedPin = pinHashUtil.hashPin(pinChars);
 
         CardDetails cardDetails = new CardDetails(account, hashedPin);
         cardDetails.setPinCreated(true);
@@ -56,10 +53,7 @@ public class PinService {
                 .orElseThrow(() -> new RuntimeException("PIN not set for this account"));
 
         char[] pinChars = pinRequest.getPin();
-        String pin = new String(pinChars);
-        Arrays.fill(pinChars, '0');
-
-        return pinHashUtil.verifyPin(pin, cardDetails.getHashedPin());
+        return pinHashUtil.verifyPin(pinChars, cardDetails.getHashedPin());
     }
 
     public void changePin(PinRequest pinRequest) {
@@ -74,16 +68,11 @@ public class PinService {
                 .filter(CardDetails::isPinCreated)
                 .orElseThrow(() -> new ResourceNotFoundException("PIN", "accountId", pinRequest.getAccountId()));
 
-        String oldPin = new String(oldPinChars);
-        String newPin = new String(newPinChars);
-        Arrays.fill(oldPinChars, '0');
-        Arrays.fill(newPinChars, '0');
-
-        if (!pinHashUtil.verifyPin(oldPin, cardDetails.getHashedPin())) {
+        if (!pinHashUtil.verifyPin(oldPinChars, cardDetails.getHashedPin())) {
             throw new InvalidPinException("Current PIN is incorrect");
         }
 
-        String newHashedPin = pinHashUtil.hashPin(newPin);
+        String newHashedPin = pinHashUtil.hashPin(newPinChars);
         cardDetails.setHashedPin(newHashedPin);
         cardDetails.setLastPinChanged(LocalDateTime.now());
 
