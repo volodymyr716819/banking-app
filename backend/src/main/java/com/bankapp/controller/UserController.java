@@ -1,6 +1,7 @@
 package com.bankapp.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -154,5 +157,28 @@ public class UserController {
         @RequestParam String name,
         Authentication authentication) {
         return userSearchService.searchUsersByName(name, authentication);
+    }
+    
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    @Operation(summary = "Update user information (EMPLOYEE only)")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "User updated successfully"),
+       @ApiResponse(responseCode = "400", description = "Update failed"),
+       @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, String> updates) {
+        try {
+            User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+            
+            if (updates.containsKey("name")) user.setName(updates.get("name"));
+            if (updates.containsKey("email")) user.setEmail(updates.get("email"));
+            
+            userRepository.save(user);
+            return ResponseEntity.ok("User updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

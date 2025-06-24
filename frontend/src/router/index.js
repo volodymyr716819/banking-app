@@ -15,6 +15,7 @@ import TransactionHistoryView from "../views/TransactionHistoryView.vue";
 import SearchCustomerView from "../views/SearchCustomerView.vue";
 import PinSettingsView from "../views/PinSettingsView.vue";
 import AwaitingApproval from "../views/AwaitingApproval.vue";
+import CustomersView from "../views/CustomersView.vue";
 
 import { useAuthStore } from "../store/auth";
 
@@ -70,6 +71,11 @@ const routes = [
       {
         path: "employee-transfer",
         component: EmployeeTransferView,
+        meta: { requiresRole: "employee" },
+      },
+      {
+        path: "customers",
+        component: CustomersView,
         meta: { requiresRole: "employee" },
       },
     ],

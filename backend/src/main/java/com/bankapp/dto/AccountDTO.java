@@ -12,6 +12,7 @@ public class AccountDTO {
     private String iban;
     private String formattedIban;
     private String ownerName;
+    private String ownerEmail;
     private boolean approved;
     private boolean closed;
 
@@ -21,7 +22,8 @@ public class AccountDTO {
 
     // optional constructor for convenience
     public AccountDTO(Long id, String type, BigDecimal balance, BigDecimal dailyLimit, BigDecimal absoluteLimit,
-            Long userId, String iban, String formattedIban, String ownerName, boolean approved, boolean closed) {
+            Long userId, String iban, String formattedIban, String ownerName, String ownerEmail, 
+            boolean approved, boolean closed) {
         this.id = id;
         this.type = type;
         this.balance = balance;
@@ -31,6 +33,7 @@ public class AccountDTO {
         this.iban = iban;
         this.formattedIban = formattedIban;
         this.ownerName = ownerName;
+        this.ownerEmail = ownerEmail;
         this.approved = approved;
         this.closed = closed;
     }
@@ -105,6 +108,14 @@ public class AccountDTO {
 
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
+    }
+    
+    public String getOwnerEmail() {
+        return ownerEmail;
+    }
+
+    public void setOwnerEmail(String ownerEmail) {
+        this.ownerEmail = ownerEmail;
     }
 
     public boolean isApproved() {

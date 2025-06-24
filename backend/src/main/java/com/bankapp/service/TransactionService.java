@@ -260,6 +260,11 @@ public class TransactionService {
         if (receiverOpt.isEmpty()) {
             throw new IllegalArgumentException("Receiver account not found");
         }
+        
+        // After getting sender and receiver accounts
+        if (senderOpt.get().getId().equals(receiverOpt.get().getId())) {
+            throw new IllegalArgumentException("Cannot transfer to the same account");
+        }
 
         // Delegate to ID-based logic
         transferMoney(senderOpt.get().getId(), receiverOpt.get().getId(), amount, description);
@@ -268,6 +273,11 @@ public class TransactionService {
     // Handles transferring money from one account to another (by ID)
     @Transactional
     public void transferMoney(Long senderAccountId, Long receiverAccountId, BigDecimal amount, String description) {
+        // Prevent self-transfer
+        if (senderAccountId.equals(receiverAccountId)) {
+            throw new IllegalArgumentException("Cannot transfer to the same account");
+        }
+        
         // Must be a positive amount
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be greater than zero");

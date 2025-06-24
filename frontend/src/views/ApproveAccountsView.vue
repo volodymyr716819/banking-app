@@ -10,10 +10,10 @@
             <th>Account ID</th>
             <th>IBAN</th>
             <th>Type</th>
-            <th>User Info</th>
+            <th>User Email</th>
             <th>Balance</th>
-            <th>Created Date</th>
-            <th>Action</th>
+            <th>Created</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -21,11 +21,7 @@
             <td>{{ account.id }}</td>
             <td class="iban-cell">{{ formatIban(account.iban) }}</td>
             <td>{{ account.type }}</td>
-            <td class="user-info-cell">
-              <div><strong>ID:</strong> {{ account.userId }}</div>
-              <div v-if="account.userName"><strong>Name:</strong> {{ account.userName }}</div>
-              <div v-if="account.userEmail"><strong>Email:</strong> {{ account.userEmail }}</div>
-            </td>
+            <td>{{ account.ownerEmail }}</td>
             <td>€{{ account.balance ? account.balance.toFixed(2) : '0.00' }}</td>
             <td>{{ formatDate(account.createdAt) }}</td>
             <td>

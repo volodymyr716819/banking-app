@@ -48,8 +48,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="tx in transactions" :key="tx.transactionId">
-          <td>{{ tx.transactionType }}</td>
+        <tr v-for="tx in transactions" :key="tx.transactionId" :class="'tx-type-' + tx.transactionType.toLowerCase()">
+          <td :data-type="tx.transactionType">{{ tx.transactionType }}</td>
           <td>{{ tx.fromAccountIban || '-' }}</td>
           <td>{{ tx.toAccountIban || '-' }}</td>
           <td>€{{ tx.amount }}</td>
@@ -146,14 +146,26 @@ watch([selectedUserId, startDate, endDate, minAmount, maxAmount], fetchTransacti
 </script>
 
 <style scoped>
+.transaction-history {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+h1 {
+  color: #2c3e50;
+  margin-bottom: 2rem;
+}
+
 .filters {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: #f5f5f5;
+  background: #f8f9fa;
+  padding: 1.5rem;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
 }
 
 .filter {
@@ -162,46 +174,125 @@ watch([selectedUserId, startDate, endDate, minAmount, maxAmount], fetchTransacti
   gap: 0.5rem;
 }
 
+.filter label {
+  font-weight: 600;
+  color: #495057;
+  margin-right: 0.5rem;
+}
+
 .filter input, .filter select {
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid #ced4da;
   border-radius: 4px;
+  background: white;
+}
+
+.filter input:focus, .filter select:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(43,108,176,0.1);
 }
 
 .clear-btn {
   background: #dc3545;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.clear-btn:hover {
+  background: #c82333;
 }
 
 .error {
-  color: #dc3545;
-  margin: 1rem 0;
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
 }
 
 .transaction-table {
   width: 100%;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-collapse: collapse;
 }
 
-.transaction-table th,
-.transaction-table td {
-  padding: 0.75rem;
+.transaction-table th {
+  background: #2b6cb0;
+  color: white;
+  padding: 1rem;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  font-weight: 600;
 }
 
-.transaction-table th {
+.transaction-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  text-align: left;
+}
+
+.transaction-table tr:hover {
   background: #f8f9fa;
-  font-weight: bold;
+}
+
+.transaction-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Transaction type colors */
+tr td:first-child {
+  font-weight: 600;
+}
+
+.tx-type-transfer {
+  border-left: 4px solid #17a2b8;
+}
+
+.tx-type-deposit {
+  border-left: 4px solid #28a745;
+}
+
+.tx-type-withdraw {
+  border-left: 4px solid #dc3545;
 }
 
 .no-data {
+  background: #f8f9fa;
+  padding: 3rem;
   text-align: center;
-  color: #666;
-  margin: 2rem 0;
+  border-radius: 8px;
+  color: #6c757d;
+}
+
+@media (max-width: 768px) {
+  .transaction-history {
+    padding: 1rem;
+  }
+  
+  .filters {
+    flex-direction: column;
+  }
+  
+  .filter {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  .transaction-table {
+    font-size: 0.875rem;
+  }
+  
+  .transaction-table th,
+  .transaction-table td {
+    padding: 0.5rem;
+  }
 }
 </style>

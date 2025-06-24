@@ -53,6 +53,7 @@ public class AccountController {
         dto.setIban(account.getIban());
         dto.setFormattedIban(account.getFormattedIban());
         dto.setOwnerName(account.getUser().getName());
+        dto.setOwnerEmail(account.getUser().getEmail());
         return dto;
     }
 
