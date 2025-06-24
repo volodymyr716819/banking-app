@@ -18,11 +18,13 @@ public class UserSearchService {
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     
+    // Constructor injection for dependencies
     public UserSearchService(UserRepository userRepository, AccountRepository accountRepository) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
     }
 
+    // Main search method - finds users by name with security checks
     public List<UserSearchResultDTO> searchUsersByName(String name, Authentication authentication) {
         validateAuth(authentication);
         validateInput(name);
@@ -33,18 +35,21 @@ public class UserSearchService {
             .collect(Collectors.toList());
     }
     
+    // Ensures user is authenticated before searching
     private void validateAuth(Authentication authentication) {
         if (authentication == null || userRepository.findByEmail(authentication.getName()).isEmpty()) {
             throw new IllegalArgumentException("User not authenticated");
         }
     }
     
+    // Validates search input is not empty
     private void validateInput(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Name search parameter is required");
         }
     }
     
+    // Filters for only approved customers (excludes pending/rejected users)
     private List<User> findApprovedCustomers(String name) {
         List<User> allUsers = userRepository.findByNameContainingIgnoreCase(name.trim());
         return allUsers.stream()
@@ -53,7 +58,9 @@ public class UserSearchService {
             .collect(Collectors.toList());
     }
     
+    // Converts User entity to DTO with active account IBANs
     private UserSearchResultDTO toDTO(User user) {
+        // Get only approved and open accounts for the user
         List<String> ibans = accountRepository.findByUserId(user.getId()).stream()
             .filter(Account::isApproved)
             .filter(account -> !account.isClosed())

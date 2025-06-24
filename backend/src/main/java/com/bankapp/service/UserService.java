@@ -86,8 +86,7 @@ public class UserService {
             if (userOpt.isEmpty()) return Optional.empty();
 
             User user = userOpt.get();
-            // We don't throw an exception for unapproved accounts anymore
-            // The frontend will handle limiting access based on approval status
+           
             
             return Optional.of(user);
         }
