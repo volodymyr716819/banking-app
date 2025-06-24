@@ -19,8 +19,8 @@
             <td>{{ user.email }}</td>
             <td>{{ user.role }}</td>
             <td>
-              <button class="edit-btn" disabled>Edit</button>
-              <button class="delete-btn" disabled>Delete</button>
+              <button class="edit-btn" >Edit</button>
+              <button class="delete-btn" >Delete</button>
             </td>
           </tr>
         </tbody>
