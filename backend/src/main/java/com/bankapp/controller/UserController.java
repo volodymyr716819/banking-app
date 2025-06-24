@@ -35,8 +35,6 @@ import com.bankapp.repository.UserRepository;
 import com.bankapp.service.AccountService;
 import com.bankapp.service.UserService;
 import com.bankapp.service.UserSearchService;
-import com.bankapp.repository.AccountRepository;
-import com.bankapp.model.Account;
 
 @RestController
 @RequestMapping("/api/users")
