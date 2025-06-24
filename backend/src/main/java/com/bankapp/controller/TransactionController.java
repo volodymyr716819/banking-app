@@ -40,12 +40,7 @@ public class TransactionController {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Retrieves transaction history with role-based access control.
-     * Employees can view all transactions across all accounts in the system.
-     * Customers can only view transactions for their own accounts.
-     * Accepts filter parameters like date range, account ID, and transaction type.
-     */
+    
     @Operation(summary = "Get filtered transaction history")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Transaction history retrieved successfully"),
@@ -55,12 +50,11 @@ public class TransactionController {
     })
     @GetMapping("/history")
     public ResponseEntity<?> getTransactionHistory(
-        @ModelAttribute TransactionFilterRequest filters,
+        @ModelAttribute TransactionFilterRequest filters,// Spring automatically fills this from URL params
         Authentication authentication) {
         
         try {
-            // Extract user email from JWT token and look up user in database
-            // The authentication.getName() method returns the email from the JWT token
+            // Find the logged-in user
             Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
@@ -77,11 +71,10 @@ public class TransactionController {
             // Return the list of transactions as a successful HTTP response
             return ResponseEntity.ok(transactions);
         } catch (IllegalArgumentException e) {
-            // This exception is thrown when a customer tries to access transactions
-            // from accounts they don't own
+           // Customer tried to view someone else's transactions
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
-            // Catches any unexpected errors like database connection issues
+           // database errors,or another problenm 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error retrieving transactions: " + e.getMessage());
         }
@@ -102,24 +95,11 @@ public class TransactionController {
     @PostMapping("/transfer")
     public ResponseEntity<?> transferMoney(@RequestBody TransferRequest transferRequest) {
         try {
-            // Process the transfer request through the transaction service
-            // The processTransfer method performs the following validations and actions:
-            // - Verifies the source account belongs to the authenticated user
-            // - Checks if the source account has sufficient balance for the transfer
-            // - Validates that daily and monthly transfer limits are not exceeded
-            // - Ensures both source and destination accounts exist and are active
-            // - Creates debit transaction for source account
-            // - Creates credit transaction for destination account
-            // - Updates balances for both accounts in a single database transaction
+           
             transactionService.processTransfer(transferRequest);
             return ResponseEntity.ok("Transfer completed successfully");
         } catch (IllegalArgumentException e) {
-            // This exception is thrown when validation fails, such as:
-            // - Insufficient funds in the source account
-            // - Invalid account numbers (non-existent accounts)
-            // - Transfer amount exceeds daily or monthly limits
-            // - Attempting to transfer from an account not owned by the user
-            // - Source or destination account is inactive or closed
+           
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             // Catches unexpected errors like database failures or network issues

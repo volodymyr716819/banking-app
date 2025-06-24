@@ -92,18 +92,20 @@ const fetchTransactions = async () => {
   error.value = '';
   
   try {
+    // Build URL parameters from filters
     const params = new URLSearchParams();
     if (selectedUserId.value) params.append('userId', selectedUserId.value);
     if (startDate.value) params.append('startDate', startDate.value);
     if (endDate.value) params.append('endDate', endDate.value);
     if (minAmount.value) params.append('minAmount', minAmount.value);
     if (maxAmount.value) params.append('maxAmount', maxAmount.value);
-    
+     
+    // Send GET request to backend
     const response = await api.get(`/transactions/history?${params}`, {
       headers: { Authorization: `Bearer ${auth.token}` }
     });
     
-    transactions.value = response.data;
+    transactions.value = response.data;// Store the results
   } catch (err) {
     error.value = err.response?.data || 'Failed to load transactions';
   } finally {
@@ -136,10 +138,10 @@ const clearFilters = () => {
 const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleDateString();
 };
-
+//When the page loads, two things happen automatically
 onMounted(() => {
-  fetchCustomerList();
-  fetchTransactions();
+  fetchCustomerList(); // Only for employees - gets list of all customers
+  fetchTransactions(); // Gets transactions based on current filters
 });
 
 watch([selectedUserId, startDate, endDate, minAmount, maxAmount], fetchTransactions);

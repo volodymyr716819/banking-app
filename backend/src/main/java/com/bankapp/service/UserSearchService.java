@@ -26,34 +26,36 @@ public class UserSearchService {
 
     // Main search method - finds users by name with security checks
     public List<UserSearchResultDTO> searchUsersByName(String name, Authentication authentication) {
-        validateAuth(authentication);
-        validateInput(name);
-        
-        List<User> filteredUsers = findApprovedCustomers(name);
-        return filteredUsers.stream()
-            .map(this::toDTO)
-            .collect(Collectors.toList());
-    }
+    validateAuth(authentication);    // Step 1: Check if user is logged in
+    validateInput(name);            // Step 2: Check if search term is valid
     
-    // Ensures user is authenticated before searching
+    List<User> filteredUsers = findApprovedCustomers(name);  // Step 3: Find users
+    return filteredUsers.stream()
+        .map(this::toDTO)           // Step 4: Convert to DTOs
+        .collect(Collectors.toList());
+}
+    
+    // Checks if authentication object exists and  user exists in database by email
     private void validateAuth(Authentication authentication) {
         if (authentication == null || userRepository.findByEmail(authentication.getName()).isEmpty()) {
             throw new IllegalArgumentException("User not authenticated");
         }
     }
     
-    // Validates search input is not empty
+    // Checks if name is not null and not just whitespace
     private void validateInput(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Name search parameter is required");
         }
     }
     
-    // Filters for only approved customers (excludes pending/rejected users)
+    // Searches database for users whose name contains the search term (case-insensitive)
     private List<User> findApprovedCustomers(String name) {
         List<User> allUsers = userRepository.findByNameContainingIgnoreCase(name.trim());
         return allUsers.stream()
+        // 1. Users with APPROVED status (not pending or rejected)
             .filter(user -> user.getRegistrationStatus() == RegistrationStatus.APPROVED)
+              // 2. Users with CUSTOMER role (not employees)
             .filter(user -> "CUSTOMER".equalsIgnoreCase(user.getRole()))
             .collect(Collectors.toList());
     }

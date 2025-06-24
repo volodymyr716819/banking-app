@@ -47,21 +47,26 @@ public class TransactionService {
         return applyFiltersAndSort(history, filters);
     }
 
-    // Resolve which user's data to query
+    // decide which user's data to query
     private Long resolveQueryUser(TransactionFilterRequest filters, User currentUser) {
         boolean isEmployee = "EMPLOYEE".equalsIgnoreCase(currentUser.getRole());
+       // If employee and they selected a specific customer
         if (isEmployee && filters.getUserId() != null) return filters.getUserId();
+         // If employee but no customer selected - return null (means all customers)
         if (isEmployee) return null;
+         // If customer - always return their own
         return currentUser.getId();
     }
 
-    // Get transactions + ATM operations for user
+    // Get transactions 
     private List<TransactionHistoryDTO> fetchUserTransactionHistory(Long userId) {
         List<TransactionHistoryDTO> result = new ArrayList<>();
         if (userId == null) {
+             // Employee viewing all transactions
             result.addAll(transactionRepository.findAll().stream().map(this::toTransactionDTO).toList());
             result.addAll(atmOperationRepository.findAll().stream().map(this::toAtmDTO).toList());
         } else {
+            // Specific user's transactions
             result.addAll(transactionRepository
                 .findByFromAccount_User_IdOrToAccount_User_Id(userId, userId)
                 .stream().map(this::toTransactionDTO).toList());
@@ -74,11 +79,15 @@ public class TransactionService {
 
     // Filter + sort descending by timestamp
     private List<TransactionHistoryDTO> applyFiltersAndSort(List<TransactionHistoryDTO> transactions, TransactionFilterRequest filters) {
+        // Parse date strings to DateTime objects
         LocalDateTime start = parseDate(filters.getStartDate(), true);
         LocalDateTime end = parseDate(filters.getEndDate(), false);
         return transactions.stream()
+         // Filter by date range
             .filter(tx -> isWithinRange(tx.getTimestamp(), start, end))
+            // Filter by amount range
             .filter(tx -> isWithinAmount(tx.getAmount(), filters.getMinAmount(), filters.getMaxAmount()))
+           // Sort newest first
             .sorted(Comparator.comparing(TransactionHistoryDTO::getTimestamp).reversed())
             .collect(Collectors.toList());
     }
@@ -146,7 +155,7 @@ public class TransactionService {
         saveTransaction(null, account, amount, "Deposit", TransactionType.DEPOSIT);
     }
 
-    // Convert transaction to DTO
+    // Convert transaction History to DTO
     private TransactionHistoryDTO toTransactionDTO(Transaction tx) {
         TransactionHistoryDTO dto = new TransactionHistoryDTO();
         dto.setTransactionId(tx.getId());
@@ -154,13 +163,13 @@ public class TransactionService {
         dto.setTimestamp(tx.getTimestamp());
         dto.setDescription(tx.getDescription());
         dto.setTransactionType(tx.getTransactionType().name());
-
+  // Sender info (if exists)
         if (tx.getFromAccount() != null) {
             dto.setSenderAccountId(tx.getFromAccount().getId());
             dto.setFromAccountIban(tx.getFromAccount().getIban());
-            dto.setFromAccountHolderName(Optional.ofNullable(tx.getFromAccount().getUser()).map(User::getName).orElse(""));
+            dto.setFromAccountHolderName(Optional.ofNullable(tx.getFromAccount().getUser()).map(User::getName).orElse(""));// Empty string if no user
         }
-
+// Receiver info
         if (tx.getToAccount() != null) {
             dto.setReceiverAccountId(tx.getToAccount().getId());
             dto.setToAccountIban(tx.getToAccount().getIban());
