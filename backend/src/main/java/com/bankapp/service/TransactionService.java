@@ -51,10 +51,21 @@ public class TransactionService {
 
     /** Get transaction history */
     public List<TransactionHistoryDTO> getTransactionHistory(TransactionFilterRequest filters, User currentUser) {
-        // Employees see all, customers see only their own
-        List<TransactionHistoryDTO> results = currentUser.getRole().equalsIgnoreCase("EMPLOYEE") 
-            ? getAllTransactions() 
-            : getUserTransactions(currentUser.getId());
+        List<TransactionHistoryDTO> results;
+        boolean isEmployee = currentUser.getRole().equalsIgnoreCase("EMPLOYEE");
+        
+        // Check if employee is filtering by specific user
+        if (isEmployee && filters.getUserId() != null) {
+            results = getUserTransactions(filters.getUserId());
+        }
+        // Employee with no filters - show all
+        else if (isEmployee) {
+            results = getAllTransactions();
+        }
+        // Customer - show only their own
+        else {
+            results = getUserTransactions(currentUser.getId());
+        }
         
         return applyFilters(results, filters);
     }
