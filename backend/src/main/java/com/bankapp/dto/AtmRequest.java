@@ -1,5 +1,6 @@
 package com.bankapp.dto;
 import com.bankapp.model.AtmOperation.OperationType;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import java.math.BigDecimal;
 
@@ -31,8 +32,16 @@ public class AtmRequest {
         return pin;
     }
 
+    // Accept both string and char array for PIN
     public void setPin(char[] pin) {
         this.pin = pin;
+    }
+    
+    @JsonSetter("pin")
+    public void setPin(String pinString) {
+        if (pinString != null) {
+            this.pin = pinString.toCharArray();
+        }
     }
 
     public OperationType getOperationType() {
@@ -41,5 +50,13 @@ public class AtmRequest {
 
     public void setOperationType(OperationType operationType) {
         this.operationType = operationType;
+    }
+    
+    // Accept string for operation type and convert to enum
+    @JsonSetter("operationType")
+    public void setOperationType(String operationTypeString) {
+        if (operationTypeString != null) {
+            this.operationType = OperationType.valueOf(operationTypeString.toUpperCase());
+        }
     }
 }

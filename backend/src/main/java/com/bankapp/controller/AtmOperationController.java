@@ -52,18 +52,18 @@ public class AtmOperationController {
     public ResponseEntity<?> getBalance(
             Authentication authentication,
             @RequestParam Long accountId,
-            @RequestParam(required = false) char[] pin) {
+            @RequestParam(required = false) String pin) {
         Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
         }
         
         // Check if PIN is provided for balance check
-        if (pin == null || pin.length == 0) {
+        if (pin == null || pin.trim().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("PIN is required for balance check");
         }
         
-        return atmService.getBalanceWithPin(accountId, pin);
+        return atmService.getBalanceWithPin(accountId, pin.toCharArray());
     }
 
     // returns PIN status (whether a PIN is set) for the authenticated user's account

@@ -105,6 +105,38 @@ public class AccountController {
         return ResponseEntity.ok(accounts);
     }
 
+    @GetMapping("/{accountId}/balance")
+    @Operation(summary = "Get account balance")
+    @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Balance retrieved"),
+       @ApiResponse(responseCode = "403", description = "Access denied"),
+       @ApiResponse(responseCode = "404", description = "Account not found")
+    })
+    public ResponseEntity<?> getAccountBalance(@PathVariable Long accountId, Authentication authentication) {
+        Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+        }
+
+        User currentUser = userOpt.get();
+        
+        // Find the account
+        Optional<Account> accountOpt = accountRepository.findById(accountId);
+        if (accountOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+        }
+        
+        Account account = accountOpt.get();
+        
+        // Check authorization: user owns the account OR user is an employee
+        if (!account.getUser().getId().equals(currentUser.getId()) && 
+            !currentUser.getRole().equalsIgnoreCase("employee")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+        }
+
+        return ResponseEntity.ok(account.getBalance());
+    }
+
     @PutMapping("/{accountId}")
     @Operation(summary = "Update account type or approval status")
     @ApiResponses({

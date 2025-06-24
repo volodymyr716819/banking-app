@@ -793,11 +793,12 @@ async function processTransaction() {
     previousBalance.value = balance.value;
 
     const res = await api.post(
-      `/atm/${operationType.value}`,
+      `/atm/operation`,
       {
         accountId: selectedAccountId.value,
         amount: enteredAmount.value,
         pin: verifiedPin.value,
+        operationType: operationType.value.toUpperCase()
       },
       {
         headers: {
