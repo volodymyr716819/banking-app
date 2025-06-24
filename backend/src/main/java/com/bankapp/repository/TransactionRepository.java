@@ -12,4 +12,3 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     
     List<Transaction> findByFromAccount_IdOrToAccount_Id(Long fromAccountId, Long toAccountId);
 }
-// test for merge

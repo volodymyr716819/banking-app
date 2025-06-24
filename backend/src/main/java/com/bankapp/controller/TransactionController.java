@@ -25,11 +25,13 @@ import com.bankapp.service.TransactionService;
 @RequestMapping("/api/transactions")
 public class TransactionController {
 
-    @Autowired
-    private TransactionService transactionService;
-
-    @Autowired
-    private UserRepository userRepository;
+    private final TransactionService transactionService;
+    private final UserRepository userRepository;
+    
+    public TransactionController(TransactionService transactionService, UserRepository userRepository) {
+        this.transactionService = transactionService;
+        this.userRepository = userRepository;
+    }
 
     // Get transaction history for customers and employees
     @GetMapping("/history")

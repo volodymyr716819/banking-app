@@ -13,15 +13,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import com.bankapp.util.IbanGenerator;
 
 @Service
 public class AccountService {
 
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
     
-    @Autowired
-    private UserRepository userRepository;
+    public AccountService(AccountRepository accountRepository, UserRepository userRepository) {
+        this.accountRepository = accountRepository;
+        this.userRepository = userRepository;
+    }
     
     /**
      * Creates a new account for a user
@@ -108,5 +111,12 @@ public class AccountService {
     public Account getAccountById(Long accountId) {
         return accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
+    }
+    
+    /**
+     * Generate IBAN for an account
+     */
+    public String generateIban(Account account) {
+        return IbanGenerator.generateIban(account.getId());
     }
 }

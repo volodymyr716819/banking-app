@@ -1,11 +1,9 @@
 package com.bankapp.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,10 +12,8 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,12 +23,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import com.bankapp.dto.UserDTO;
 import com.bankapp.dto.UserSearchResultDTO;
-import com.bankapp.model.Account;
+import com.bankapp.exception.UserNotFoundException;
 import com.bankapp.model.User;
 import com.bankapp.model.enums.RegistrationStatus;
-import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.UserRepository;
-import com.bankapp.model.enums.RegistrationStatus;
+import com.bankapp.service.AccountService;
 import com.bankapp.service.UserService;
 import com.bankapp.service.UserSearchService;
 
@@ -41,17 +36,22 @@ import com.bankapp.service.UserSearchService;
 @Tag(name = "User Management", description = "Endpoints for managing users and registration flow")
 public class UserController {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private UserSearchService userSearchService;
-
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private UserService userService;
+    private final UserRepository userRepository;
+    private final UserSearchService userSearchService;
+    private final AccountService accountService;
+    private final UserService userService;
+    
+    public UserController(
+        UserRepository userRepository,
+        UserSearchService userSearchService,
+        AccountService accountService,
+        UserService userService
+    ) {
+        this.userRepository = userRepository;
+        this.userSearchService = userSearchService;
+        this.accountService = accountService;
+        this.userService = userService;
+    }
 
     private UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
@@ -61,13 +61,6 @@ public class UserController {
         dto.setRole(user.getRole());
         dto.setApproved(user.isApproved());
         return dto;
-    }
-
-    private String generateIban(Account account) {
-        String countryCode = "NL";
-        String bankCode = "BANK";
-        String paddedId = String.format("%010d", account.getId());
-        return countryCode + bankCode + paddedId;
     }
 
     @Operation(summary = "Get all registered users")
@@ -86,10 +79,10 @@ public class UserController {
        @ApiResponse(responseCode = "404", description = "User not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        Optional<User> userOpt = userRepository.findById(id);
-        return userOpt.map(user -> ResponseEntity.ok(mapToDTO(user)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public UserDTO getUserById(@PathVariable Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
+        return mapToDTO(user);
     }
 
     @Operation(summary = "Delete a user by ID")
@@ -98,9 +91,9 @@ public class UserController {
        @ApiResponse(responseCode = "404", description = "User not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         if (!userRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            throw new UserNotFoundException("User not found with id: " + id);
         }
         userRepository.deleteById(id);
         return ResponseEntity.ok("User deleted.");
@@ -139,16 +132,7 @@ public class UserController {
         return userRepository.findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus.APPROVED, "CUSTOMER");
     }
 
-    @GetMapping("/find-by-name")
-    public ResponseEntity<?> searchUsersByName(@RequestParam String name, Authentication authentication) {
-        return searchCustomersByName(name, authentication);
-    }
-
-    @GetMapping("/find-by-email")
-    public ResponseEntity<?> searchUsersByEmail(@RequestParam String email, Authentication authentication) {
-        return ResponseEntity.badRequest().body("Email search is no longer supported. Please use name search instead.");
-    }
-
+   
     @PreAuthorize("hasRole('EMPLOYEE')")
     @Operation(summary = "Decline user registration (EMPLOYEE only)")
     @ApiResponses({
@@ -166,15 +150,9 @@ public class UserController {
     }
 
         @GetMapping("/search")
-    public ResponseEntity<?> searchCustomersByName(
+    public List<UserSearchResultDTO> searchCustomersByName(
         @RequestParam String name,
         Authentication authentication) {
-        
-        try {
-            List<UserSearchResultDTO> results = userSearchService.searchUsersByName(name, authentication);
-            return ResponseEntity.ok(results);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(ex.getMessage());
-        }
+        return userSearchService.searchUsersByName(name, authentication);
     }
 }

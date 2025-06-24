@@ -16,7 +16,6 @@ public class TransactionHistoryDTO {
     private BigDecimal amount;
     private LocalDateTime timestamp;
     private String description;
-    private String type; 
 
     public TransactionHistoryDTO() {}
 
@@ -108,11 +107,4 @@ public class TransactionHistoryDTO {
         this.description = description;
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
 }

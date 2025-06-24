@@ -14,7 +14,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.EnumType;
-import com.bankapp.model.enums.RegistrationStatus;
 
 @Entity
 @Table(name = "app_user")
@@ -56,7 +55,7 @@ public class User {
         this.email = email;
         this.password = password;
         this.bsn = bsn;
-        this.registrationStatus = RegistrationStatus.PENDING;
+        this.registrationStatus = registrationStatus;
         this.registrationDate = new java.util.Date();
     }
 
@@ -93,13 +92,8 @@ public class User {
         return registrationDate;
     }
 
-    public boolean isApproved(){
-        if (registrationStatus == RegistrationStatus.APPROVED) {
-            return true;
-        }
-        else{
-            return false;
-        }
+    public boolean isApproved() {
+        return registrationStatus == RegistrationStatus.APPROVED;
     }
 
     // Setters
