@@ -99,6 +99,29 @@ public class AtmService {
                 .orElse(ResponseEntity.status(404).body("Account not found or not approved"));
     }
 
+    // returns current balance if account is approved and PIN is valid
+    public ResponseEntity<?> getBalanceWithPin(Long accountId, char[] pin) {
+        try {
+            // First validate the PIN
+            CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
+            
+            if (!pinHashUtil.verifyPin(pin, cardDetails.getHashedPin())) {
+                throw new InvalidPinException("Invalid PIN provided");
+            }
+            
+            // If PIN is valid, return the balance
+            return accountRepository.findById(accountId)
+                    .filter(Account::isApproved)
+                    .<ResponseEntity<?>>map(account -> ResponseEntity.ok(account.getBalance()))
+                    .orElse(ResponseEntity.status(404).body("Account not found or not approved"));
+        } catch (InvalidPinException e) {
+            return ResponseEntity.status(400).body("Invalid PIN");
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
     // indicates whether a PIN has been created for the account
     public ResponseEntity<?> getPinStatus(Long accountId) {
     if (accountId == null) {
