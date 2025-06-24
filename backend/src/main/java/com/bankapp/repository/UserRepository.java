@@ -15,6 +15,7 @@ import com.bankapp.model.enums.RegistrationStatus;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     /* user lookup */
+    //  validates if the logged-in user exists
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.deleted = false")
     Optional<User> findByEmail(@Param("email") String email);
     

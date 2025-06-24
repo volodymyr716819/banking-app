@@ -52,7 +52,7 @@
         <span class="material-icons">close</span>
       </button>
     </div>
-
+// Template displays results
     <div v-if="searchResults.length > 0" class="results">
       <div class="results-header">
         <h2><span class="material-icons">people</span> Results</h2>
@@ -108,7 +108,6 @@
 import { ref } from 'vue';
 import { api } from '../api';
 import { useAuthStore } from '../store/auth';
-
 const auth = useAuthStore();
 const searchTerm = ref('');
 const searchResults = ref([]);
@@ -121,20 +120,23 @@ defineExpose({ __pageTitle: 'Find Customer' });
 
 // Search customers by name
 const searchCustomers = async () => {
+// First checks if search term is empty
   if (!searchTerm.value.trim()) {
     errorMessage.value = 'Please enter a search term';
     return;
   }
 
-  loading.value = true;
-  errorMessage.value = '';
-  searchPerformed.value = true;
+  // Sets UI states
+  loading.value = true;          // Shows loading spinner
+  errorMessage.value = '';        // Clears any previous errors
+  searchPerformed.value = true;   // Marks that a search was done
   
   try {
     const response = await api.get('/users/search', {
-      params: { name: searchTerm.value },
-      headers: { Authorization: `Bearer ${auth.token}` }
+      params: { name: searchTerm.value },// Sends search term as query parameter
+      headers: { Authorization: `Bearer ${auth.token}` }// Sends JWT token
     });
+    // If successful, results are stored
     searchResults.value = response.data;
   } catch (err) {
     if (err.response) {
