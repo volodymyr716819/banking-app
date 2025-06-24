@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
+import com.bankapp.dto.UpdateUserRequest;
 import com.bankapp.dto.UserDTO;
 import com.bankapp.dto.UserSearchResultDTO;
 import com.bankapp.exception.UserNotFoundException;
@@ -46,14 +47,13 @@ public class UserController {
     private final AccountService accountService;
     private final UserService userService;
     private final AccountRepository accountRepository;
-    
+
     public UserController(
-        UserRepository userRepository,
-        UserSearchService userSearchService,
-        AccountService accountService,
-        UserService userService,
-        AccountRepository accountRepository
-    ) {
+            UserRepository userRepository,
+            UserSearchService userSearchService,
+            AccountService accountService,
+            UserService userService,
+            AccountRepository accountRepository) {
         this.userRepository = userRepository;
         this.userSearchService = userSearchService;
         this.accountService = accountService;
@@ -83,8 +83,8 @@ public class UserController {
 
     @Operation(summary = "Get user by ID")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "Returns the user"),
-       @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "200", description = "Returns the user"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @GetMapping("/{id}")
     public UserDTO getUserById(@PathVariable Long id) {
@@ -96,26 +96,26 @@ public class UserController {
     @PreAuthorize("hasRole('EMPLOYEE')")
     @Operation(summary = "Delete a user by ID (EMPLOYEE only)")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "User deleted"),
-       @ApiResponse(responseCode = "400", description = "User has open accounts"),
-       @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "200", description = "User deleted"),
+            @ApiResponse(responseCode = "400", description = "User has open accounts"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
             User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-            
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
+
             // Check for open accounts
             List<Account> accounts = accountRepository.findByUserId(id);
             boolean hasOpenAccounts = accounts.stream()
-                .anyMatch(acc -> acc.isApproved() && !acc.isClosed());
-            
+                    .anyMatch(acc -> acc.isApproved() && !acc.isClosed());
+
             if (hasOpenAccounts) {
                 return ResponseEntity.badRequest()
-                    .body("Cannot delete user with open accounts. Close all accounts first.");
+                        .body("Cannot delete user with open accounts. Close all accounts first.");
             }
-            
+
             // Soft delete
             user.setDeleted(true);
             userRepository.save(user);
@@ -137,8 +137,8 @@ public class UserController {
     @PreAuthorize("hasRole('EMPLOYEE')")
     @Operation(summary = "Approve user by ID (EMPLOYEE only)")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "User approved"),
-       @ApiResponse(responseCode = "400", description = "Approval failed")
+            @ApiResponse(responseCode = "200", description = "User approved"),
+            @ApiResponse(responseCode = "400", description = "Approval failed")
     })
     @PostMapping("/{id}/approve")
     public ResponseEntity<?> approveUser(@PathVariable Long id) {
@@ -158,47 +158,40 @@ public class UserController {
         return userRepository.findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus.APPROVED, "CUSTOMER");
     }
 
-   
     @PreAuthorize("hasRole('EMPLOYEE')")
     @Operation(summary = "Decline user registration (EMPLOYEE only)")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "User declined"),
-       @ApiResponse(responseCode = "400", description = "Decline failed")
+            @ApiResponse(responseCode = "200", description = "User declined"),
+            @ApiResponse(responseCode = "400", description = "Decline failed")
     })
     @PostMapping("/{id}/decline")
     public ResponseEntity<?> declineUser(@PathVariable Long id) {
         try {
-           userService.declineUser(id);
-           return ResponseEntity.ok("User declined successfully.");
+            userService.declineUser(id);
+            return ResponseEntity.ok("User declined successfully.");
         } catch (RuntimeException e) {
-           return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-        @GetMapping("/search")
+    @GetMapping("/search")
     public List<UserSearchResultDTO> searchCustomersByName(
-        @RequestParam String name,
-        Authentication authentication) {
+            @RequestParam String name,
+            Authentication authentication) {
         return userSearchService.searchUsersByName(name, authentication);
     }
-    
+
     @PreAuthorize("hasRole('EMPLOYEE')")
     @Operation(summary = "Update user information (EMPLOYEE only)")
     @ApiResponses({
-       @ApiResponse(responseCode = "200", description = "User updated successfully"),
-       @ApiResponse(responseCode = "400", description = "Update failed"),
-       @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "200", description = "User updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Update failed"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, String> updates) {
+    public ResponseEntity<?> updateUser( @PathVariable Long id, @RequestBody UpdateUserRequest req) {
         try {
-            User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-            
-            if (updates.containsKey("name")) user.setName(updates.get("name"));
-            if (updates.containsKey("email")) user.setEmail(updates.get("email"));
-            
-            userRepository.save(user);
+            userService.updateUser(id, req);
             return ResponseEntity.ok("User updated successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

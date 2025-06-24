@@ -3,11 +3,13 @@ package com.bankapp.service;
 import com.bankapp.model.User;
 import com.bankapp.model.enums.RegistrationStatus;
 import com.bankapp.repository.UserRepository;
+import com.bankapp.dto.UpdateUserRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.bankapp.exception.UnapprovedAccountException;
+import com.bankapp.exception.UserNotFoundException;
 
 import java.util.Map;
 import java.util.Optional;
@@ -102,5 +104,15 @@ public class UserService {
             throw new RuntimeException("User is not pending");
         }
         user.setRegistrationStatus(RegistrationStatus.APPROVED);
+    }
+
+    public User updateUser(Long id, UpdateUserRequest req) {
+        User user = repo.findById(id)
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        user.setName(req.getName());
+        user.setEmail(req.getEmail());
+        
+        return user;
     }
 }
