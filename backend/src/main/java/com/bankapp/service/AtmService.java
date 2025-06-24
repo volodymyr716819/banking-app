@@ -9,11 +9,10 @@ import com.bankapp.repository.AccountRepository;
 import com.bankapp.repository.AtmOperationRepository;
 import com.bankapp.repository.CardDetailsRepository;
 import com.bankapp.util.PinHashUtil;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,136 +21,76 @@ import java.util.List;
 @Service
 public class AtmService {
 
-    @Autowired
-    private AccountRepository accountRepository;
-    
-    @Autowired
-    private CardDetailsRepository cardDetailsRepository;
-    
-    @Autowired
-    private AtmOperationRepository atmOperationRepository;
-    
-    @Autowired
-    private PinHashUtil pinHashUtil;
-    
-    /**
-     * Process a deposit to an account via ATM
-     * @param accountId the ID of the account to deposit to
-     * @param amount the amount to deposit
-     * @param pin the PIN for verification
-     * @return the ATM operation record
-     * @throws ResourceNotFoundException if the account is not found
-     * @throws InvalidPinException if the PIN is invalid
-     * @throws IllegalStateException if the account is not approved or is closed
-     * @throws IllegalArgumentException if the amount is zero or negative
-     */
+    @Autowired private AccountRepository accountRepository;
+    @Autowired private CardDetailsRepository cardDetailsRepository;
+    @Autowired private AtmOperationRepository atmOperationRepository;
+    @Autowired private PinHashUtil pinHashUtil;
+
+    // common method for both deposit and withdrawal, validates account, PIN, and sufficient funds before applying transaction
     @Transactional
-    public AtmOperation processDeposit(Long accountId, BigDecimal amount, String pin) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Deposit amount must be greater than zero");
-        }
-        
-        // Fetch and validate account existence
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
-        
-        // Fetch and verify PIN against stored hash
-        CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
-        
-        if (!pinHashUtil.verifyPin(pin, cardDetails.getHashedPin())) {
-            throw new InvalidPinException("Invalid PIN provided");
-        }
-        
-        // Check account status
-        if (!account.isApproved()) {
-            throw new IllegalStateException("Account is not approved for transactions");
-        }
-        
-        if (account.isClosed()) {
-            throw new IllegalStateException("Account is closed and cannot accept deposits");
-        }
-        
-        // Process deposit
-        account.setBalance(account.getBalance().add(amount));
-        accountRepository.save(account);
-        
-        // Create ATM operation record
-        AtmOperation operation = new AtmOperation();
-        operation.setAccount(account);
-        operation.setAmount(amount);
-        operation.setOperationType(AtmOperation.OperationType.DEPOSIT);
-        operation.setTimestamp(LocalDateTime.now());
-        
-        return atmOperationRepository.save(operation);
+    public AtmOperation performAtmOperation(Long accountId, BigDecimal amount, char[] pin, AtmOperation.OperationType type) {
+        ValidationContext context = validateAtmOperation(accountId, amount, pin, type);
+        return executeAtmOperation(context.account, amount, type);
     }
-    
-    /**
-     * Process a withdrawal from an account via ATM
-     * @param accountId the ID of the account to withdraw from
-     * @param amount the amount to withdraw
-     * @param pin the PIN for verification
-     * @return the ATM operation record
-     * @throws ResourceNotFoundException if the account is not found
-     * @throws InvalidPinException if the PIN is invalid
-     * @throws IllegalStateException if the account is not approved or is closed
-     * @throws IllegalArgumentException if the amount is zero or negative, or if the account has insufficient balance
-     */
-    @Transactional
-    public AtmOperation processWithdrawal(Long accountId, BigDecimal amount, String pin) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Withdrawal amount must be greater than zero");
-        }
-        
-        // Fetch and validate account existence
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
-        
-        // Fetch and verify PIN
-        CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
-        
-        if (!pinHashUtil.verifyPin(pin, cardDetails.getHashedPin())) {
-            throw new InvalidPinException("Invalid PIN provided");
-        }
-        
-        // Check account status
-        if (!account.isApproved()) {
-            throw new IllegalStateException("Account is not approved for transactions");
-        }
-        
-        if (account.isClosed()) {
-            throw new IllegalStateException("Account is closed and cannot process withdrawals");
-        }
-        
-        // Check for sufficient funds
-        if (account.getBalance().compareTo(amount) < 0) {
-            throw new IllegalArgumentException("Insufficient balance for withdrawal");
-        }
-        
-        // Process withdrawal
-        account.setBalance(account.getBalance().subtract(amount));
-        accountRepository.save(account);
-        
-        // Create ATM operation record
-        AtmOperation operation = new AtmOperation();
-        operation.setAccount(account);
-        operation.setAmount(amount);
-        operation.setOperationType(AtmOperation.OperationType.WITHDRAW);
-        operation.setTimestamp(LocalDateTime.now());
-        
-        return atmOperationRepository.save(operation);
-    }
-    
-    /**
-     * Get ATM operations for an account
-     * @param accountId the ID of the account to get operations for
-     * @return the list of ATM operations
-     */
+
+    // returns all ATM transactions for an account
     public List<AtmOperation> getAtmOperations(Long accountId) {
         return atmOperationRepository.findByAccount_Id(accountId);
     }
 
+    // validates account status, PIN, and balance rules, returns context with loaded and verified entities
+    private ValidationContext validateAtmOperation(Long accountId, BigDecimal amount, char[] pin, AtmOperation.OperationType type) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+           throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
+
+        CardDetails cardDetails = cardDetailsRepository.findByAccountId(accountId)
+            .orElseThrow(() -> new ResourceNotFoundException("CardDetails", "accountId", accountId));
+
+        if (!pinHashUtil.verifyPin(new String(pin), cardDetails.getHashedPin())) {
+           throw new InvalidPinException("Invalid PIN provided");
+        }
+
+        if (!account.isApproved()) {
+           throw new IllegalStateException("Account is not approved for transactions");
+        }
+
+        if (account.isClosed()) {
+           throw new IllegalStateException("Account is closed and cannot process transactions");
+        }
+
+        if (type == AtmOperation.OperationType.WITHDRAW && account.getBalance().compareTo(amount) < 0) {
+           throw new IllegalArgumentException("Insufficient balance for withdrawal");
+        }
+
+        return new ValidationContext(account, cardDetails);
+    }
+
+    // performs balance update and persists ATM operation
+    private AtmOperation executeAtmOperation(Account account, BigDecimal amount, AtmOperation.OperationType type) {
+        BigDecimal updatedBalance = (type == AtmOperation.OperationType.DEPOSIT)
+            ? account.getBalance().add(amount)
+            : account.getBalance().subtract(amount);
+
+        account.setBalance(updatedBalance);
+        accountRepository.save(account);
+
+        AtmOperation operation = new AtmOperation();
+        operation.setAccount(account);
+        operation.setAmount(amount);
+        operation.setOperationType(type);
+        operation.setTimestamp(LocalDateTime.now());
+
+        return atmOperationRepository.save(operation);
+    }
+
+    // internal holder to pass validated account & card as a pair
+    private record ValidationContext(Account account, CardDetails cardDetails) {}
+
+    // returns current balance if account is approved
     public ResponseEntity<?> getBalance(Long accountId) {
         return accountRepository.findById(accountId)
                 .filter(Account::isApproved)
@@ -159,9 +98,10 @@ public class AtmService {
                 .orElse(ResponseEntity.status(404).body("Account not found or not approved"));
     }
 
+    // indicates whether a PIN has been created for the account
     public ResponseEntity<?> getPinStatus(Long accountId) {
         boolean pinCreated = cardDetailsRepository.findByAccountId(accountId)
-                .map(card -> card.isPinCreated())
+                .map(CardDetails::isPinCreated)
                 .orElse(false);
         return ResponseEntity.ok().body(java.util.Map.of("pinCreated", pinCreated));
     }
