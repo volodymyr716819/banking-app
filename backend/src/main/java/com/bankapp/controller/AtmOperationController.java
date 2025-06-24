@@ -1,5 +1,3 @@
-// File: com.bankapp.controller.AtmOperationController.java
-
 package com.bankapp.controller;
 
 import com.bankapp.dto.AtmRequest;
@@ -19,9 +17,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @Tag(name = "ATM", description = "Endpoints for ATM operations: deposit, withdraw, balance, PIN status")
 public class AtmOperationController {
 
-    @Autowired
-    private AtmService atmService;
+    @Autowired private AtmService atmService;
 
+    // common endpoint for both deposit and withdrawal; uses authenticated user's accountId from JWT principal
     @Operation(summary = "Perform ATM operation (deposit/withdraw)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Operation successful"),
@@ -36,15 +34,17 @@ public class AtmOperationController {
         return ResponseEntity.ok("ATM operation successful");
     }
 
+    // returns current balance of the authenticated user's account
     @GetMapping("/balance")
     public ResponseEntity<?> getBalance(
             @AuthenticationPrincipal(expression = "accountId") Long accountId) {
         return atmService.getBalance(accountId);
     }
 
+    // returns PIN status (whether a PIN is set) for the authenticated user's account
     @GetMapping("/pinStatus")
     public ResponseEntity<?> getPinStatus(
             @AuthenticationPrincipal(expression = "accountId") Long accountId) {
         return atmService.getPinStatus(accountId);
     }
-} // <- class ends here correctly
+} 
