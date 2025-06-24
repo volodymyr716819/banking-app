@@ -542,17 +542,8 @@ async function selectAccount() {
     const pinStatus = pinStatusRes.data;
     pinCreated.value = pinStatus.pinCreated;
 
-    // Get balance
-    const balanceRes = await api.get(
-      `/atm/balance?accountId=${selectedAccountId.value}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    balance.value = balanceRes.data;
+    // Skip balance check during initial account selection
+    // Balance will be fetched after PIN verification
 
     // Route to appropriate state based on PIN status
     if (!pinCreated.value) {
@@ -608,6 +599,9 @@ async function createPin() {
     verifiedPin.value = pinValue.value;
     pinCreated.value = true;
 
+    // Fetch balance after PIN creation
+    await updateBalance();
+
     // Skip PIN verification since we just created it
     message.value = "PIN created successfully";
     atmState.value = "menu";
@@ -647,6 +641,10 @@ async function verifyPin() {
       // Keep pin value for ATM operations, don't clear it
       // Store the verified PIN in a separate variable
       verifiedPin.value = pinValue.value;
+      
+      // Fetch balance after PIN verification
+      await updateBalance();
+      
       atmState.value = "menu";
     } else {
       error.value = "Invalid PIN. Please try again.";
@@ -891,8 +889,12 @@ async function processTransaction() {
  */
 async function updateBalance() {
   try {
+    if (!verifiedPin.value) {
+      throw new Error("PIN not verified");
+    }
+
     const res = await api.get(
-      `/atm/balance?accountId=${selectedAccountId.value}`,
+      `/atm/balance?accountId=${selectedAccountId.value}&pin=${verifiedPin.value}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
