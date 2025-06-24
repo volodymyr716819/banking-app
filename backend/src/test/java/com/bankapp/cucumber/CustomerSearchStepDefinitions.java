@@ -81,7 +81,15 @@ public class CustomerSearchStepDefinitions {
             user.setEmail(customerData.get("email"));
             user.setPassword(passwordEncoder.encode("password123"));
             user.setRole(customerData.get("role"));
-            user.setRegistrationStatus(RegistrationStatus.APPROVED);
+            
+            // Set registration status from data
+            String regStatus = customerData.get("registration_status");
+            if ("PENDING".equals(regStatus)) {
+                user.setRegistrationStatus(RegistrationStatus.PENDING);
+            } else {
+                user.setRegistrationStatus(RegistrationStatus.APPROVED);
+            }
+            
             user = userRepository.save(user);
             testUsers.put(user.getEmail(), user);
 
@@ -169,6 +177,37 @@ public class CustomerSearchStepDefinitions {
                 }
             }
         }
+    }
+
+    @And("the search results should be empty")
+    public void theSearchResultsShouldBeEmpty() throws Exception {
+        String responseBody = lastResponse.getResponse().getContentAsString();
+        JsonNode results = objectMapper.readTree(responseBody);
+        
+        assertTrue(results.isArray(), "Results should be an array");
+        assertEquals(0, results.size(), "Expected empty results");
+    }
+
+    @And("the search results should include IBAN {string}")
+    public void theSearchResultsShouldIncludeIban(String expectedIban) throws Exception {
+        String responseBody = lastResponse.getResponse().getContentAsString();
+        JsonNode results = objectMapper.readTree(responseBody);
+        
+        boolean ibanFound = false;
+        if (results.isArray()) {
+            for (JsonNode result : results) {
+                if (result.has("ibans")) {
+                    JsonNode ibans = result.get("ibans");
+                    for (JsonNode iban : ibans) {
+                        if (expectedIban.equals(iban.asText())) {
+                            ibanFound = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        assertTrue(ibanFound, "Expected IBAN " + expectedIban + " not found in results");
     }
 
     private void setupSecurityContext(String email, String role) {
