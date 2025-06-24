@@ -284,7 +284,7 @@ public class BankingStepDefinitions {
     }
 
     //==============================
-    // Customer Approval
+    // Customer Approval (Panagiotis)
     //==============================
     
     @Given("there is a pending user with name {string} and email {string}")
