@@ -420,10 +420,11 @@ public class BankingStepDefinitions {
         }
         
         Account fromAccount = accounts.get(0);
+        Account toAccount = accountRepository.findById((long) toAccountId).orElseThrow();
 
         TransferRequest transferRequest = new TransferRequest();
-        transferRequest.setSenderAccountId(fromAccount.getId());
-        transferRequest.setReceiverAccountId((long) toAccountId);
+        transferRequest.setSenderIban(fromAccount.getIban());
+        transferRequest.setReceiverIban(toAccount.getIban());
         transferRequest.setAmount(new BigDecimal(String.valueOf(amount)));
         transferRequest.setDescription(description);
 
