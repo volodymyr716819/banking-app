@@ -43,17 +43,20 @@ public class UserController {
     private final UserSearchService userSearchService;
     private final AccountService accountService;
     private final UserService userService;
+    private final AccountRepository accountRepository;
     
     public UserController(
         UserRepository userRepository,
         UserSearchService userSearchService,
         AccountService accountService,
-        UserService userService
+        UserService userService,
+        AccountRepository accountRepository
     ) {
         this.userRepository = userRepository;
         this.userSearchService = userSearchService;
         this.accountService = accountService;
         this.userService = userService;
+        this.accountRepository = accountRepository;
     }
 
     private UserDTO mapToDTO(User user) {
@@ -88,18 +91,36 @@ public class UserController {
         return mapToDTO(user);
     }
 
-    @Operation(summary = "Delete a user by ID")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    @Operation(summary = "Delete a user by ID (EMPLOYEE only)")
     @ApiResponses({
        @ApiResponse(responseCode = "200", description = "User deleted"),
+       @ApiResponse(responseCode = "400", description = "User has open accounts"),
        @ApiResponse(responseCode = "404", description = "User not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("User not found with id: " + id);
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        try {
+            User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+            
+            // Check for open accounts
+            List<Account> accounts = accountRepository.findByUserId(id);
+            boolean hasOpenAccounts = accounts.stream()
+                .anyMatch(acc -> acc.isApproved() && !acc.isClosed());
+            
+            if (hasOpenAccounts) {
+                return ResponseEntity.badRequest()
+                    .body("Cannot delete user with open accounts. Close all accounts first.");
+            }
+            
+            // Soft delete
+            user.setDeleted(true);
+            userRepository.save(user);
+            return ResponseEntity.ok("User deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        userRepository.deleteById(id);
-        return ResponseEntity.ok("User deleted.");
     }
 
     @PreAuthorize("hasRole('EMPLOYEE')")

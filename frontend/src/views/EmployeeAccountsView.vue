@@ -5,26 +5,26 @@
       <table v-if="accounts.length" class="accounts-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Account ID</th>
+            <th>IBAN</th>
             <th>Type</th>
-            <th>Balance (€)</th>
-            <th>Daily Limit (€)</th>
-            <th>Absolute Limit (€)</th>
-            <th>User ID</th>
+            <th>User Email</th>
+            <th>Balance</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="acc in accounts" :key="acc.id">
             <td>{{ acc.id }}</td>
+            <td>{{ acc.iban }}</td>
             <td>{{ acc.type }}</td>
-            <td>{{ acc.balance.toFixed(2) }}</td>
-            <td>{{ acc.dailyLimit.toFixed(2) }}</td>
-            <td>{{ acc.absoluteLimit.toFixed(2) }}</td>
-            <td>{{ acc.userId }}</td>
+            <td>{{ acc.ownerEmail }}</td>
+            <td>€{{ acc.balance.toFixed(2) }}</td>
+            <td>{{ acc.closed ? 'Closed' : 'Active' }}</td>
             <td>
               <button class="edit-btn" @click="editAccount(acc)">Edit Limits</button>
-              <button class="close-btn" @click="closeAccount(acc.id)">Close</button>
+              <button v-if="!acc.closed" class="close-btn" @click="closeAccount(acc.id)">Close</button>
             </td>
           </tr>
         </tbody>
@@ -64,7 +64,7 @@
           Authorization: `Bearer ${auth.token}`
         }
       });
-      accounts.value = res.data.filter(account => !account.closed);
+      accounts.value = res.data;
     } catch (err) {
       console.error('Failed to fetch approved accounts:', err);
     }

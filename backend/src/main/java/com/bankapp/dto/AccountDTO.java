@@ -1,6 +1,7 @@
 package com.bankapp.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class AccountDTO {
     private Long id;
@@ -15,6 +16,7 @@ public class AccountDTO {
     private String ownerEmail;
     private boolean approved;
     private boolean closed;
+    private LocalDateTime createdDate;
 
 
     public AccountDTO() {
@@ -23,7 +25,7 @@ public class AccountDTO {
     // optional constructor for convenience
     public AccountDTO(Long id, String type, BigDecimal balance, BigDecimal dailyLimit, BigDecimal absoluteLimit,
             Long userId, String iban, String formattedIban, String ownerName, String ownerEmail, 
-            boolean approved, boolean closed) {
+            boolean approved, boolean closed, LocalDateTime createdDate) {
         this.id = id;
         this.type = type;
         this.balance = balance;
@@ -36,6 +38,7 @@ public class AccountDTO {
         this.ownerEmail = ownerEmail;
         this.approved = approved;
         this.closed = closed;
+        this.createdDate = createdDate;
     }
 
     public Long getId() {
@@ -132,6 +135,14 @@ public class AccountDTO {
 
     public void setClosed(boolean closed) {
         this.closed = closed;
+    }
+    
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+    
+    public void setCreatedDate(LocalDateTime createdDate) {
+        this.createdDate = createdDate;
     }
 }
 // test for merge

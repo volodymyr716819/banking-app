@@ -46,6 +46,9 @@ public class User {
     
     @Column(name = "registration_date")
     private java.util.Date registrationDate = new java.util.Date();
+    
+    @Column(name = "is_deleted")
+    private boolean deleted = false;
 
     public User() {
     }
@@ -139,5 +142,13 @@ public class User {
  
     public void decline() {
         this.registrationStatus = RegistrationStatus.DECLINED;
+    }
+    
+    public boolean isDeleted() { 
+        return deleted; 
+    }
+    
+    public void setDeleted(boolean deleted) { 
+        this.deleted = deleted; 
     }
 }

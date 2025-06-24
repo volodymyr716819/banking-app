@@ -23,7 +23,7 @@
             <td>{{ account.type }}</td>
             <td>{{ account.ownerEmail }}</td>
             <td>€{{ account.balance ? account.balance.toFixed(2) : '0.00' }}</td>
-            <td>{{ formatDate(account.createdAt) }}</td>
+            <td>{{ formatDate(account.createdDate) }}</td>
             <td>
               <button @click="approveAccount(account.id)" class="approve-button">Approve</button>
             </td>
@@ -49,15 +49,9 @@
     return iban.replace(/(.{4})/g, "$1 ").trim();
   };
   
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown';
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${day} ${month} ${year} at ${hours}:${minutes}`;
+  const formatDate = (date) => {
+    if (!date) return 'Not available';
+    return new Date(date).toLocaleDateString();
   };
   
   const fetchPendingAccounts = async () => {

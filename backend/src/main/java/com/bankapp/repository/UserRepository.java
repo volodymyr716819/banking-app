@@ -15,13 +15,18 @@ import com.bankapp.model.enums.RegistrationStatus;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     /* user lookup */
-    Optional<User> findByEmail(String email);
+    @Query("SELECT u FROM User u WHERE u.email = :email AND u.deleted = false")
+    Optional<User> findByEmail(@Param("email") String email);
     
-    Optional<User> findByBsn(String bsn);
+    @Query("SELECT u FROM User u WHERE u.bsn = :bsn AND u.deleted = false")
+    Optional<User> findByBsn(@Param("bsn") String bsn);
   
-    @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    @Query("SELECT u FROM User u WHERE u.deleted = false AND LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<User> findByNameContainingIgnoreCase(@Param("name") String name);
     
-    List<User> findByRegistrationStatus(RegistrationStatus registrationStatus);
-    List<User> findByRegistrationStatusAndRoleIgnoreCase(RegistrationStatus registrationStatus, String role);
+    @Query("SELECT u FROM User u WHERE u.deleted = false AND u.registrationStatus = :status")
+    List<User> findByRegistrationStatus(@Param("status") RegistrationStatus registrationStatus);
+    
+    @Query("SELECT u FROM User u WHERE u.deleted = false AND u.registrationStatus = :status AND LOWER(u.role) = LOWER(:role)")
+    List<User> findByRegistrationStatusAndRoleIgnoreCase(@Param("status") RegistrationStatus status, @Param("role") String role);
 }
