@@ -1,4 +1,5 @@
 package com.bankapp.dto;
+import com.bankapp.model.AtmOperation.OperationType;
 
 import java.math.BigDecimal;
 
@@ -6,7 +7,8 @@ public class AtmRequest {
 
     private Long accountId;
     private BigDecimal amount;
-    private String pin; // Added PIN for verification
+    private char[] pin;
+    private OperationType operationType;
 
     // Getters and Setters
     public Long getAccountId() {
@@ -25,11 +27,19 @@ public class AtmRequest {
         this.amount = amount;
     }
     
-    public String getPin() {
+    public char[] getPin() {
         return pin;
     }
-    
-    public void setPin(String pin) {
+
+    public void setPin(char[] pin) {
         this.pin = pin;
+    }
+
+    public OperationType getOperationType() {
+        return operationType;
+    }
+
+    public void setOperationType(OperationType operationType) {
+        this.operationType = operationType;
     }
 }

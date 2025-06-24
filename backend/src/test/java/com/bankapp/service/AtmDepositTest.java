@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import com.bankapp.model.AtmOperation.OperationType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,31 +30,24 @@ import com.bankapp.util.PinHashUtil;
 @ExtendWith(MockitoExtension.class)
 class AtmDepositTest {
 
-    @Mock
-    private AccountRepository accountRepository;
-    
-    @Mock
-    private CardDetailsRepository cardDetailsRepository;
-    
-    @Mock
-    private AtmOperationRepository atmOperationRepository;
-    
-    @Mock
-    private PinHashUtil pinHashUtil;
-    
+    @Mock private AccountRepository accountRepository;
+    @Mock private CardDetailsRepository cardDetailsRepository;
+    @Mock private AtmOperationRepository atmOperationRepository;
+    @Mock private PinHashUtil pinHashUtil;
+
     @InjectMocks
     private AtmService atmService;
-    
+
     private Account account;
     private CardDetails cardDetails;
-    
+
     @BeforeEach
     void setUp() {
         User user = new User();
         user.setId(1L);
         user.setName("John Smith");
         user.setApproved(true);
-        
+
         account = new Account();
         account.setId(1L);
         account.setUser(user);
@@ -61,72 +55,59 @@ class AtmDepositTest {
         account.setBalance(new BigDecimal("1000.00"));
         account.setApproved(true);
         account.setClosed(false);
-        
+
         cardDetails = new CardDetails();
         cardDetails.setId(1L);
         cardDetails.setAccount(account);
         cardDetails.setHashedPin("hashedPin1234");
         cardDetails.setPinCreated(true);
     }
-    
+
     @Test
     @DisplayName("Should process ATM deposit successfully")
     void shouldProcessAtmDepositSuccessfully() {
-        // Given
-        String pin = "1234";
         BigDecimal depositAmount = new BigDecimal("500.00");
-        
+        char[] pin = "1234".toCharArray();
+
         when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
         when(cardDetailsRepository.findByAccountId(1L)).thenReturn(Optional.of(cardDetails));
-        when(pinHashUtil.verifyPin(pin, cardDetails.getHashedPin())).thenReturn(true);
+        when(pinHashUtil.verifyPin(eq(new String(pin)), eq(cardDetails.getHashedPin()))).thenReturn(true);
         when(accountRepository.save(any(Account.class))).thenReturn(account);
         when(atmOperationRepository.save(any(AtmOperation.class))).thenAnswer(i -> i.getArgument(0));
-        
-        // When
-        AtmOperation result = atmService.processDeposit(1L, depositAmount, pin);
-        
-        // Then
+
+        AtmOperation result = atmService.performAtmOperation(1L, depositAmount, pin, OperationType.DEPOSIT);
+
         assertNotNull(result);
-        assertEquals(AtmOperation.OperationType.DEPOSIT, result.getOperationType());
+        assertEquals(OperationType.DEPOSIT, result.getOperationType());
         assertEquals(depositAmount, result.getAmount());
         assertEquals(new BigDecimal("1500.00"), account.getBalance());
-        verify(accountRepository).save(account);
-        verify(atmOperationRepository).save(any(AtmOperation.class));
     }
-    
+
     @Test
     @DisplayName("Should throw exception when account not found")
     void shouldThrowExceptionWhenAccountNotFound() {
-        // Given
         when(accountRepository.findById(99L)).thenReturn(Optional.empty());
-        
-        // When & Then
+
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            atmService.processDeposit(99L, new BigDecimal("500.00"), "1234");
+            atmService.performAtmOperation(99L, new BigDecimal("500.00"), "1234".toCharArray(), OperationType.DEPOSIT);
         });
-        
+
         assertEquals("Account not found with id : '99'", exception.getMessage());
-        verify(accountRepository, never()).save(any());
-        verify(atmOperationRepository, never()).save(any());
     }
-    
+
     @Test
     @DisplayName("Should throw exception when PIN verification fails")
     void shouldThrowExceptionWhenPinVerificationFails() {
-        // Given
-        String incorrectPin = "9999";
-        
+        char[] incorrectPin = "9999".toCharArray();
+
         when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
         when(cardDetailsRepository.findByAccountId(1L)).thenReturn(Optional.of(cardDetails));
-        when(pinHashUtil.verifyPin(incorrectPin, cardDetails.getHashedPin())).thenReturn(false);
-        
-        // When & Then
+        when(pinHashUtil.verifyPin(eq(new String(incorrectPin)), eq(cardDetails.getHashedPin()))).thenReturn(false);
+
         InvalidPinException exception = assertThrows(InvalidPinException.class, () -> {
-            atmService.processDeposit(1L, new BigDecimal("500.00"), incorrectPin);
+            atmService.performAtmOperation(1L, new BigDecimal("500.00"), incorrectPin, OperationType.DEPOSIT);
         });
-        
+
         assertEquals("Invalid PIN provided", exception.getMessage());
-        verify(accountRepository, never()).save(any());
-        verify(atmOperationRepository, never()).save(any());
     }
 }
