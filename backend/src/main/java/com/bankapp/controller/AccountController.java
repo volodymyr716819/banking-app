@@ -54,6 +54,7 @@ public class AccountController {
         dto.setFormattedIban(account.getFormattedIban());
         dto.setOwnerName(account.getUser().getName());
         dto.setOwnerEmail(account.getUser().getEmail());
+        dto.setCreatedDate(account.getCreatedDate());
         return dto;
     }
 
@@ -196,7 +197,7 @@ public class AccountController {
         return ResponseEntity.ok("Account approved successfully.");
     }
 
-       @Operation(summary = "Get all approved and open accounts (employee only)")
+       @Operation(summary = "Get all approved accounts including closed ones (employee only)")
        @ApiResponses({
        @ApiResponse(responseCode = "200", description = "Approved accounts retrieved")
     })
@@ -204,7 +205,6 @@ public class AccountController {
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<List<AccountDTO>> getApprovedAccounts() {
         List<AccountDTO> accounts = accountRepository.findByApprovedTrue().stream()
-                .filter(account -> !account.isClosed())
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
 

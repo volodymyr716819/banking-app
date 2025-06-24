@@ -24,6 +24,9 @@ public class Account {
     private BigDecimal balance;
     private boolean approved = false;
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @Column(name = "created_date")
+    private LocalDateTime createdDate = LocalDateTime.now();
 
     @Column(nullable = false)
     private BigDecimal dailyLimit = BigDecimal.ZERO;
@@ -83,6 +86,10 @@ public class Account {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
     }
 
     public BigDecimal getAbsoluteLimit() {
