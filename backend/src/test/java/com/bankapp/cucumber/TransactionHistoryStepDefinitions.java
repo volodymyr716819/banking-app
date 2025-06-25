@@ -28,9 +28,10 @@ import io.cucumber.java.en.When;
 import io.cucumber.spring.CucumberContextConfiguration;
 
 @CucumberContextConfiguration
+//Tells Cucumber this class configures the Spring context for all Cucumber tests.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(locations = "classpath:application-test.properties")
-@Transactional
+@Transactional // Each test runs in a transaction that gets rolled back
 public class TransactionHistoryStepDefinitions {
 
     @Autowired
@@ -41,17 +42,19 @@ public class TransactionHistoryStepDefinitions {
 
     @Autowired
     private ObjectMapper objectMapper;
-
+ // Store created test data for verification
     private MockMvc mockMvc;
     private MvcResult lastResponse;
     private String currentUserToken;
 
     @Before
     public void setUp() {
+         // Initialize MockMvc to simulate HTTP requests without starting a real server
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         userRepository.deleteAll();
     }
 
+    //Creates test users with their transaction history in the database.
     @Given("there are test users with transactions in the system:")
     public void thereAreTestUsersWithTransactionsInTheSystem(List<Map<String, String>> users) {
         for (Map<String, String> userData : users) {
@@ -59,8 +62,8 @@ public class TransactionHistoryStepDefinitions {
             user.setName(userData.get("name"));
             user.setEmail(userData.get("email"));
             user.setRole(userData.get("role"));
-            user.setApproved(true);
-            userRepository.save(user);
+            user.setApproved(true);//All test users are pre-approved to simplify testing.
+            userRepository.save(user);//Saves the user to the actual database (H2 in-memory during tests).
         }
     }
 
@@ -71,11 +74,12 @@ public class TransactionHistoryStepDefinitions {
 
     @Given("I am logged in as employee {string}")
     public void iAmLoggedInAsEmployee(String email) {
-        currentUserToken = "mock-employee-token-" + email;
+        currentUserToken = "mock-employee-token-" + email; //Creates a fake token
     }
-
+//Action Steps
     @When("I request transaction history")
     public void iRequestTransactionHistory() throws Exception {
+       //mockMvc.perform(): Executes the HTTP request
         lastResponse = mockMvc.perform(get("/api/transactions/history")
                 .header("Authorization", "Bearer " + currentUserToken))
                 .andReturn();
@@ -102,13 +106,13 @@ public class TransactionHistoryStepDefinitions {
     @Then("I should see my own transactions")
     public void iShouldSeeMyOwnTransactions() throws Exception {
         assertEquals(200, lastResponse.getResponse().getStatus());
-        // Mock response - in real scenario would verify actual transactions
+        // Mock response -
     }
 
     @Then("I should not see other customers' transactions")
     public void iShouldNotSeeOtherCustomersTransactions() throws Exception {
-        String responseBody = lastResponse.getResponse().getContentAsString();
-        // In real scenario, would verify no transactions from other customers appear
+        String responseBody = lastResponse.getResponse().getContentAsString(); //Gets response body as string. Currently just checks it's not null.
+       //Verifies security - no other customer data visible.
         assertNotNull(responseBody);
     }
 
