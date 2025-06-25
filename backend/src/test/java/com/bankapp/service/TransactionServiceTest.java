@@ -30,44 +30,44 @@ class TransactionServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        MockitoAnnotations.openMocks(this); // Initialize mocks before each test
         
         testUser = new User();
-        testUser.setId(1L);
-        testUser.setName("Test User");
+        testUser.setId(1L);               // Setup user ID
+        testUser.setName("Test User");   // Setup user name
         
         testAccount = new Account();
-        testAccount.setId(1L);
-        testAccount.setUser(testUser);
-        testAccount.setBalance(new BigDecimal("1000.00"));
+        testAccount.setId(1L);                                // Setup account ID
+        testAccount.setUser(testUser);                       // Link account to user
+        testAccount.setBalance(new BigDecimal("1000.00"));  // Set initial balance
     }
 
     @Test
     void saveTransaction_Success() {
         Transaction transaction = new Transaction();
-        transaction.setAmount(new BigDecimal("100.00"));
-        transaction.setFromAccount(testAccount);
+        transaction.setAmount(new BigDecimal("100.00"));   // Set transaction amount
+        transaction.setFromAccount(testAccount);          // Set sender account
         
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
+        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);    // Mock save behavior
         
-        Transaction result = transactionRepository.save(transaction);
+        Transaction result = transactionRepository.save(transaction);    // Call save
         
-        assertNotNull(result);
-        assertEquals(new BigDecimal("100.00"), result.getAmount());
-        verify(transactionRepository).save(transaction);
+        assertNotNull(result);     // Verify result is not null
+        assertEquals(new BigDecimal("100.00"), result.getAmount());     // Verify amount matches
+        verify(transactionRepository).save(transaction);               // Confirm save called once
     }
 
     @Test
     void findTransactionsByUser_Success() {
         Transaction transaction1 = new Transaction();
-        transaction1.setAmount(new BigDecimal("100.00"));
+        transaction1.setAmount(new BigDecimal("100.00"));    // Setup transaction amount
         
         List<Transaction> transactions = Arrays.asList(transaction1);
-        when(transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(1L, 1L)).thenReturn(transactions);
+        when(transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(1L, 1L)).thenReturn(transactions); // Mock find
         
-        List<Transaction> result = transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(1L, 1L);
+        List<Transaction> result = transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(1L, 1L); // Call find
         
-        assertEquals(1, result.size());
-        assertEquals(new BigDecimal("100.00"), result.get(0).getAmount());
+        assertEquals(1, result.size());     // Check returned list size
+        assertEquals(new BigDecimal("100.00"), result.get(0).getAmount()); // Verify amount in first transaction
     }
 }

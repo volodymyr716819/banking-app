@@ -40,7 +40,7 @@ public class AtmOperationController {
         }
         
         // For simplicity, using the account ID from the request
-        // In a real app, you might want to validate that the user owns this account
+        // *should add validation that the user owns this account*
         Long accountId = request.getAccountId();
         
         atmService.performAtmOperation(accountId, request.getAmount(), request.getPin(), request.getOperationType());
