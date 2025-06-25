@@ -41,7 +41,7 @@ import io.cucumber.spring.CucumberContextConfiguration;
 @CucumberContextConfiguration
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(locations = "classpath:application-test.properties")
-@Transactional
+@Transactional //Each test runs in a transaction that gets rolled back this means we test with a real database (H2 in-memory)
 public class CustomerSearchStepDefinitions {
 
     @Autowired
@@ -69,13 +69,14 @@ public class CustomerSearchStepDefinitions {
         lastResponse = null;
         testUsers.clear();
         SecurityContextHolder.clearContext();
-        accountRepository.deleteAll();
+        accountRepository.deleteAll(); // Clean database
         userRepository.deleteAll();
     }
 
     @Given("there are test customers in the system:")
     public void thereAreTestCustomersInTheSystem(List<Map<String, String>> customers) {
         for (Map<String, String> customerData : customers) {
+            // Create real user in database
             User user = new User();
             user.setName(customerData.get("name"));
             user.setEmail(customerData.get("email"));
@@ -92,7 +93,7 @@ public class CustomerSearchStepDefinitions {
             
             user = userRepository.save(user);
             testUsers.put(user.getEmail(), user);
-
+ // Create real account
             Account account = new Account();
             account.setUser(user);
             account.setType(customerData.get("account_type"));
@@ -116,7 +117,7 @@ public class CustomerSearchStepDefinitions {
         employee.setRegistrationStatus(RegistrationStatus.APPROVED);
         employee = userRepository.save(employee);
         testUsers.put(employee.getEmail(), employee);
-
+// Set up Spring Security context (simulate logged-in user)
         setupSecurityContext("employee@bank.com", "EMPLOYEE");
     }
 
@@ -130,6 +131,7 @@ public class CustomerSearchStepDefinitions {
 
     @When("I search for customers by name {string}")
     public void iSearchForCustomersByName(String name) throws Exception {
+        // Make real HTTP request to the controller
         lastResponse = mockMvc.perform(get("/api/users/search")
                 .param("name", name)
                 .contentType(MediaType.APPLICATION_JSON))
@@ -194,8 +196,10 @@ public class CustomerSearchStepDefinitions {
         JsonNode results = objectMapper.readTree(responseBody);
         
         boolean ibanFound = false;
+        // Loop through results array
         if (results.isArray()) {
             for (JsonNode result : results) {
+                // Check ibans array in each result
                 if (result.has("ibans")) {
                     JsonNode ibans = result.get("ibans");
                     for (JsonNode iban : ibans) {

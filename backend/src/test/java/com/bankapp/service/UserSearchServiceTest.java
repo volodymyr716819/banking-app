@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
@@ -31,10 +32,10 @@ class UserSearchServiceTest {
 
     @Mock
     private UserRepository userRepository;
-
+//@Mock creates fake versions of repositories
     @Mock
     private AccountRepository accountRepository;
-
+//creates a real UserSearchService but injects the fake repositories
     @InjectMocks
     private UserSearchService userSearchService;
 
@@ -45,10 +46,10 @@ class UserSearchServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         
-        // Create authentication for employee
+         // Fake authentication token
         authentication = new TestingAuthenticationToken("employee@bank.com", "password", "ROLE_EMPLOYEE");
         
-        // Setup authenticated employee
+        // Fake employee user
         authenticatedEmployee = new User();
         authenticatedEmployee.setId(1L);
         authenticatedEmployee.setEmail("employee@bank.com");
@@ -63,11 +64,11 @@ class UserSearchServiceTest {
         unapprovedCustomer.setName("Alaa Aldrobe");
         unapprovedCustomer.setRole("CUSTOMER");
         unapprovedCustomer.setRegistrationStatus(RegistrationStatus.PENDING); // Not approved yet
-        
+          // Tell mocks what to return
         when(userRepository.findByEmail("employee@bank.com")).thenReturn(Optional.of(authenticatedEmployee));
         when(userRepository.findByNameContainingIgnoreCase("Alaa")).thenReturn(Arrays.asList(unapprovedCustomer));
 
-        // Act: Search for unapproved customer
+        // Act: Call the method being tested
         List<UserSearchResultDTO> result = userSearchService.searchUsersByName("Alaa", authentication);
 
         // Assert: Should return empty list (unapproved users are filtered out)
@@ -78,20 +79,20 @@ class UserSearchServiceTest {
 
     @Test
     void searchUsersByName_ApprovedCustomerWithPendingAccount_ReturnsCustomerWithoutIban() {
-        // Arrange: Create approved customer (Trimpakkiros) with pending account
+        // ARRANGE: Approved user
         User approvedCustomer = new User();
         approvedCustomer.setId(3L);
         approvedCustomer.setName("Trimpakkiros");
         approvedCustomer.setRole("CUSTOMER");
         approvedCustomer.setRegistrationStatus(RegistrationStatus.APPROVED);
-        
+           // But with pending account
         Account pendingAccount = new Account();
         pendingAccount.setId(101L);
         pendingAccount.setUser(approvedCustomer);
         pendingAccount.setIban("NL91ABNA0417164301");
         pendingAccount.setApproved(false); // Account not approved yet
         pendingAccount.setClosed(false);
-        
+        // Mock setup
         when(userRepository.findByEmail("employee@bank.com")).thenReturn(Optional.of(authenticatedEmployee));
         when(userRepository.findByNameContainingIgnoreCase("Trimpakkiros")).thenReturn(Arrays.asList(approvedCustomer));
         when(accountRepository.findByUserId(3L)).thenReturn(Arrays.asList(pendingAccount));
@@ -122,7 +123,7 @@ class UserSearchServiceTest {
         approvedAccount.setApproved(true); // Account is approved
         approvedAccount.setClosed(false);
         approvedAccount.setBalance(new BigDecimal("1500.00"));
-        
+          // Mock setup
         when(userRepository.findByEmail("employee@bank.com")).thenReturn(Optional.of(authenticatedEmployee));
         when(userRepository.findByNameContainingIgnoreCase("Panagiotis")).thenReturn(Arrays.asList(approvedCustomer));
         when(accountRepository.findByUserId(4L)).thenReturn(Arrays.asList(approvedAccount));
