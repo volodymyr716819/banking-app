@@ -38,40 +38,42 @@ class TransactionHistoryControllerTest {
     @MockBean
     private TransactionRepository transactionRepository;
 
+    //Test 1: Customer Views Own Transactions
     @Test
     @WithMockUser(username = "alaa@example.com", roles = "CUSTOMER")
     void customerViewsOwnTransactions() throws Exception {
-        // Arrange: Mock transaction history response
+        // ARRANGE: Create test transaction
         TransactionHistoryDTO tx1 = new TransactionHistoryDTO();
         tx1.setTransactionId(1L);
         tx1.setAmount(new BigDecimal("100.00"));
         tx1.setTransactionType("TRANSFER");
         tx1.setTimestamp(LocalDateTime.now());
-        
+         // Create customer user
         User customer = new User();
         customer.setId(1L);
         customer.setEmail("alaa@example.com");
-        
+        // Mock repository and service
         when(userRepository.findByEmail("alaa@example.com")).thenReturn(Optional.of(customer));
         when(transactionService.getTransactionHistory(any(), eq(customer)))
             .thenReturn(Arrays.asList(tx1));
 
-        // Act & Assert: GET /api/transactions/history
+       // ACT & ASSERT: Call endpoint
         mockMvc.perform(get("/api/transactions/history"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].amount").value(100.00))
                 .andExpect(jsonPath("$[0].transactionType").value("TRANSFER"));
     }
 
+    //Test 2: Employee Views Specific User's Transactions
     @Test
     @WithMockUser(username = "employee@bank.com", roles = "EMPLOYEE")
     void employeeViewsSpecificUserTransactions() throws Exception {
-        // Arrange: Employee views customer's transactions
+      // ARRANGE: Create transaction for viewing
         TransactionHistoryDTO tx1 = new TransactionHistoryDTO();
         tx1.setTransactionId(2L);
         tx1.setAmount(new BigDecimal("200.00"));
         tx1.setTransactionType("DEPOSIT");
-        
+        // Create employee user
         User employee = new User();
         employee.setId(3L);
         employee.setEmail("employee@bank.com");
@@ -81,17 +83,18 @@ class TransactionHistoryControllerTest {
         when(transactionService.getTransactionHistory(any(), eq(employee)))
             .thenReturn(Arrays.asList(tx1));
 
-        // Act & Assert: GET /api/transactions/history?userId=2
+        // ACT & ASSERT: Employee requests specific user's transactions
         mockMvc.perform(get("/api/transactions/history")
                 .param("userId", "2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].amount").value(200.00));
     }
 
+    //Test 3: Security Test - Customer Cannot View Others' Transactions
     @Test
     @WithMockUser(username = "alaa@example.com", roles = "CUSTOMER")
     void customerCannotViewOthersTransactions() throws Exception {
-        // Arrange: Customer tries to view another user's transactions
+       // ARRANGE: Customer setup
         User customer = new User();
         customer.setId(1L);
         customer.setEmail("alaa@example.com");
@@ -101,13 +104,15 @@ class TransactionHistoryControllerTest {
         when(transactionService.getTransactionHistory(any(), eq(customer)))
             .thenReturn(Arrays.asList()); // Service ignores userId param for customers
 
-        // Act & Assert: Customer tries to access other user's data
+        // ACT: Customer tries to hack by adding userId parameter
         mockMvc.perform(get("/api/transactions/history")
                 .param("userId", "2")) // Trying to view user 2's transactions
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
         
-        // Verify service was called with the customer's context, not user 2
+        // ASSERT: Verify service was called with customer, NOT user 2
         verify(transactionService).getTransactionHistory(any(), eq(customer));
     }
+     //Security protection - customers can't view others' data 
+    //userId parameter is ignored for customers Service always uses the logged-in customer's ID
 }

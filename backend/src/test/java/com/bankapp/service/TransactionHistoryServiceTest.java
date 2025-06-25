@@ -18,10 +18,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Unit tests for TransactionService.getTransactionHistory method.
- * Tests three scenarios: customer views own, employee views any user's, customer can't view others.
- */
+
 class TransactionHistoryServiceTest {
 
     @Mock
@@ -43,7 +40,7 @@ class TransactionHistoryServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         
-        // Setup test users
+        // Create test users
         customerAlaa = new User();
         customerAlaa.setId(1L);
         customerAlaa.setName("Alaa Aldrobe");
@@ -59,7 +56,7 @@ class TransactionHistoryServiceTest {
         employeeUser.setName("Employee");
         employeeUser.setRole("EMPLOYEE");
         
-        // Setup test transactions
+        // create test transactions
         transaction1 = new Transaction();
         transaction1.setId(1L);
         transaction1.setAmount(new BigDecimal("100.00"));
@@ -71,6 +68,7 @@ class TransactionHistoryServiceTest {
         transaction2.setTimestamp(LocalDateTime.now());
     }
 
+    //Test 1: Customer Views Own Transactions
     @Test
     void customerCanViewOwnTransactions() {
         // Arrange: Alaa has transactions
@@ -79,9 +77,9 @@ class TransactionHistoryServiceTest {
         when(atmOperationRepository.findByAccount_User_Id(1L))
             .thenReturn(Arrays.asList());
         
-        TransactionFilterRequest filters = new TransactionFilterRequest();
+        TransactionFilterRequest filters = new TransactionFilterRequest(); // Note: No userId set in filters
         
-        // Act: Alaa requests her own transactions
+        // ACT: Alaa (customer) requests transactions
         List<TransactionHistoryDTO> result = transactionService.getTransactionHistory(filters, customerAlaa);
         
         // Assert: Should return Alaa's transactions
@@ -89,12 +87,13 @@ class TransactionHistoryServiceTest {
         verify(transactionRepository).findByFromAccount_User_IdOrToAccount_User_Id(1L, 1L);
     }
 
+    //Test 2: Employee Views Specific User's Transactions
     @Test
     void employeeCanViewSpecificUserTransactions() {
-        // Arrange: Employee wants to view Panagiotis' transactions
+        // ARRANGE: Mock Panagiotis' transactions
         when(transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(2L, 2L))
             .thenReturn(Arrays.asList(transaction1));
-        when(atmOperationRepository.findByAccount_User_Id(2L))
+        when(atmOperationRepository.findByAccount_User_Id(2L)) // Employee specifies Panagiotis' ID
             .thenReturn(Arrays.asList());
         
         TransactionFilterRequest filters = new TransactionFilterRequest();
@@ -103,14 +102,15 @@ class TransactionHistoryServiceTest {
         // Act: Employee requests Panagiotis' transactions
         List<TransactionHistoryDTO> result = transactionService.getTransactionHistory(filters, employeeUser);
         
-        // Assert: Should return Panagiotis' transactions
+        // Assert: Gets Panagiotis' transactions
         assertEquals(1, result.size());
         verify(transactionRepository).findByFromAccount_User_IdOrToAccount_User_Id(2L, 2L);
     }
 
+    //Test 3: Security Test - Customer Cannot View Others' Transactions
     @Test
     void customerCannotViewOtherUserTransactions() {
-        // Arrange: Alaa tries to view Panagiotis' transactions
+        // ARRANGE: Mock only Alaa's transactions
         when(transactionRepository.findByFromAccount_User_IdOrToAccount_User_Id(1L, 1L))
             .thenReturn(Arrays.asList(transaction1));
         when(atmOperationRepository.findByAccount_User_Id(1L))
